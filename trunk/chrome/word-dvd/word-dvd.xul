@@ -1,0 +1,102 @@
+<?xml version="1.0"?>
+<!--
+    This file is part of word-dvd.
+
+    Copyright 2010 Dale Potter (gpl.programs.info@gmail.com)
+
+    Muqaddas Kitob is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 2 of the License, or
+    (at your option) any later version.
+
+    Muqaddas Kitob is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Muqaddas Kitob.  If not, see <http://www.gnu.org/licenses/>.
+!-->
+
+<?xml-stylesheet href="chrome://global/skin/" type="text/css"?>
+
+<window
+    id="word-dvd" xmlns:html="http://www.w3.org/1999/xhtml"
+    title="word-dvd"
+    persist="screenX screenY"
+    onload="loadedXUL()"
+    onunload="unloadXUL()"
+    xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
+<script type="application/x-javascript" src="chrome://word-dvd/content/word-dvd.js" />
+<vbox id="body">
+  <hbox>
+    <iframe id="render" src="chrome://word-dvd/content/web/menu.html" />
+  </hbox>
+  <groupbox>
+    <caption label="Setup"/>
+    <hbox pack="start" style="margin-left:-6px;">
+      <button id="installPrompt" disabled="true" label="Install directory:" oncommand="window.alert('Installation directory is:\n' + ExtDir.path);" tooltiptext="Click to see where Word-DVD is installed." />
+    </hbox>
+    <grid>
+      <columns>
+        <column />
+        <column />
+        <column />
+      </columns>
+      <rows>
+        <row align="center">
+          <label tooltiptext="Directory where OSIS file, config file, etc. are located." />
+          <textbox id="input-0" width="400" readonly="true" />
+          <button id="browse-0" label="browse" oncommand="handleInput(this);" />
+        </row>
+        <row align="center">
+          <label tooltiptext="Directory where audio files (with names of the form: lang-book-ch.ac3) are located." />
+          <textbox id="input-1" width="400" readonly="true" />
+          <button id="browse-1" label="browse" oncommand="handleInput(this);" />
+          <checkbox id="noaudio" label="none" oncommand="handleInput(this);" tooltiptext="Check if there is no audio for this DVD." />
+        </row>
+        <row align="center">
+          <label tooltiptext="Directory where DVD output files will be put." />
+          <textbox id="input-2" width="400" readonly="true" />
+          <button id="browse-2" label="browse" oncommand="handleInput(this);" />
+        </row>
+      </rows>
+    </grid>
+  </groupbox>
+  <hbox flex="100%">
+    <groupbox>
+      <caption label="Run"/>
+      <vbox>
+        <checkbox id="delete1st" label="Clean Output Dir" checked="false" oncommand="handleInput(this);" tooltiptext="Wipe output directory and start from scratch." />
+        <checkbox id="runword-dvd" label="Create DVD" checked="true" tooltiptext="Create final DVD files." />
+        <checkbox id="osis2html" label="Convert OSIS to HTML" checked="false" oncommand="handleInput(this);" tooltiptext="Run the OSIS to HTML converter to generate new HTML." />
+        <hbox>
+          <button id="runpause" label="Go!" oncommand="ButtonId=this.id; wordDVD();" />
+          <button id="rendernext" disabled="true" label="Render Next" oncommand="ButtonId=this.id; wordDVD();" tooltiptext="Render a single page and pause." />
+        </hbox>
+      </vbox>
+    </groupbox>
+    <vbox flex="50%"></vbox>
+    <groupbox>
+      <caption label="Render"/>
+      <vbox>
+        <radiogroup orient="vertical">
+          <radio id="renderall" label="Render All Books" tooltiptext="Render pages for all books." selected="true" />
+          <radio id="startbk"   label="Render From Book" tooltiptext="Render pages starting at a selected book." />
+          <radio id="singlebk"  label="Single Book DVD"  tooltiptext="Create a DVD with only a chosen book." />
+        </radiogroup>
+        <checkbox id="images" label="Don't capture" checked="false" tooltiptext="Show pages in window, but do not capture or save them." />
+      </vbox>
+    </groupbox>
+    <vbox flex="50%"></vbox>
+    <groupbox >
+      <caption label="Skip"/>
+      <vbox>
+        <checkbox id="skipmenus" label="Menu Generation" checked="false" tooltiptext="Don't render menus." />
+        <checkbox id="skiptext" label="Text Generation" checked="false" tooltiptext="Don't render text pages." />
+        <checkbox id="skipfootnotes" label="Footnote Generation" checked="false" tooltiptext="Don't render footnotes pages." />
+      </vbox>
+    </groupbox>
+  </hbox>
+</vbox>
+</window>
