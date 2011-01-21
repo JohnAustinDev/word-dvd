@@ -1,0 +1,18 @@
+<?xml version="1.0"?>
+<overlay id="singleItemEx"
+         xmlns:html="http://www.w3.org/1999/xhtml"
+         xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
+         
+  <script type="text/javascript">
+    var WordDVDWin;
+    function startWordDVD() {
+      if (WordDVDWin) WordDVDWin.close();
+      WordDVDWin = window.open("chrome://word-dvd/content", "word-dvd", "chrome=yes,alwaysRaised=yes");
+    }
+  </script>
+  
+  <menupopup id="menu_ToolsPopup">
+  <menuseparator/>
+  <menuitem label="Word-DVD..." oncommand="startWordDVD();" />
+  </menupopup>
+</overlay>

@@ -1,0 +1,199 @@
+DOCUMENTATION:
+
+Current Work:
+TRY ROOT/MENU on CARS FOOTNOTES PAGE
+
+KRKOT with Labels = iso is ready!
+KRKNT with Labels = iso is ready!
+UZV with new MK & Labels = Waiting for Labels
+TKL with new MK & Labels = Waiting for Labels
+TKC with new MK & Labels = Waiting for Labels
+
+config.txt parameters
+----------------------------
+Chaptext[-chapter]
+TitlesAreRead[-book]
+CountChapterNumbersAsTitle[-book]
+DefaultBookStartGap
+DefaultChapterStartGap
+DefaultBookEndGap
+DefaultChapterEndGap
+
+TK AUDIO NOTES:
+Act was actually Hebrews.
+Hebrews was actually a tract.
+Revelation, 3 John are missing from NT.
+
+
+BUGS:
+TKL Gen ch4 pg2 - has "window"
+
+TODOS:
+UZV - Update MK program. Add QuickTime batch file to audo dir. Add label files.
+KRKNT - Add label files.
+KRKOT - Add label files.
+
+TKL & TKC - 
+Change "Extra Features" translation & check that Proverbs short name is okay, & Change "x-nji" chapter numbers?
+Check TOC artwork, and get any other artwork.
+Fix audio files.
+Add audio anchor points.
+Add MK program.
+
+GENERAL TODOS:
+Add glossary
+
+WORD-DVD DEPENDENCIES AND VERSIONS:
+perl (v5.8.8)
+ffmpeg (see below)
+jpeg2yuv (mjpegtools 1.9.0)
+mpeg2enc (mjpegtools 1.9.0)
+mplex (mjpegtools 1.9.0 modified!)
+import (ImageMagick 6.3.7)
+mogrify (ImageMagick 6.3.7)
+dvdauthor (version 0.6.14)
+spumux (dvdauthor version 0.6.14)
+genisoimage (genisoimage 1.1.9)
+growisofs (version 7.0.1)
+convert (ImageMagick 6.3.7, was used for subtitle texts variation, not used anymore)
+
+FFmpeg version SVN-rUNKNOWN, Copyright (c) 2000-2007 Fabrice Bellard, et al.
+  configuration: --enable-gpl --enable-pp --enable-swscaler --enable-pthreads --enable-libvorbis --enable-libtheora --enable-libogg --enable-libgsm --enable-dc1394 --disable-debug --enable-shared --prefix=/usr
+  libavutil version: 1d.49.3.0
+  libavcodec version: 1d.51.38.0
+  libavformat version: 1d.51.10.0
+  built on Mar 16 2009 21:16:26, gcc: 4.2.4 (Ubuntu 4.2.4-1ubuntu3)
+ffmpeg      SVN-rUNKNOWN
+libavutil   3212032
+libavcodec  3352064
+libavformat 3344896
+
+SPECIAL HELPER PROGRAMS USED
+sox (v14.0.0, not used by word-dvd, used to convert mp3 to wav)
+AC3Encoder (3.0, x86, Win32 Unicode, not used by word-dvd, used to convert wav to ac3. Runs in Wine.)
+
+MAY NEED ONLY IF COMPATIBILITY PROBLEMS ARE FOUND:
+Allow option for one book per VTS and footnotes stored in separate fn VTSs???
+
+-----------------------------------------------------
+Important authoring constraints:
+All break values should be variables!
+Some breaks may have other break constraints as well!
+
+99 max VTS
+9 max titles per VTS (???-DVDA&P p177)
+OR
+5 max titles per VTS (assuming 511 ch/VTS below & 99 ch/title)
+99 max total titles
+99 max chapters per title
+511 max chapters per VTS (???-DVDA&P p226)
+
+Proposed structure:
+VTS filled with 5 pgc/titles.
+Titles filled with 99 chapters.
+Each title holds either text or footnotes, not both. (why??)
+Text titles break at chapter divisions.
+Footnote titles for a VTS hold all footnotes for all titles in the VTS and can break anywhere; some duplicate footnotes are allowable.
+Chapters represent a single page of text, or a single page of footnotes; absolute maximum 9801 total pages.
+Dummy menus in VTS would have separate menu sequences for text, footnotes by text chapter (for jumping to footnotes), and footnotes by footnotes chapter (for traversing footnotes).
+VTS root menu has pre section to forward control to either a test/footnote by text chapter menu sequence, footnote mapping sequence, chapter sub-menu, help menu, or to VMGM title menu.
+VMGM title menu has pre section to forward control to any VTS root menu (and hence to any chapter).
+
+-----------------------------------------------------
+
+ENCODING ISSUES:
+The DVD-player's displayed timecode is a code, separate from PS time codes, VOBU header.
+PS System Header Audio P-STD_buffer_bound_scale & P-STD_buffer_size_bound are illegal values. (related to strange audio buffer re-playing behaviour? - NO.)
+Using mplex fixes the above mentioned STD_buffer_bound_scale etc. problem!
+KJV has (valid) system headers every .5 seconds.
+
+DIFFERENCES BETWEEN NKJV AND UZV VOB PROGRAM STREAMS
+uzv has Subpicture stream (P120p), nkjv does not.
+nkjv has much larger pictures, and much higher audio bit rate.
+nkjv has SysHeader (PS22) period of 500.625630ms, uzv is at 502.247593 ms period, starting at 510.374593 ms
+nkjv System Header's "packet_rate_restriction_flag = 0" but is set to 1 for uzv, which is illegal! This was fixed in my "mplex".
+nkjv PES_extension_flag = 1 only rarely, but for uzv repeats every page.
+PES extension field's P-STD_buffer_sizes:
+in Video Packets:        nkjv=232   uzv=232
+in Audio Packets:        nkjv=58    uzv=16
+in Subpicture Packets:   nkjv=na    uzv=58
+
+DIFFERENCES BETWEEN NKJV AND UZV AND VIDEO STREAMS
+horizontal_size_value and vertical_size_values differ
+frame_rate_code & bit_rate_values differ
+nkjv has load_intra_quantiser_matrix = 1 extension, but uzv does not include this.
+(UNIMPORTANT) Sequence_Display_Extension differences:
+  nkjv: video_format = 2                uzv: video_format = 1
+  nkjv: colour_primaries = 6            uzv: colour_primaries = 5
+  nkjv: transfer_characteristics = 6    uzv: transfer_characteristics = 5
+  nkjv: display_horizontal_size = 540   uzv: display_horizontal_size = 720
+  nkjv: display_vertical_size = 480     uzv: display_vertical_size = 576
+group_start_code, closed_gop=0 for nkjv, but is 1 for uzv.
+picture_header = 0x00000100, display order = 0: same for both, but can't see any other pictures since they are not included in printout!
+(UNIMPORTANT) picture_header nkjv:vbv_delay = 4318, uzv:vbv_delay = 65535
+(UNIMPORTANT) picture_coding_extension_id = 8, content differences:
+  nkjv:intra_dc_precision = 0   uzv: intra_dc_precision = 1
+  nkjv:intra_vlc_format = 0     uzv: intra_vlc_format = 1
+  nkjv:alternate_scan = 0       uzv: alternate_scan = 1
+picture_display_extension_id = 7, nkjv has this, but uzv does not (Related to zoom-ability?? and/or Pan&Scan)
+slice_start_code = 0x00000116, quantiser_scale_code = nkjv:5-6, uzv:8-12
+Other frames in the video file are UNKNOWN!
+
+-----------------------------------------------------
+
+ORIGINAL VIDEO ENCODING...
+Uzbek full (no audio for Gen):
+Total menu pages:71
+Total audio pages:3019
+Total quiet pages:2502
+Total footnote pages:869
+Total content size:5.31144064664841 gB (5311.44064664841 MB)
+
+-----------------------------------------------------
+AUDIO SIZE ESTIMATES:
+Unreadable files:
+uz-Col-04.mp3
+uz-Heb-1.mp3 - uz-Heb-13.mp3
+uz-Matt-02.mp3
+
+Total (all available audio minus Gen and Ps):
+  95765.45 (291 files)
++ 20.9MB/6kBps = 3483.3s (13 files - Heb)
++ 1.1MB/6kBps = 183.3s (1 file - Col-4)
++ 271s (1 file - Matt-2)
+= 99703.05s = 27hr, 41min, 24s
+
+Total for Gen and Ps:
+  78.7MB + 108.7MB = 187.4MB @ 40kbps 
+= 39300.6s = 10hr, 55min, 0.6s
+
+Total for Gen:
+= 16504.6s
+
+Total for Ps:
+= 22796.0s
+
+Grand Total (all available audio):
+= 139003.65 = 38hr, 36min, 43.65s
+
+-------------------------------------------------------
+STILL SIZE ESTIMATES:
+Ps = 697 pages
+1page approx. 330kB
+Ps w/o audio = 219.4MB, or 0.28xAudio-size (saving 566MB compared to with audio)
+Gen w/o audio would be approx. 159MB (saving 410MB compared to with audio)
+
+-------------------------------------------------------
+DVD SIZE ESTIMATES:
+DVD size = 4.7gB
+All audio = 139003.65s * 48kbps = 834,021,900 bytes
+All audio+video = 139003.65 * 289kpbs = 5.02gB
+Gen audio+video = 568.6MB
+Ps audio+video = 785.4MB
+
+
+99703s of audio at 64kbps = 797.624MB
+3.902GB left for video
+
+3.902GB/99703s = 39140Bs = 313120bs = 313kbps ABSOLUTE MAXIMUM!!
+
