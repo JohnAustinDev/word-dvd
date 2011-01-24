@@ -1,0 +1,45 @@
+#labels Featured,Phase-Deploy
+== Word-DVD Installation: ==
+
+=== These Linux packages need to be installed to use Word-DVD: ===
+  * Firefox
+  * perl
+  * ffmpeg
+  * !ImageMagick 
+  * dvdauthor (0.6.14 later versions may work too)
+  * genisoimage (1.1.9 and eariler versions result in ISOs which are incompatible with Windows XP)
+  * growisofs
+
+=== Steps ===
+1) Unpack, compile and install the "modified-mjpegtools-1.9.0.tar.gz" package which is included with this distribution:
+{{{
+user:~/modified-mjpegtools-1.9.0$ sudo apt-get build-dep mjpegtools
+user:~/modified-mjpegtools-1.9.0$ sudo ./configure
+user:~/modified-mjpegtools-1.9.0$ sudo make install
+}}}
+
+This mjpegtools package contains a modified `"mplex"` multiplexer utility which is capable of creating highly compressed slide shows (10's of hours on a single DVD rather than just 1 or 2).
+
+2) Install the `"Word-DVD-xx.xpi"` Firefox extension included with this distribution. Then, Firefox's "Tools" menu will show "Word-DVD...". Click this to start the program.
+
+3) Click the browse button for the input directory and choose the directory where your input files are located (to use the example inputs, unzip the folder somewhere and choose it). If you have audio, uncheck the "none" checkbox and browse for your audio directory (to use the example audio, choose the `"audio"` directory within the example directory). Create a directory called `"OUTPUTS"` somewhere, then click the browse button and choose this as your output directory.
+
+4) Click Go! You will see a prompt when it's finished. NOTE: for some systems it is important that other windows do not cover the Word-DVD window during the initial rendering phases. Otherwise, captured images could be corrupted.
+
+<br>
+=== Testing and Burning to DVD ===
+The final DVD files will be located in `OUTPUTS/dvd`. To burn these to DVD you need to use the proper file system, so run:
+{{{
+`sudo xcreateiso.sh`
+}}}
+Which is located in `OUTPUTS/script`. Then you should see the `OUTPUTS/dvd.iso` file which is ready for burning to DVD. By running `xcreateiso.sh` with `sudo`, the script will also be able to mount the iso as a dvd under `/media/dvd`.
+
+To burn and verify a DVD, run:
+{{{
+`./xburnverify.sh`
+}}}
+
+
+
+
+
