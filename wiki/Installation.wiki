@@ -16,9 +16,10 @@
 === Steps ===
 1) Unpack, compile and install the "modified-mjpegtools-1.9.0.tar.gz" package which is included with this distribution:
 {{{
-user:~/modified-mjpegtools-1.9.0$ sudo apt-get build-dep mjpegtools
-user:~/modified-mjpegtools-1.9.0$ sudo ./configure
-user:~/modified-mjpegtools-1.9.0$ sudo make install
+user:/usr/src/modified-mjpegtools-1.9.0$ sudo apt-get build-dep mjpegtools
+user:/usr/src/modified-mjpegtools-1.9.0$ sudo ./configure --exec-prefix=/usr
+user:/usr/src/modified-mjpegtools-1.9.0$ sudo make
+user:/usr/src/modified-mjpegtools-1.9.0$ sudo make install
 }}}
 
 This mjpegtools package contains a modified `"mplex"` multiplexer utility which is capable of creating highly compressed slide shows (10's of hours on a single DVD rather than just 1 or 2).
@@ -41,6 +42,4 @@ To burn and verify a DVD, run:
 {{{
 ./xburnverify.sh
 }}}
-
-
 
