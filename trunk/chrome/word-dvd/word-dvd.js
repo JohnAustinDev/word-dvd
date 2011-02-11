@@ -81,16 +81,18 @@ const MYGUID="{f597ab2a-3a14-11de-a792-e68e56d89593}";
 const OSISPL="osis2html.pl", RUNOSISPL="xosis2html.sh";
 const AUDIOGEN="audio.pl", RUNAUDIOGEN="xaudio.sh";
 const IMAGEPL="imgs2mpeg.pl", RUNIMAGEPL="ximgs2mpeg.sh";
+const IMG2WEB="imgs2web.pl", RUNIMG2WEB="ximgs2web.sh";
 const NAVBUT="navbuttons.pl", RUNNAVBUT="xnavbuttons.sh";
 const MENUS="menus.pl", RUNMENUS="xmenus.sh";
 const MPEGPL="mpeg2vob.pl", RUNMPEGPL="xmpeg2vob.sh";
 const LENCALC="lencalc.pl", RUNLENCALC="xlencalc.sh";
 const TIMEANAL="timeAnalysis.pl", RUNTIMEANAL="xtimeAnalysis.sh";
-const WORDDVD="word-dvd.pl", RUNWORDDVD="xword-dvd.sh";
-const CREATEISO="createiso.pl", RUNCREATEISO="xcreateiso.sh";
 const AUDACITY="audacity.pl", RUNAUDACITY="xaudacity.sh";
 const ECASOUND="ecasound.pl", RUNECASOUND="xecasound.sh";
 const BURNVERIFY="burnverifydvd.sh", RUNBURNVERIFY="xburnverify.sh";
+const RUNWORDDVD="xword-dvd.sh";
+const RUNVIDEOFILES="xvideo.sh";
+const CREATEISO="createiso.pl", RUNCREATEISO="xcreateiso.sh";
 const DBLOGFILE="logfile.txt";
 const STYLESHEET="chrome/word-dvd/web/pal.css";
 const CAPTURE="import.sh";
@@ -142,8 +144,8 @@ function writeRunScripts() {
 
   const st="\"", md="\" \"", en="\"";
   var commandline = scriptdir.path + md + UIfile[INDIR].path + md + UIfile[OUTDIR].path + md + UIfile[AUDIO].path + en + " $1 $2 $3";
-  var slist = [OSISPL, AUDIOGEN, IMAGEPL, NAVBUT, MENUS, MPEGPL, LENCALC, TIMEANAL, CREATEISO, AUDACITY, ECASOUND, BURNVERIFY];
-  var rlist = [RUNOSISPL, RUNAUDIOGEN, RUNIMAGEPL, RUNNAVBUT, RUNMENUS, RUNMPEGPL, RUNLENCALC, RUNTIMEANAL, RUNCREATEISO, RUNAUDACITY, RUNECASOUND, RUNBURNVERIFY];
+  var slist = [OSISPL, AUDIOGEN, IMAGEPL, NAVBUT, MENUS, MPEGPL, LENCALC, TIMEANAL, CREATEISO, AUDACITY, ECASOUND, BURNVERIFY, IMG2WEB];
+  var rlist = [RUNOSISPL, RUNAUDIOGEN, RUNIMAGEPL, RUNNAVBUT, RUNMENUS, RUNMPEGPL, RUNLENCALC, RUNTIMEANAL, RUNCREATEISO, RUNAUDACITY, RUNECASOUND, RUNBURNVERIFY, RUNIMG2WEB];
   for (var i=0; i<slist.length; i++) {
     var script = scriptdir.clone();
     script.append(slist[i]);
@@ -333,8 +335,8 @@ function wordDVD() {
   // COPY MISC BITS TO OUTPUT DIR
   const CFILE=[
   "chrome/word-dvd/web/blankaudio.ac3",
-  "script/xword-dvd.sh",
-  "script/xcreateiso.sh",
+  "script/" + RUNWORDDVD,
+  "script/" + RUNVIDEOFILES,
   "chrome/word-dvd/web/textbuttonsSEL.png",
   "chrome/word-dvd/web/textbuttonsHIGH.png",
   "chrome/word-dvd/web/menuNormHIGH.png",
@@ -1366,9 +1368,21 @@ function stop() {
     process.init(file);
     var args = [rundir];
     process.run(true, args, args.length);
-    window.alert("Finished Creating DVD!");
+    logmsg("Finished Creating DVD!");
   }
-  else window.alert("Finished!");
+  if (document.getElementById("runvideo").checked) {
+    var process = Components.classes["@mozilla.org/process/util;1"]
+                      .createInstance(Components.interfaces.nsIProcess);                        
+    var file = UIfile[OUTDIR].clone();
+    file.append(SCRIPT);
+    var rundir = file.path;
+    file.append(RUNVIDEOFILES);
+    process.init(file);
+    var args = [rundir];
+    process.run(true, args, args.length);
+    logmsg("Finished Creating Video Files!");  
+  }
+  window.alert("Finished!");
 
   window.close();
   //RenderNext.disabled = true;

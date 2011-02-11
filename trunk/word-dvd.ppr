@@ -66,21 +66,45 @@ word-dvd
 			script\mpeg2vob.pl
 			script\navbuttons.pl
 			script\osis2html.pl
-			script\shared.pl
-			script\timeAnalysis.pl
 			script\TODOs.txt
 			script\xword-dvd.sh
+			script\imgs2mp4.pl
+			script\xvideo.sh
 		chrome.manifest
 		install.rdf
 [Open project files]
 0=chrome\word-dvd\word-dvd.js
-1=..\..\..\..\..\..\var\www\templates\ntehomepage\js\script.js
+1=script\xword-dvd.sh
+2=script\shared.pl
+3=script\init.pl
+4=script\imgs2web.pl
+5=script\xvideo.sh
+6=chrome\word-dvd\word-dvd.xul
+7=..\..\..\..\Desktop\example\OUTPUTS\logfile.txt
 [Selected Project Files]
 Main=
-Selected=..\..\..\..\..\..\var\www\templates\ntehomepage\js\script.js
+Selected=script\imgs2web.pl
 [chrome\word-dvd\word-dvd.js]
+TopLine=128
+Caret=174,148
+[script\xword-dvd.sh]
 TopLine=1
-Caret=1,24
-[..\..\..\..\..\..\var\www\templates\ntehomepage\js\script.js]
+Caret=1,1
+[script\shared.pl]
 TopLine=1
-Caret=33,85
+Caret=1,1
+[script\init.pl]
+TopLine=1
+Caret=29,12
+[script\imgs2web.pl]
+TopLine=24
+Caret=9,113
+[script\xvideo.sh]
+TopLine=1
+Caret=46,25
+[chrome\word-dvd\word-dvd.xul]
+TopLine=54
+Caret=29,68
+[..\..\..\..\Desktop\example\OUTPUTS\logfile.txt]
+TopLine=1
+Caret=1,1

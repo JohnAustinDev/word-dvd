@@ -87,11 +87,14 @@ foreach $book (sort {$books{$a}<=>$books{$b}} keys %books) {
       $numf = ($tlen*$framesPS);
       $gop = (2*$numf);
       
-      print "\n\njpeg2yuv -v 0 -n $numf -I p -f $framesPS -j $imagedir/$book/$book-$ch-$pg.jpg | mpeg2enc -v 0 -f 8 -g $gop -G $gop -o $webdir/videotmp/$book-$ch-$pg.m2v\n\n";
-      `jpeg2yuv -v 0 -n $numf -I p -f $framesPS -j $imagedir/$book/$book-$ch-$pg.jpg | mpeg2enc -v 0 -f 8 -g $gop -G $gop -o $webdir/videotmp/$book-$ch-$pg.m2v`;
-      # NOTE about ffmpeg: -t is NOT duration as the man page says, it is the time code at which encoding stops.
-      print "ffmpeg -v $Verbosity -t $tlen -i $audiofile -ss $fseekto -acodec copy -y $webdir/videotmp/$book-$ch-$pg.m2a\n\n";
-      `ffmpeg -v $Verbosity -t $ffmpegt -i $audiofile -ss $fseekto -acodec copy -y $webdir/videotmp/$book-$ch-$pg.m2a`;
+      #$cmd = "jpeg2yuv -v 0 -n $numf -I p -f $framesPS -j $imagedir/$book/$book-$ch-$pg.jpg | mpeg2enc -v 0 -f 8 -g $gop -G $gop -o $webdir/videotmp/$book-$ch-$pg.m2v";
+      $cmd = "jpeg2yuv -v 0 -n $numf -I p -f $framesPS -j $imagedir/$book/$book-$ch-$pg.jpg | mpeg2enc -v 0 -f 8 -o $webdir/videotmp/$book-$ch-$pg.m2v";     
+      print "$cmd\n\n";
+      `$cmd`;
+      # NOTE about ffmpeg: sometimes -t is NOT duration as the man page says, it is the time code at which encoding stops.
+      $cmd = "ffmpeg -v $Verbosity -t $tlen -i $audiofile -ss $fseekto -acodec libmp3lame -y $webdir/videotmp/$book-$ch-$pg.m2a";
+      print "$cmd\n\n";
+      `$cmd`;
 
       #mux audio and video clips...
       if ($mpgIsMultiPage{"$book-$ch"} eq "true") {
@@ -100,19 +103,23 @@ foreach $book (sort {$books{$a}<=>$books{$b}} keys %books) {
         $startPTS = ($seekto+$gap);
         $gap = ($gap+0.040); #this gap insures there is at least 1 frame between last audio and first video packets even after rounding (for dvdauthor)
         
-        print "\n\nmplex -v $Verbosity -V $seqend -T $startPTS -f 8 $webdir/videotmp/$book-$ch-$pg.m2v $webdir/videotmp/$book-$ch-$pg.m2a -o $webdir/$book/$book-$ch-$pg.mpg\n\n";
-        `mplex -v $Verbosity -V $seqend -T $startPTS -f 8 $webdir/videotmp/$book-$ch-$pg.m2v $webdir/videotmp/$book-$ch-$pg.m2a -o $webdir/$book/$book-$ch-$pg.mpg`;          
+        #$cmd = "mplex -v $Verbosity -V $seqend -T $startPTS -f 8 $webdir/videotmp/$book-$ch-$pg.m2v $webdir/videotmp/$book-$ch-$pg.m2a -o $webdir/$book/$book-$ch-$pg.mpg";
+        $cmd = "mplex -v $Verbosity -V -f 8 $webdir/videotmp/$book-$ch-$pg.m2v $webdir/videotmp/$book-$ch-$pg.m2a -o $webdir/$book/$book-$ch-$pg.mpg";
+        print "$cmd\n\n";
+        `$cmd`;          
       }
       else {
-        `mplex -v $Verbosity -V -f 8 $webdir/videotmp/$book-$ch-$pg.m2v $webdir/videotmp/$book-$ch-$pg.m2a -o $webdir/$book/$book-$ch-$pg.mpg`;
+        $cmd = "mplex -v $Verbosity -V -f 8 $webdir/videotmp/$book-$ch-$pg.m2v $webdir/videotmp/$book-$ch-$pg.m2a -o $webdir/$book/$book-$ch-$pg.mpg";
+        print "\n\n$cmd\n\n";
+        `$cmd`;
       }
     }
-    `rm -r $webdir/videotmp/*.*`;
+    #`rm -r $webdir/videotmp/*.*`;
   }
 }
 
 CONCAT:
 #CONCATENATE PAGE MPGs INTO CHAPTER MPGs
-&mpgPages2Chapter($webdir, "");
+#&mpgPages2Chapter($webdir, "");
 
         
