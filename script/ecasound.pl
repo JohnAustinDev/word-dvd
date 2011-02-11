@@ -479,11 +479,13 @@ sub readTransitionInformation() {
     foreach $entry (@entries) {
       if ($entry !~ /-trans\.csv$/) {next;}
       open (INF, "<$listdir/$entry") || die "Could not open $listdir/$entry";
+      my $line = 0;
       while (<INF>) {
+        $line++;
         if    ($_ =~ /^unknown$/) {next;}
-        elsif ($_ = /^\s*\#/) {next;}
+        elsif ($_ =~ /^\s*\#/) {next;}
         elsif ($_ =~ /^last_page$/) {next;}
-        elsif ($_ !~ /^\s*([^,]+)\s*,\s*([^,]+)\s*,\s*(\{.*?\})/) {print "WARNING: Bad translation listing \"$_\"\n"; next;}
+        elsif ($_ !~ /^\s*([^,]+)\s*,\s*([^,]+)\s*,\s*(\{.*?\})/) {print "WARNING: Bad translation listing line $line, $listdir/$entry, \"$_\"\n"; next;}
         my $page = $1;
         my $verse = $2;
         my $trans = $3;
