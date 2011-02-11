@@ -69,6 +69,7 @@
       <vbox>
         <checkbox id="delete1st" label="Clean Output Dir" checked="false" oncommand="handleInput(this);" tooltiptext="Wipe output directory and start from scratch." />
         <checkbox id="runword-dvd" label="Create DVD" checked="true" tooltiptext="Create final DVD files." />
+        <checkbox id="runvideo" label="Create Video Files" checked="false" tooltiptext="Create separate video files for internet etc." />
         <checkbox id="osis2html" label="Convert OSIS to HTML" checked="false" oncommand="handleInput(this);" tooltiptext="Run the OSIS to HTML converter to generate new HTML." />
         <hbox>
           <button id="runpause" label="Go!" oncommand="ButtonId=this.id; wordDVD();" />
