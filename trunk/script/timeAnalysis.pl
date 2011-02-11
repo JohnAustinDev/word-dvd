@@ -94,7 +94,7 @@ if (open (INF, "<$indir/pageTiming.txt")) {
   if (!defined($ranVerseAdj)) {&calcVerseAdjustments(); $ranVerseAdj = "true";}
   
   open(OUTF, ">$outaudiodir/timingAdjustments.csv") || die "Could not open timingAdjustments.csv";
-  print "#Page,Delta\n";
+  print OUTF "#Page,Delta\n";
   foreach $k (sort keys %adjustment) {print OUTF $adjustment{$k};}
   close(OUTF);
 }

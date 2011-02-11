@@ -92,6 +92,7 @@ const AUDACITY="audacity.pl", RUNAUDACITY="xaudacity.sh";
 const ECASOUND="ecasound.pl", RUNECASOUND="xecasound.sh";
 const BURNVERIFY="burnverifydvd.sh", RUNBURNVERIFY="xburnverify.sh";
 const DBLOGFILE="logfile.txt";
+const STYLESHEET="chrome/word-dvd/web/pal.css";
 const CAPTURE="import.sh";
 const HTMLDIR="html";
 const IMGDIR="images";
@@ -395,9 +396,16 @@ function wordDVD() {
   }
   else logmsg("Skipped HTML generation.");
   
-  // Read books and maxchapters
+  // Read HTML books and maxchapters
   var htmlFiles = UIfile[INDIR].clone();
   htmlFiles.append(HTMLDIR);
+  var cfile = ExtDir.clone();
+  var pth = STYLESHEET.split("/");
+  for (var i=0; i<pth.length; i++) {cfile.append(pth[i]);}
+  var dest = htmlFiles.clone();
+  dest.append(pth[pth.length-1]);
+  if (dest.exists()) try{dest.remove(false);} catch (er) {logmsg("WARNING:" + er);}
+  try {cfile.copyTo(htmlFiles, null);} catch (er) {logmsg("WARNING:" + er);}
   if (!htmlFiles.exists() || !htmlFiles.isDirectory()) {
     logmsg("Error: HTML directory not found \"" + htmlFiles.path() + "\"\n");
     return;
@@ -426,7 +434,7 @@ function wordDVD() {
       logmsg("ERROR: HTML file has no chapters \"" + file.path() + "\"");
       continue;
     }
-    Book[Book.length-1].maxChapter = data.length-1;
+    Book[Book.length-1].maxChapter = data.length;
   }
   Book = Book.sort(booksort);
 
