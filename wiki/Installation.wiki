@@ -1,12 +1,15 @@
 #labels Featured,Phase-Deploy
 == Word-DVD Installation: ==
 
-=== These Linux packages need to be installed to use Word-DVD: ===
+=== Ubuntu Linux 10.04: These packages need to be installed: ===
+
+  * ffmpeg 
+  * dvdauthor (0.6.14 later versions may work too)
+
+=== Word-DVD also uses these packages ===
   * Firefox
   * perl
-  * ffmpeg
-  * !ImageMagick 
-  * dvdauthor (0.6.14 later versions may work too)
+  * !ImageMagick
   * genisoimage (1.1.9 and eariler versions result in ISOs which are incompatible with Windows XP)
   * growisofs
 
@@ -30,16 +33,14 @@ This mjpegtools package contains a modified `"mplex"` multiplexer utility which 
 === Testing and Burning to DVD ===
 The final DVD files will be located in `OUTPUTS/dvd`. To burn these to DVD you need to use the proper file system, so run:
 {{{
-`sudo xcreateiso.sh`
+sudo xcreateiso.sh
 }}}
 Which is located in `OUTPUTS/script`. Then you should see the `OUTPUTS/dvd.iso` file which is ready for burning to DVD. By running `xcreateiso.sh` with `sudo`, the script will also be able to mount the iso as a dvd under `/media/dvd`.
 
 To burn and verify a DVD, run:
 {{{
-`./xburnverify.sh`
+./xburnverify.sh
 }}}
-
-
 
 
 
