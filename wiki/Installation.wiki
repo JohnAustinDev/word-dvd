@@ -3,6 +3,7 @@
 
 === Ubuntu Linux 10.04: These packages need to be installed: ===
 
+  * mjpegtools-1.9.0
   * ffmpeg 
   * dvdauthor (0.6.14 later versions may work too)
 
@@ -14,12 +15,13 @@
   * growisofs
 
 === Steps ===
-1) Unpack, compile and install the "modified-mjpegtools-1.9.0.tar.gz" package which is included with this distribution:
+1) Unpack and compile "modified-mjpegtools-1.9.0.tar.gz" which is included with this distribution, and install mplex from the package:
 {{{
 user:/usr/src/modified-mjpegtools-1.9.0$ sudo apt-get build-dep mjpegtools
 user:/usr/src/modified-mjpegtools-1.9.0$ sudo ./configure --exec-prefix=/usr
 user:/usr/src/modified-mjpegtools-1.9.0$ sudo make
-user:/usr/src/modified-mjpegtools-1.9.0$ sudo make install
+user:/usr/src/modified-mjpegtools-1.9.0$ cd mplex
+user:/usr/src/modified-mjpegtools-1.9.0/mplex$ sudo make install
 }}}
 
 This mjpegtools package contains a modified `"mplex"` multiplexer utility which is capable of creating highly compressed slide shows (10's of hours on a single DVD rather than just 1 or 2).
@@ -42,4 +44,3 @@ To burn and verify a DVD, run:
 {{{
 ./xburnverify.sh
 }}}
-
