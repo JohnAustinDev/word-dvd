@@ -37,6 +37,8 @@ word-dvd
 				chrome\word-dvd\word-dvd.js
 				chrome\word-dvd\word-dvd.xul
 				chrome\word-dvd\word-dvd-overlay.xul
+				chrome\word-dvd\render.xul
+				chrome\word-dvd\render.js
 		-defaults
 			-preferences
 				defaults\preferences\prefs.js
@@ -64,47 +66,78 @@ word-dvd
 			script\init.pl
 			script\menus.pl
 			script\mpeg2vob.pl
-			script\navbuttons.pl
-			script\osis2html.pl
 			script\TODOs.txt
 			script\xword-dvd.sh
 			script\imgs2mp4.pl
 			script\xvideo.sh
+			script\dvd.sh
+			script\video.sh
+			script\word-dvd.sh
+			script\word-video.sh
+			script\shared.pl
 		chrome.manifest
 		install.rdf
 [Open project files]
-0=chrome\word-dvd\word-dvd.js
-1=script\xword-dvd.sh
-2=script\shared.pl
-3=script\init.pl
-4=script\imgs2web.pl
-5=script\xvideo.sh
-6=chrome\word-dvd\word-dvd.xul
-7=..\..\..\..\Desktop\example\OUTPUTS\logfile.txt
+0=chrome\word-dvd\word-dvd.xul
+1=chrome\word-dvd\word-dvd.js
+2=chrome\word-dvd\render.xul
+3=chrome\word-dvd\render.js
+4=chrome\word-dvd\web\render-page.js
+5=script\dvd.sh
+6=chrome\word-dvd\word-dvd-overlay.xul
+7=script\word-dvd.sh
+8=script\word-video.sh
+9=..\..\..\OUTPUTS\TEMP\logfile.txt
+10=..\..\..\OUTPUTS\TEMP\dvdauthor.xml
+11=script\mpeg2vob.pl
+12=script\shared.pl
+13=script\init.pl
+14=script\createiso.pl
 [Selected Project Files]
 Main=
-Selected=script\imgs2web.pl
+Selected=script\shared.pl
+[chrome\word-dvd\word-dvd.xul]
+TopLine=15
+Caret=21,25
 [chrome\word-dvd\word-dvd.js]
-TopLine=128
-Caret=174,148
-[script\xword-dvd.sh]
+TopLine=103
+Caret=18,137
+[chrome\word-dvd\render.xul]
+TopLine=15
+Caret=32,27
+[chrome\word-dvd\render.js]
+TopLine=727
+Caret=2,750
+[chrome\word-dvd\web\render-page.js]
 TopLine=1
-Caret=1,1
+Caret=13,14
+[script\dvd.sh]
+TopLine=13
+Caret=73,40
+[chrome\word-dvd\word-dvd-overlay.xul]
+TopLine=1
+Caret=84,15
+[script\word-dvd.sh]
+TopLine=1
+Caret=66,3
+[script\word-video.sh]
+TopLine=1
+Caret=67,3
+[..\..\..\OUTPUTS\TEMP\logfile.txt]
+TopLine=1
+Caret=89,42
+[..\..\..\OUTPUTS\TEMP\dvdauthor.xml]
+TopLine=69
+Caret=52,80
+[script\mpeg2vob.pl]
+TopLine=102
+Caret=33,120
 [script\shared.pl]
-TopLine=1
-Caret=1,1
+TopLine=259
+Caret=32,273
 [script\init.pl]
 TopLine=1
-Caret=29,12
-[script\imgs2web.pl]
-TopLine=24
-Caret=9,113
-[script\xvideo.sh]
-TopLine=1
-Caret=46,25
-[chrome\word-dvd\word-dvd.xul]
-TopLine=54
-Caret=29,68
-[..\..\..\..\Desktop\example\OUTPUTS\logfile.txt]
-TopLine=1
+Caret=1,1
+[script\createiso.pl]
+TopLine=3
 Caret=1,1

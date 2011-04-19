@@ -6,8 +6,13 @@
   <script type="text/javascript">
     var WordDVDWin;
     function startWordDVD() {
+      // close windows if they are allready open.
       if (WordDVDWin) WordDVDWin.close();
-      WordDVDWin = window.open("chrome://word-dvd/content", "word-dvd", "chrome=yes,alwaysRaised=yes");
+      var renderWin = Components.classes["@mozilla.org/embedcomp/window-watcher;1"].getService(Components.interfaces.nsIWindowWatcher).getWindowByName("render-win", window);
+      if (renderWin) renderWin.close();
+      
+      // open word-dvd anew
+      WordDVDWin = window.open("chrome://word-dvd/content", "word-dvd", "chrome=yes");
     }
   </script>
   

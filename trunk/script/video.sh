@@ -20,18 +20,24 @@ if [ -n "$1" ]
 then cd $1
 fi
 
-./xtimeAnalysis.sh >>../logfile.txt 2>../err.txt 
-./xaudio.sh >>../logfile.txt 2>>../err.txt
-./ximgs2web.sh >>../logfile.txt 2>>../err.txt
+./xtimeAnalysis.sh  2>../err.txt | tee -a ../logfile.txt  
+./xaudio.sh 2>>../err.txt | tee -a ../logfile.txt
+./ximgs2web.sh 2>>../err.txt | tee -a ../logfile.txt
 
 if cat ../logfile.txt ../err.txt | grep -q -i "err" 
 then
-  echo Summary logfile.txt follows: >>../logfile.txt
-  grep -i "err" ../logfile.txt >>../logfile.txt
+  echo Summary logfile.txt follows: | tee -a ../logfile.txt
+  grep -i "err" ../logfile.txt | tee -a ../logfile.txt
   echo >>../logfile.txt
-  echo Summary err.txt follows: >>../logfile.txt
-  grep -i "err" ../err.txt >>../logfile.txt
+  echo Summary err.txt follows: | tee -a ../logfile.txt
+  grep -i "err" ../err.txt | tee -a ../logfile.txt
 else
-  echo CONGRATULATIONS! _N-O__E-R-R-O-R-S_ >>../logfile.txt
+  echo CONGRATULATIONS! _N-O__E-R-R-O-R-S_ | tee -a ../logfile.txt
 fi
 
+echo
+cd ..
+wdir=$(pwd)
+echo "Your logfile is in $wdir/logfile.txt"
+echo "Press Enter to exit"
+read noneed
