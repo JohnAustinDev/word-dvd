@@ -1,0 +1,18 @@
+#labels Featured,Phase-Implementation
+#Debugging tips for Word-DVD.
+
+= Debugging Tips =
+
+Error messages, warnings and other information are reported during run time.
+
+During the initial image rendering phase, a live stream of this information is available in the javascript Error Console. Open the console in Firefox by clicking "Tools"->"Error Console" and click the "All" button at the top to view all types of information.
+
+Important: you must have the following Firefox user preference set to be able to see all the information in the javascript console: in the Firefox address bar type "about:config", then type "javascript" into the "filter" text-box and hit return. If  javascript.options.showInConsole is not listed with a value of "true", then right click on it and select "toggle". This will enable showing information in your javascript console. NOTE: In Firefox 4, the javascript console is disabled by default and so the devtools.errorconsole.enabled preference must be set to "true".
+
+During the DVD building phase, a console window will open showing the progress of the build scripts.
+
+There are two log files which save all this information, and both are located in the Word-DVD output directory:
+ * logfile.txt
+ * err.txt (holds error messages from the DVD building phase)
+
+The logfile.txt file should be checked after each run. If there are errors, these need to be fixed. Warnings are usually okay. 
