@@ -117,8 +117,7 @@ foreach $book (sort {$books{$a}<=>$books{$b}} keys %books) {
     }
   }
   
-  for ($ch=0; $ch<=$lastChapter{$book}; $ch++) {
-    
+  for ($ch=0; $ch<=$lastChapter{$book}; $ch++) {   
     # test fit of this chapter and all its pages into current TITLE (PGC) and VTS
     undef @pages;
     if ($mpgIsMultiPage{$book."-".$ch} eq "true") {

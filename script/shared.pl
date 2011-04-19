@@ -269,6 +269,24 @@ sub readPageInformation {
       $abstime = ($f/$framesPS);    
       $correctPageChap{$order."-".$book."-".$ch."-".$pg."-".$type} = "$res,$numtitles,$abstime,$cnt";
     }
+    elsif ($_ =~ /^\s*(.*?)-maxChapter=(\d+)\s*$/) {
+      # This entry is only used for shorter than single page, final chapters,
+      # without audio. Such chapters will not otherwise be recorded. If this entry
+      # reveals such a chapter (because it has not yet been recorded), 
+      # it must represent a still page.
+      if (!(exists($chapters{"$1-$2"}))) {
+        $book = $1;
+        $ch = $2;
+        if (!(exists $books{$book})) {$books{$book} = 1;}
+        $chapters{"$book-$ch"}++;
+        if (!$lastChapter{$book} || $ch>$lastChapter{$book}) {$lastChapter{$book}=$ch;}
+        if (!(exists $haveAudio{$book."-".$ch})) {
+          $haveAudio{$book."-".$ch} = "still";
+          $mpgIsMultiPage{$book."-".$ch} = "false";
+        }
+        $totalTitles{$book."-".$ch} = ($totalTitles{$book."-".$ch} + 0);
+      }        
+    }
     else {die "Could not parse timingstat: $_";}
   }
   close(INF);

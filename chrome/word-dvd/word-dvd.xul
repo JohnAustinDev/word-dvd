@@ -23,22 +23,19 @@
 <window
     id="word-dvd" xmlns:html="http://www.w3.org/1999/xhtml"
     title="word-dvd"
-    persist="screenX screenY"
     onload="loadedXUL()"
     onunload="unloadXUL()"
     xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
 <script type="application/x-javascript" src="chrome://word-dvd/content/word-dvd.js" />
 <vbox id="body">
-  <hbox>
-    <iframe id="render" src="chrome://word-dvd/content/web/menu.html" />
-  </hbox>
   <groupbox>
     <caption label="Setup"/>
     <hbox pack="start" style="margin-left:-6px;">
-      <button id="installPrompt" disabled="true" label="Install directory:" oncommand="window.alert('Installation directory is:\n' + ExtDir.path);" tooltiptext="Click to see where Word-DVD is installed." />
+      <button id="installPrompt" disabled="true" label="Install directory:" oncommand="window.alert('Your installation directory is:\n' + ExtDir.path);" tooltiptext="Click to see where Word-DVD is installed." />
     </hbox>
     <grid>
       <columns>
+        <column />
         <column />
         <column />
         <column />
@@ -47,7 +44,7 @@
         <row align="center">
           <label tooltiptext="Directory where OSIS file, config file, etc. are located." />
           <textbox id="input-0" width="400" readonly="true" />
-          <button id="browse-0" label="browse" oncommand="handleInput(this);" />
+          <button id="browse-0" label="browse" oncommand="handleInput(this);" /> 
         </row>
         <row align="center">
           <label tooltiptext="Directory where audio files (with names of the form: lang-book-ch.ac3) are located." />
@@ -63,14 +60,19 @@
       </rows>
     </grid>
   </groupbox>
+  <spacer height="20" />
   <hbox flex="100%">
     <groupbox>
       <caption label="Run"/>
       <vbox>
         <checkbox id="delete1st" label="Clean Output Dir" checked="false" oncommand="handleInput(this);" tooltiptext="Wipe output directory and start from scratch." />
-        <checkbox id="runword-dvd" label="Create DVD" checked="true" tooltiptext="Create final DVD files." />
-        <checkbox id="runvideo" label="Create Video Files" checked="false" tooltiptext="Create separate video files for internet etc." />
-        <checkbox id="osis2html" label="Convert OSIS to HTML" checked="false" oncommand="handleInput(this);" tooltiptext="Run the OSIS to HTML converter to generate new HTML." />
+        <checkbox id="osis2html" label="Convert OSIS to HTML" checked="false" disabled="true" oncommand="handleInput(this);" tooltiptext="Run the OSIS to HTML converter to generate new HTML. This command is disabled unless there is an osis file named 'osis.xml' located in the Input Directory listed above." />
+        <radiogroup orient="vertical">
+          <radio label="Render images only" tooltiptext="Render images, and then stop." />
+          <radio id="runword-dvd" label="Create DVD" selected="true" tooltiptext="Create final DVD files." />
+          <radio id="runvideo" label="Create Video Files" tooltiptext="Create separate video files for internet etc." />
+        </radiogroup>
+        <spacer height="20" />
         <hbox>
           <button id="runpause" label="Go!" oncommand="ButtonId=this.id; wordDVD();" />
           <button id="rendernext" disabled="true" label="Render Next" oncommand="ButtonId=this.id; wordDVD();" tooltiptext="Render a single page and pause." />
@@ -84,7 +86,7 @@
         <radiogroup orient="vertical">
           <radio id="renderall" label="Render All Books" tooltiptext="Render pages for all books." selected="true" />
           <radio id="startbk"   label="Render From Book" tooltiptext="Render pages starting at a selected book." />
-          <radio id="singlebk"  label="Single Book DVD"  tooltiptext="Create a DVD with only a chosen book." />
+          <radio id="singlebk"  label="Render Single Book"  tooltiptext="Render only a single book. You will be given a drop-down list to choose the book from." />
         </radiogroup>
         <checkbox id="images" label="Don't capture" checked="false" tooltiptext="Show pages in window, but do not capture or save them." />
       </vbox>
