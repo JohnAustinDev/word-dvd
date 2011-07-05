@@ -21,6 +21,7 @@ word-dvd
 					chrome\word-dvd\web\help.html
 					chrome\word-dvd\web\image-01.jpg
 					chrome\word-dvd\web\image-02.jpg
+					chrome\word-dvd\web\image-03.jpg
 					chrome\word-dvd\web\menu.html
 					chrome\word-dvd\web\menuNormHIGH.png
 					chrome\word-dvd\web\menuNormSEL.png
@@ -34,15 +35,27 @@ word-dvd
 					chrome\word-dvd\web\textbuttonsHIGH.png
 					chrome\word-dvd\web\textbuttonsSEL.png
 					chrome\word-dvd\web\transparent.png
+					chrome\word-dvd\web\menu.js
+				chrome\word-dvd\render.js
+				chrome\word-dvd\render.xul
 				chrome\word-dvd\word-dvd.js
 				chrome\word-dvd\word-dvd.xul
 				chrome\word-dvd\word-dvd-overlay.xul
-				chrome\word-dvd\render.xul
-				chrome\word-dvd\render.js
 		-defaults
 			-preferences
+				-.svn
+					-prop-base
+					-props
+					-text-base
+						defaults\preferences\.svn\text-base\prefs.js.svn-base
+					-tmp
+						-prop-base
+						-props
+						-text-base
+					defaults\preferences\.svn\all-wcprops
+					defaults\preferences\.svn\entries
 				defaults\preferences\prefs.js
-		+script
+		-script
 			-utilities
 				script\utilities\getStartEndTimes.pl
 				script\utilities\imagemogrify.pl
@@ -58,6 +71,7 @@ word-dvd
 			script\audio.pl
 			script\burnverifydvd.sh
 			script\createiso.pl
+			script\dvd.sh
 			script\ecasound.pl
 			script\imgs2mpeg.pl
 			script\imgs2web mplex.pl
@@ -66,78 +80,79 @@ word-dvd
 			script\init.pl
 			script\menus.pl
 			script\mpeg2vob.pl
+			script\navbuttons.pl
+			script\osis2html.pl
+			script\shared.pl
+			script\timeAnalysis.pl
 			script\TODOs.txt
-			script\xword-dvd.sh
-			script\imgs2mp4.pl
-			script\xvideo.sh
-			script\dvd.sh
 			script\video.sh
 			script\word-dvd.sh
 			script\word-video.sh
-			script\shared.pl
+			script\xvideo.sh
+			script\xword-dvd.sh
 		chrome.manifest
 		install.rdf
 [Open project files]
-0=chrome\word-dvd\word-dvd.xul
-1=chrome\word-dvd\word-dvd.js
-2=chrome\word-dvd\render.xul
-3=chrome\word-dvd\render.js
-4=chrome\word-dvd\web\render-page.js
-5=script\dvd.sh
-6=chrome\word-dvd\word-dvd-overlay.xul
-7=script\word-dvd.sh
-8=script\word-video.sh
-9=..\..\..\OUTPUTS\TEMP\logfile.txt
-10=..\..\..\OUTPUTS\TEMP\dvdauthor.xml
-11=script\mpeg2vob.pl
-12=script\shared.pl
-13=script\init.pl
-14=script\createiso.pl
+0=install.rdf
+1=script\navbuttons.pl
+2=script\menus.pl
+3=script\mpeg2vob.pl
+4=chrome\word-dvd\word-dvd.js
+5=chrome\word-dvd\word-dvd.xul
+6=chrome\word-dvd\web\pal.css
+7=..\..\..\INPUTS\CARS\config.txt
+8=chrome\word-dvd\web\menu.html
+9=chrome\word-dvd\web\render-page.html
+10=chrome\word-dvd\render.xul
+11=chrome\word-dvd\render.js
+12=chrome\word-dvd\word-dvd-overlay.xul
+13=chrome\word-dvd\web\render-page.js
+14=chrome\word-dvd\web\menu.js
 [Selected Project Files]
 Main=
-Selected=script\shared.pl
-[chrome\word-dvd\word-dvd.xul]
-TopLine=15
-Caret=21,25
-[chrome\word-dvd\word-dvd.js]
-TopLine=103
-Caret=18,137
-[chrome\word-dvd\render.xul]
-TopLine=15
-Caret=32,27
-[chrome\word-dvd\render.js]
-TopLine=727
-Caret=2,750
-[chrome\word-dvd\web\render-page.js]
+Selected=..\..\..\INPUTS\CARS\config.txt
+[install.rdf]
 TopLine=1
-Caret=13,14
-[script\dvd.sh]
-TopLine=13
-Caret=73,40
+Caret=33,21
+[script\navbuttons.pl]
+TopLine=64
+Caret=61,76
+[script\menus.pl]
+TopLine=99
+Caret=1,1
+[script\mpeg2vob.pl]
+TopLine=305
+Caret=1,330
+[chrome\word-dvd\word-dvd.js]
+TopLine=537
+Caret=19,546
+[chrome\word-dvd\word-dvd.xul]
+TopLine=19
+Caret=150,34
+[chrome\word-dvd\web\pal.css]
+TopLine=1
+Caret=1,1
+[..\..\..\INPUTS\CARS\config.txt]
+TopLine=3
+Caret=30,24
+[chrome\word-dvd\web\menu.html]
+TopLine=1
+Caret=52,8
+[chrome\word-dvd\web\render-page.html]
+TopLine=1
+Caret=96,8
+[chrome\word-dvd\render.xul]
+TopLine=1
+Caret=8,32
+[chrome\word-dvd\render.js]
+TopLine=35
+Caret=40,56
 [chrome\word-dvd\word-dvd-overlay.xul]
 TopLine=1
-Caret=84,15
-[script\word-dvd.sh]
-TopLine=1
-Caret=66,3
-[script\word-video.sh]
-TopLine=1
-Caret=67,3
-[..\..\..\OUTPUTS\TEMP\logfile.txt]
-TopLine=1
-Caret=89,42
-[..\..\..\OUTPUTS\TEMP\dvdauthor.xml]
-TopLine=69
-Caret=52,80
-[script\mpeg2vob.pl]
-TopLine=102
-Caret=33,120
-[script\shared.pl]
-TopLine=259
-Caret=32,273
-[script\init.pl]
-TopLine=1
-Caret=1,1
-[script\createiso.pl]
+Caret=163,11
+[chrome\word-dvd\web\render-page.js]
 TopLine=3
-Caret=1,1
+Caret=18,10
+[chrome\word-dvd\web\menu.js]
+TopLine=1
+Caret=1,3

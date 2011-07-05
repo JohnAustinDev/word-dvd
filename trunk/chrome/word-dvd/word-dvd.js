@@ -70,7 +70,7 @@ function jsdump(str)
 function logmsg(text, showBCP) {
   if (showBCP && RenderWin) text += " [" + RenderWin.Book[RenderWin.Bindex].shortName + ", Chapter=" + RenderWin.Chapter + ", Page=" + RenderWin.Page.pagenumber + "]";
   jsdump(text);
-  write2File(DBLogFile, text + "\n", true);
+  if (DBLogFile) write2File(DBLogFile, text + "\n", true);
 }
 
 //returns data from file. Does NO checking!
@@ -155,8 +155,6 @@ var RenderWin;
 var DBLogFile;
 
 function loadedXUL() {
-  // open render window, which itself runs startRenderer()
-  RenderWin = window.open("chrome://word-dvd/content/render.xul", "render-win", "chrome=yes,alwaysRaised=yes");
   window.setTimeout("window.focus();", 500);
   
   ExtDir =  Components.classes["@mozilla.org/file/directory_service;1"].
@@ -205,6 +203,16 @@ function loadedXUL() {
   
   enableGO();
   if (ExtDir.exists()) document.getElementById("installPrompt").disabled = false;
+
+
+    
+  // READ LOCALE FILE
+  LocaleFile = UIfile[INDIR].clone();
+  LocaleFile.append(LOCALEFILE);
+  LocaleFile = readFile(LocaleFile);
+    
+  // open render window, which itself runs startRenderer()
+  RenderWin = window.open("chrome://word-dvd/content/render.xul", "render-win", "chrome=yes,alwaysRaised=yes");
 }
 
 function handleInput(elem) {
@@ -308,6 +316,18 @@ function wordDVD() {
   DBLogFile.append(DBLOGFILE);
   var date = new Date();
   logmsg("Starting Word-DVD imager at " + date.toTimeString() + " " + date.toDateString());
+  var vers = ExtDir.clone();
+  try {
+    vers.append("install.rdf");
+    vers = readFile(vers).match(/<em\:version>(.*?)<\/em\:version>/im)[1];
+  }
+  catch (er) {vers=null;}
+  logmsg("Word-DVD Version: " + (vers ? vers:"(error reading version)"));
+  
+  // Below is for Firefox 4+
+  //Components.utils.import("resource://gre/modules/AddonManager.jsm");    
+  //AddonManager.getAddonByID("{ec8030f7-c20a-464f-9b0e-13a3a9e97384}", function(addon) {alert("My extension's version is " + addon.version);});
+
   if (document.getElementById("delete1st").checked) logmsg("Cleaned OUTPUT directory:" + UIfile[OUTDIR].path + "...");
 
   // IMAGE DIRECTORY
@@ -364,12 +384,6 @@ function wordDVD() {
     for (var i=0; i<pth.length; i++) {cfile.append(pth[i]);}
     if (cfile.exists()) cfile.copyTo(destdir, null);
   }
-    
-  // READ LOCALE FILE
-  LocaleFile = UIfile[INDIR].clone();
-  LocaleFile.append(LOCALEFILE);
-  LocaleFile = readFile(LocaleFile);
-  if (!LocaleFile) return;
   
   // AUTOGENERATE ALL RUN SCRIPTS
   writeRunScripts();
@@ -529,7 +543,7 @@ function stop() {
   var date = new Date();
   var unUtilizedAudio = "";
   if (RenderWin) {
-    for each (files in RenderWin.CheckAudioChapters) {
+    for each (var files in RenderWin.CheckAudioChapters) {
       if (files.match(/^\s*$/)) {continue;}
       unUtilizedAudio += files + "\n";
     }
