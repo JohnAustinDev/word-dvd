@@ -39,10 +39,24 @@ var Book, Bindex, Chapter, Page;
 function loadedRender() {
   MainWin = window.opener;
   RenderFrame = document.getElementById("render");
-    
+  
   RenderFrame.style.width = MainWin.PAL.W + "px";
   RenderFrame.style.height = String(MainWin.PAL.H + 16) + "px";
   window.setTimeout("window.resizeTo(RenderFrame.boxObject.width, document.getElementById('body').boxObject.height);", 0);
+}
+
+function applyConfigCSS() {
+  // apply CSS styles from configuration file
+  var cssre = "^\\s*CSS:([^:\\s]+):([^:\\s]+)\\s*=[\t ]*([^\\n\\r]*)[\t ]*[\\n\\r]";
+  var re = new RegExp(cssre, "gm");
+  var css = window.opener.LocaleFile.match(re);
+  for (var i=0; css && i<css.length; i++) {
+    var tcss = css[i].match(cssre, "m");
+    try {
+      document.getElementById("render").contentDocument.getElementById(tcss[1]).style[tcss[2]] = tcss[3];
+    }
+    catch (er) {window.opener.logmsg("WARNING: Problem applying CSS \"" + css[i] + "\"");}
+  }
 }
 
 function startMenuGeneration() {

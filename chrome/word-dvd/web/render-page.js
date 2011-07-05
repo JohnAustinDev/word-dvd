@@ -17,9 +17,11 @@ function init() {
   var rule2 = getCSS(".title-2");
   CSSHeading1Color = rule1.style.color;
   CSSHeading2Color = rule2.style.color;
+  RenderWin.applyConfigCSS();
 }
 
 function fitScreen(book, chapter, aPage, textOnly, skipPage1, skipPage2) {
+MainWin.logmsg("fontFamily=" + Body.style.fontFamily);
 MainWin.jsdump("Chapter=" + chapter + ", Pagenumber=" + aPage.pagenumber);
   RenderWin.DoneDrawing = false;
   DisplayBook = book;
