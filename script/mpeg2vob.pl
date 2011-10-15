@@ -327,7 +327,7 @@ for ($vts=1; $vts<=$LASTVTS; $vts++) {
   }
 }
 
-goto AUTHOR;
+#goto AUTHOR;
 
 # BEGIN WRITING THE DVDAUTHOR.XML FILE.
 
