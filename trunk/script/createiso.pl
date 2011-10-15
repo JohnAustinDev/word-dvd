@@ -33,7 +33,7 @@ if (-e "../md5sum-iso.txt") {`rm -f ../md5sum-iso.txt`;}
 
 
 # must use >= genisoimage 1.1.9. Earlier versions could not be read in Windows!
-`sudo genisoimage -f -dvd-video -o ../dvd.iso ../dvd`;
+`sudo genisoimage -dvd-video -o ../dvd.iso ../dvd`;
 if (!-e "/media/dvd") {`sudo mkdir /media/dvd`;}
 `sudo mount -o loop ../dvd.iso /media/dvd`;
 
