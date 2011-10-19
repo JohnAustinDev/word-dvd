@@ -1,0 +1,185 @@
+/* CSS Document */
+body {
+  /* Let the background overscan, but restrict the content to title-safe. */
+  font-family:arial, sans-serif;
+  font-size:19px;
+  max-width:720px;
+  max-height:576px;
+  color:rgb(60,60,0);
+}
+
+.menu {
+  background-image: url(chrome://word-dvd/content/web/image-02.jpg);
+}
+
+.content {
+  background-image: url(chrome://word-dvd/content/web/image-01.jpg);
+}
+
+.help {
+  background-image: url(chrome://word-dvd/content/web/parchback.jpg);
+  color:white;
+}
+
+.pagehelp {
+  padding:30px;
+}
+
+.textonly {
+  background:rgb(185,175,150);
+}
+
+.usable {
+  position: relative;
+  left:62px;
+  top:57px;
+  width:580px;
+  height:460px;
+  /*background: rgb(150,150,255);*/
+  z-index:-1;
+}
+
+.page {
+  position:absolute;
+  overflow:hidden;
+  text-align:left;
+  padding-top:12px;
+  padding-bottom:12px;
+}
+
+#p1 {
+  margin-right:18px;
+  top:0px;
+  right:50%;
+  bottom:45px;
+  left:0px;
+}
+
+#p2 {
+  margin-left:18px;
+  top:0px;
+  right:0px;
+  bottom:45px;
+  left:50%;
+}
+
+.header {
+  font-weight:bold;
+  font-size:24px; /* also specified in writeHeader()! */
+  text-align:center;
+  height:30px;
+  margin-bottom:35px;
+  white-space:nowrap;
+}
+
+.booktext {
+  color:rgb(100,0,0);
+  font-size:24px;
+  text-align:left;
+  padding-top:10px;
+  margin-bottom:-1em;
+}
+
+.chapter-title {
+  color:rgb(100,0,0);
+  font-size:24px;
+  text-align:left;
+  margin-top:2em;
+  margin-bottom:1em;
+}
+
+.title-1 {
+  color:rgb(100,0,0);
+  font-size:19px;
+  text-align:center;
+  margin-top:1em;
+  margin-bottom:1em;
+}
+
+.title-2 {
+  color:rgb(100,0,0);
+  text-align:left;
+  margin-top:1em;
+}
+
+.majorquote {
+  padding-left:24px;
+  padding-top:0.5em;
+  padding-bottom:0.5em;
+}
+.list1 {
+
+}
+.list2 {
+
+}
+.listitem {
+  margin-bottom:1em;
+  text-indent:-1em;
+  padding-left:1em;
+}
+
+/* MENU STYLES */
+.hasAudio {
+}
+
+.custombutton {
+  font-weight:bold;
+}
+
+.button {
+  font-size:20px;
+  text-align:center;
+  height:34px;
+}
+
+.navbutton {
+  margin-top:36px;
+  font-size:20px;
+  text-align:center;
+  height:30px;
+}
+
+#imagePageLeft {
+  position:absolute;
+  text-align:center;
+  left:0px;
+  top:0px;
+  visibility:hidden;
+  z-index:2;
+}
+
+#imagePageRight {
+  position:absolute;
+  text-align:center;
+  right:0px;
+  top:0px;
+  visibility:hidden;
+  z-index:2;
+}
+
+.menuartworkleft {
+  position:absolute;
+  text-align:center;
+  left:0px;
+  top:0px;
+  visibility:hidden;
+  z-index:2;
+}
+
+.footnote {
+  margin-top:1em;
+  margin-bottom:1em;
+}
+
+.fnsymbol:after {
+  content: "\00D7 ";
+  vertical-align:super;
+  font-size-adjust:0.35 !important;
+  color:rgb(200,0,0);
+}
+
+.verseref {
+  color:rgb(100,0,0);
+  font-size:19px;
+}
