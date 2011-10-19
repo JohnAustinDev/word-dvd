@@ -236,7 +236,7 @@ sub readPageInformation {
 
         # assign "mpgIsMultiPage" value...
         #$mpgIsMultiPage{$book."-".$ch} = "false";
-        if ($haveAudio{$book."-".$ch} ne "still") {$mpgIsMultiPage{$book."-".$ch} = "true";}
+        if (!$separatePages && $haveAudio{$book."-".$ch} ne "still") {$mpgIsMultiPage{$book."-".$ch} = "true";}
         else {$mpgIsMultiPage{$book."-".$ch} = "false";}
       }
       $totalTitles{$book."-".$ch} = ($totalTitles{$book."-".$ch} + $numtitles);
@@ -399,9 +399,11 @@ sub checkImageFiles() {
 }
 
 #CONCATENATE PAGE MPGs INTO CHAPTER MPGs
-sub mpgPages2Chapter($$) {
+sub mpgPages2Chapter($$$$) {
   my $dir = shift;
   my $prefix = shift;
+  my $postFlag = shift;
+  my $debug = shift;
   foreach $book (sort {$books{$a}<=>$books{$b}} keys %books) {
     for ($ch=0; $ch<=$lastChapter{$book}; $ch++) {
       if (!$chapters{"$book-$ch"}) {next;}
@@ -416,10 +418,15 @@ sub mpgPages2Chapter($$) {
           `cat $dir/videotmp/chapter.mpg $thispage > $dir/videotmp/tmp.mpg`;
           `mv $dir/videotmp/tmp.mpg $dir/videotmp/chapter.mpg`;
         }
-        `rm $thispage`;
+        if (!$debug) {`rm $thispage`;}
       }
       
-      if (-e "$dir/videotmp/chapter.mpg") {`mv $dir/videotmp/chapter.mpg $dir/$book/fin-$book-$ch.mpg`;}
+      if (-e "$dir/videotmp/chapter.mpg") {
+		  if ($postFlag == 1) {
+			`ffmpeg -i "$dir/videotmp/chapter.mpg" -vcodec copy -acodec libmp3lame -y "$dir/$book/fin-$book-$ch.mpg"`;
+		  }
+		  else {`mv $dir/videotmp/chapter.mpg $dir/$book/fin-$book-$ch.mpg`;}
+	  }
       print "Concatenating pages for fin-$book-$ch.mpg\n";
     }
   }
@@ -489,6 +496,32 @@ sub makeSilentSlide($$) {
   
   `mplex -v $Verbosity -V -f 8 $videodir/videotmp/$leaf.m2v $outaudiodir/blankaudio.ac3 -o $videodir/$subdir$leaf.mpg`
   #`ffmpeg -v $Verbosity -genpts 1 -i $videodir/videotmp/$name.m2v -i $outaudiodir/blankaudio.ac3 -target pal-dvd -vcodec copy -acodec copy -y $videodir/$path.mpg`;
+}
+
+sub readPTS($) {
+	my $f = shift;
+	my $lastPTS = -1;
+	my $firstPTS = -1;
+	if (open(PTS, ">$videodir/videotmp/pts.txt")) {
+		print PTS `dvbsnoop -s ps -if $f`;
+		close(PTS);
+		open(PTS, "<$videodir/videotmp/pts.txt");
+		while (<PTS>) {
+			chomp;
+			if ($_ =~ /^Stream_id:/) {$streamid = $_;}
+			if ($_ =~ /\s+(\d+)\s+\(.*?\)\s+\[= 90 kHz-Timestamp:\s*(.*?)\]/) {
+				my $t = $1;
+				my $ts = $2;
+				if ($streamid =~ /MPEG_pack_start/) {
+					$lastPTS = $t*(1/90000);
+					if ($firstPTS == -1) {$firstPTS = $t*(1/90000);}
+				}
+			}
+		}
+		close(PTS);
+	}
+	#print "FIRST PTS=$firstPTS\n";
+	return $lastPTS;
 }
 
 1;

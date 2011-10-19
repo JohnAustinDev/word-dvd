@@ -21,12 +21,13 @@
 # Either audio or silence is included in the mpg clip. So each jpg image results
 # in a separate mpeg file.
 
-#usage imgs2web.pl scriptDir inputDir outputDir audioDir debugOn
+#usage imgs2web.pl scriptDir inputDir outputDir audioDir separatePages debugOn
 
 print "\nRUNNING imgs2web.pl\n";
 
 $scriptdir = @ARGV[0];
-$debug = @ARGV[4];
+$separatePages = @ARGV[4];
+$debug = @ARGV[5];
 require "$scriptdir/shared.pl";
 &readDataFiles();
 
@@ -47,13 +48,13 @@ foreach $book (sort {$books{$a}<=>$books{$b}} keys %books) {
     if ($haveAudio{"$book-$ch"} eq "still") {next;}
     if (!-e "$webdir/$book") {`mkdir $webdir/$book`;}
     print "Creating mpg for $book-$ch (".$haveAudio{"$book-$ch"}.")";
+    $nextPTS = 0;
       
     $multChapFileOFS = 0;
     $multChapEnd = 0;
     @chaps = split(/,/, $Chapterlist{$book."-".$ch});
     $tlastchap = 0;
     $lastAudioPTS = 0;
-    $gap = 0;
     if ($haveAudio{"$book-$ch"} =~ /^[^-]+-[^-]+-(\d+)-(\d+)\.ac3$/i) {
       $cs = (1*$1);
       $ce = (1*$2);
@@ -86,16 +87,17 @@ foreach $book (sort {$books{$a}<=>$books{$b}} keys %books) {
       $audiofile = "$audiodir/".$haveAudio{$book."-".$ch};
       if (!$tlen) {print "ERROR: tlen was null!!!\n"; die;}
       $fseekto = ($seekto + $multChapFileOFS);
-      $ffmpegt = ($tlen+$fseekto);
       $numf = ($tlen*$framesPS);
       $gop = (2*$numf);
       
-      #$cmd = "jpeg2yuv -v 0 -n $numf -I p -f $framesPS -j $imagedir/$book/$book-$ch-$pg.jpg | mpeg2enc -v 0 -f 8 -g $gop -G $gop -o $webdir/videotmp/$book-$ch-$pg.m2v";
-      $cmd = "jpeg2yuv -v 0 -n $numf -I p -f $framesPS -j $imagedir/$book/$book-$ch-$pg.jpg | mpeg2enc -v 0 -f 8 -o $webdir/videotmp/$book-$ch-$pg.m2v";     
+      # NOTE about ffmpeg 0.5: -t is NOT duration as the man page says, it is the time code at which encoding stops.
+      if ($ffmpgVersion=~/^0\.5\./) {$ffmpegt = ($tlen+$fseekto);}
+      else {$ffmpegt = $tlen;}     
+      
+      $cmd = "jpeg2yuv -v 0 -n ".$numf." -I p -f $framesPS -j $imagedir/$book/$book-$ch-$pg.jpg | mpeg2enc -v 0 -f 3 -g 1 -G ".(2*$framesPS)." -b 5000 -o $webdir/videotmp/$book-$ch-$pg.m2v";     
       print "$cmd\n\n";
       `$cmd`;
-      # NOTE about ffmpeg: sometimes -t is NOT duration as the man page says, it is the time code at which encoding stops.
-      $cmd = "ffmpeg -v $Verbosity -t $tlen -i $audiofile -ss $fseekto -acodec libmp3lame -y $webdir/videotmp/$book-$ch-$pg.m2a";
+      $cmd = "ffmpeg -v $Verbosity -t $ffmpegt -i $audiofile -ss $fseekto -acodec copy -y $webdir/videotmp/$book-$ch-$pg.m2a";
       print "$cmd\n\n";
       `$cmd`;
 
@@ -103,18 +105,21 @@ foreach $book (sort {$books{$a}<=>$books{$b}} keys %books) {
       if ($mpgIsMultiPage{"$book-$ch"} eq "true") {
         $seqend = "-E 0";
         if ($pg == $lastPage{$book."-".$ch}) {$seqend = "-E 1";}
-        $startPTS = ($seekto+$gap);
-        $gap = ($gap+0.040); #this gap insures there is at least 1 frame between last audio and first video packets even after rounding (for dvdauthor)
+        $startPTS = $seekto;
         
-        #$cmd = "mplex -v $Verbosity -V $seqend -T $startPTS -f 8 $webdir/videotmp/$book-$ch-$pg.m2v $webdir/videotmp/$book-$ch-$pg.m2a -o $webdir/$book/$book-$ch-$pg.mpg";
-        $cmd = "mplex -v $Verbosity -V -f 8 $webdir/videotmp/$book-$ch-$pg.m2v $webdir/videotmp/$book-$ch-$pg.m2a -o $webdir/$book/$book-$ch-$pg.mpg";
+        $cmd = "mplex -v $Verbosity -V $seqend -T $startPTS -f 3 $webdir/videotmp/$book-$ch-$pg.m2v $webdir/videotmp/$book-$ch-$pg.m2a -o $webdir/$book/$book-$ch-$pg.mpg";
         print "$cmd\n\n";
-        `$cmd`;          
+        `$cmd`; 
+        #$nextPTS = &readPTS("$webdir/$book/$book-$ch-$pg.mpg") + 0.04;         
       }
       else {
-        $cmd = "mplex -v $Verbosity -V -f 8 $webdir/videotmp/$book-$ch-$pg.m2v $webdir/videotmp/$book-$ch-$pg.m2a -o $webdir/$book/$book-$ch-$pg.mpg";
+        $cmd = "mplex -v $Verbosity -V -f 3 $webdir/videotmp/$book-$ch-$pg.m2v $webdir/videotmp/$book-$ch-$pg.m2a -o $webdir/$book/$book-$ch-$pg.mpg";
         print "\n\n$cmd\n\n";
         `$cmd`;
+        $cmd = "ffmpeg -i $webdir/$book/$book-$ch-$pg.mpg -vcodec copy -acodec libmp3lame -y $webdir/$book/fin-$book-$ch-$pg.mpg";
+        print "\n\n$cmd\n\n";
+        `$cmd`;
+        if (!$debug) {`rm $webdir/$book/$book-$ch-$pg.mpg`;}
       }
     }
     if (!$debug) {`rm -r $webdir/videotmp/*.*`;}
@@ -123,6 +128,7 @@ foreach $book (sort {$books{$a}<=>$books{$b}} keys %books) {
 
 CONCAT:
 #CONCATENATE PAGE MPGs INTO CHAPTER MPGs
-#&mpgPages2Chapter($webdir, "");
+&mpgPages2Chapter($webdir, "", 1, $debug);
+
 
         

@@ -22,7 +22,7 @@
 
 use Encode;
 
-$scriptdir = shift(@ARGV);
+$scriptdir = @ARGV[0];
 require "$scriptdir/init.pl" || die "Can't require init.pl";
 
 $infile = "$indir/osis.xml";

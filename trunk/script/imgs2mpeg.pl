@@ -138,29 +138,3 @@ foreach $book (sort {$books{$a}<=>$books{$b}} keys %books) {
 
 if (!$debug) {`rm -r $videodir/videotmp`;}
 
-sub readPTS($) {
-	my $f = shift;
-	my $lastPTS = -1;
-	my $firstPTS = -1;
-	if (open(PTS, ">$videodir/videotmp/pts.txt")) {
-		print PTS `dvbsnoop -s ps -if $f`;
-		close(PTS);
-		open(PTS, "<$videodir/videotmp/pts.txt");
-		while (<PTS>) {
-			chomp;
-			if ($_ =~ /^Stream_id:/) {$streamid = $_;}
-			if ($_ =~ /\s+(\d+)\s+\(.*?\)\s+\[= 90 kHz-Timestamp:\s*(.*?)\]/) {
-				my $t = $1;
-				my $ts = $2;
-				if ($streamid =~ /MPEG_pack_start/) {
-					$lastPTS = $t*(1/90000);
-					if ($firstPTS == -1) {$firstPTS = $t*(1/90000);}
-				}
-			}
-		}
-		close(PTS);
-	}
-	#print "FIRST PTS=$firstPTS\n";
-	return $lastPTS;
-}
-
