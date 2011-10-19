@@ -1,7 +1,7 @@
 #!/bin/sh
 # This file is part of Word-DVD.
 #
-#   Copyright 2010 Dale Potter (gpl.programs.info@gmail.com)
+#   Copyright 2010 Dale Potter (ortoasia@gmail.com)
 #
 #   Word-DVD is free software: you can redistribute it and/or modify
 #   it under the terms of the GNU General Public License as published by
@@ -29,17 +29,16 @@ fi
 
 if cat ../logfile.txt ../err.txt | grep -q -i "err" 
 then
-  echo Summary logfile.txt follows: | tee -a ../logfile.txt
-  grep -i "err" ../logfile.txt | tee -a ../logfile.txt
-  echo | tee -a ../logfile.txt
-  echo Summary err.txt follows: | tee -a ../logfile.txt
-  grep -i "err" ../err.txt | tee -a ../logfile.txt
+  echo Summary logfile.txt follows:
+  grep -i "err" ../logfile.txt
+  echo 
+  echo Summary err.txt follows: 
+  grep -i "err" ../err.txt 
 else
-  echo CONGRATULATIONS! NO E-R-R-O-R-S | tee -a ../logfile.txt
   echo
-  echo Do you want to create an ISO file and mount it to /dev/dvd? [Y/N]
+  echo Shall I try to create an ISO file and mount it to /dev/dvd? [y/n]
   read wantiso
-  if [ $wantiso = "Y" ]
+  if [ $wantiso = "y" ]
   then
     ./xcreateiso.sh
   fi

@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 # This file is part of Word-DVD.
 #
-#   Copyright 2010 Dale Potter (gpl.programs.info@gmail.com)
+#   Copyright 2010 Dale Potter (ortoasia@gmail.com)
 #
 #   Word-DVD is free software: you can redistribute it and/or modify
 #   it under the terms of the GNU General Public License as published by
@@ -25,9 +25,12 @@
 # All jumps to a title must only specify the title number (not chapter, cell, etc.)
 # All jumps to a chapter must only specify the chapter number (not the title, etc.)
 
+#usage mpeg2vob.pl scriptDir inputDir outputDir audioDir controlFlag(1 = skip dvdauthor.xml creation, 2 = don't run dvdauthor)
+
 print "\nRUNNING mpeg2vob.pl\n";
 
-$scriptdir = shift(@ARGV);
+$scriptdir = @ARGV[0];
+$control = @ARGV[4];
 require "$scriptdir/shared.pl";
 &readDataFiles();
 
@@ -87,6 +90,12 @@ $bfoot{"bfootnotes"}  = (5*1024);
 $bfoot{"bnext"}       = (6*1024);
 
 $nbhelp = 1024; # this single value is used for more than one page type!
+
+$vFORMAT = "PAL";
+$vASPECT = "4:3";
+$vRESLTN = "720x576";
+$aFORMAT = "ac3";
+$aSAMPLE = "48khz";
 
 # First, read through all pages, and fill all data structures needed to build
 # the dvd. The XML build process does not begin until after this read-through 
@@ -327,7 +336,7 @@ for ($vts=1; $vts<=$LASTVTS; $vts++) {
   }
 }
 
-#goto AUTHOR;
+if ($control && $control==1) {goto AUTHOR;}
 
 # BEGIN WRITING THE DVDAUTHOR.XML FILE.
 
@@ -726,7 +735,7 @@ foreach $book (sort {$books{$a}<=>$books{$b}} keys %books) {
   $bki = $bki.".\n";
 }
 
-#goto NOAUTHOR;
+if ($control && $control==2) {goto NOAUTHOR;}
 #Prepare output directory
 if ($LASTVTS <= 99) {
   if ($totaltitles <= 99) {

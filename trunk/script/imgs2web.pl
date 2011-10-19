@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 # This file is part of Word-DVD.
 #
-#   Copyright 2010 Dale Potter (gpl.programs.info@gmail.com)
+#   Copyright 2010 Dale Potter (ortoasia@gmail.com)
 #
 #   Word-DVD is free software: you can redistribute it and/or modify
 #   it under the terms of the GNU General Public License as published by
@@ -21,9 +21,12 @@
 # Either audio or silence is included in the mpg clip. So each jpg image results
 # in a separate mpeg file.
 
+#usage imgs2web.pl scriptDir inputDir outputDir audioDir debugOn
+
 print "\nRUNNING imgs2web.pl\n";
 
-$scriptdir = shift(@ARGV);
+$scriptdir = @ARGV[0];
+$debug = @ARGV[4];
 require "$scriptdir/shared.pl";
 &readDataFiles();
 
@@ -114,7 +117,7 @@ foreach $book (sort {$books{$a}<=>$books{$b}} keys %books) {
         `$cmd`;
       }
     }
-    #`rm -r $webdir/videotmp/*.*`;
+    if (!$debug) {`rm -r $webdir/videotmp/*.*`;}
   }
 }
 

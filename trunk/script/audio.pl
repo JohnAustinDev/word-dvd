@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 # This file is part of Word-DVD.
 #
-#   Copyright 2010 Dale Potter (gpl.programs.info@gmail.com)
+#   Copyright 2010 Dale Potter (ortoasia@gmail.com)
 #
 #   Word-DVD is free software: you can redistribute it and/or modify
 #   it under the terms of the GNU General Public License as published by
@@ -28,9 +28,11 @@
 # is run a second time to generate timings which match the measured 
 # timing values.
 
+#usage audio.pl scriptDir inputDir outputDir audioDir
+
 print "\nRUNNING audio.pl\n";
 
-$scriptdir = shift(@ARGV);
+$scriptdir = @ARGV[0];
 require "$scriptdir/shared.pl";
 &readDataFiles();
 

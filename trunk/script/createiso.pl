@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 # This file is part of Word-DVD.
 #
-#   Copyright 2010 Dale Potter (gpl.programs.info@gmail.com)
+#   Copyright 2010 Dale Potter (ortoasia@gmail.com)
 #
 #   Word-DVD is free software: you can redistribute it and/or modify
 #   it under the terms of the GNU General Public License as published by
@@ -19,9 +19,11 @@
 # SCRIPT createiso.pl copies Label and MK files to the dvd directory and then
 # creates a DVD ISO file suitable for burning to DVD
 
+#usage createiso.pl scriptDir inputDir outputDir audioDir
+
 print "\nRUNNING createiso.pl\n";
 
-$scriptdir = shift(@ARGV);
+$scriptdir = @ARGV[0];
 require "$scriptdir/shared.pl";
 &readDataFiles();
 

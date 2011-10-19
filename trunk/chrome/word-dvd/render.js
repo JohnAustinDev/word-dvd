@@ -1,6 +1,6 @@
 /*  This file is part of word-dvd.
 
-    Copyright 2010 Dale Potter (gpl.programs.info@gmail.com)
+    Copyright 2010 Dale Potter (ortoasia@gmail.com)
 
     Muqaddas Kitob is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
