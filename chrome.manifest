@@ -1,2 +1,2 @@
-content word-dvd file:chrome/word-dvd/
+content word-dvd jar:chrome/word-dvd.jar!/content/
 overlay chrome://browser/content/browser.xul chrome://word-dvd/content/word-dvd-overlay.xul
