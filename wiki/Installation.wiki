@@ -3,7 +3,7 @@
 (Tested on Ubuntu 10.04 and 11.04)
 
 === These packages need to be installed: ===
-  * ffmpeg (compiled with libmp3lame)
+  * ffmpeg (some non-DVD features require compilation with libmp3lame)
   * dvdauthor
 
 === Word-DVD also uses these and other standard packages ===
@@ -18,6 +18,7 @@
   * libaudio-ecasound-perl
   * dvbsnoop
   * eyeD3
+  * sox (some features require compilation with mp3 support)
 
 
 === Steps ===
