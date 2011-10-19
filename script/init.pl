@@ -2,9 +2,9 @@
 
 use Encode;
 
-$indir = shift(@ARGV);
-$outdir = shift(@ARGV);
-$audiodir = shift(@ARGV);
+$indir = @ARGV[1];
+$outdir = @ARGV[2];
+$audiodir = @ARGV[3];
 
 $projmenusdir = "$indir/menus";
 $locale = "$indir/config.txt";

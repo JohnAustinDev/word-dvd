@@ -81,38 +81,31 @@ word-dvd
 			script\menus.pl
 			script\mpeg2vob.pl
 			script\navbuttons.pl
-			script\osis2html.pl
-			script\shared.pl
 			script\timeAnalysis.pl
 			script\TODOs.txt
 			script\video.sh
 			script\word-dvd.sh
+			script\shared.pl
 			script\word-video.sh
-			script\xvideo.sh
-			script\xword-dvd.sh
 		chrome.manifest
 		install.rdf
 [Open project files]
-0=chrome\word-dvd\web\render-page.html
-1=chrome\word-dvd\render.js
-2=chrome\word-dvd\web\render-page.js
-3=script\mpeg2vob.pl
-4=script\imgs2mpeg.pl
+0=script\imgs2mpeg.pl
+1=script\mpeg2vob.pl
+2=..\..\..\..\Desktop\Example\OUTPUTS\Natty\dvdauthor.xml
+3=..\..\..\..\Desktop\Example\OUTPUTS\Natty\script\natty.log
 [Selected Project Files]
 Main=
 Selected=script\mpeg2vob.pl
-[chrome\word-dvd\web\render-page.html]
-TopLine=1
-Caret=96,8
-[chrome\word-dvd\render.js]
-TopLine=34
-Caret=1,48
-[chrome\word-dvd\web\render-page.js]
-TopLine=7
-Caret=2,21
-[script\mpeg2vob.pl]
-TopLine=318
-Caret=2,330
 [script\imgs2mpeg.pl]
-TopLine=84
-Caret=1,119
+TopLine=77
+Caret=122,100
+[script\mpeg2vob.pl]
+TopLine=725
+Caret=70,744
+[..\..\..\..\Desktop\Example\OUTPUTS\Natty\dvdauthor.xml]
+TopLine=1
+Caret=35,5
+[..\..\..\..\Desktop\Example\OUTPUTS\Natty\script\natty.log]
+TopLine=1
+Caret=47,17

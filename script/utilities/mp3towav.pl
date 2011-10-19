@@ -2,9 +2,9 @@
 
 #usage mp3towav.pl inDirFullPath outDirFullPath filter
 
-$indir = shift(@ARGV);
-$outdir = shift(@ARGV);
-$filter = shift(@ARGV);
+$indir = @ARGV[0];
+$outdir = @ARGV[1];
+$filter = @ARGV[2];
 if ($filter eq "") {$filter = "^.*\\.mp3\$";}
 print "\"".$filter."\"";
 

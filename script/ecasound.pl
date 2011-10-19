@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 # This file is part of Word-DVD.
 #
-#   Copyright 2010 Dale Potter (gpl.programs.info@gmail.com)
+#   Copyright 2010 Dale Potter (ortoasia@gmail.com)
 #
 #   Word-DVD is free software: you can redistribute it and/or modify
 #   it under the terms of the GNU General Public License as published by
@@ -16,19 +16,21 @@
 #   You should have received a copy of the GNU General Public License
 #   along with Word-DVD.  If not, see <http://www.gnu.org/licenses/>.
 
+#usage ecasound.pl scriptDir inputDir outputDir audioDir book [args...]
+
 $prepage = 10;
 $rewind = 15;
 $forward = 10;
 $firstChapter = 1;
 
-$scriptdir = shift(@ARGV);
-$i=0;
-$IDR = @ARGV[$i++];
-$ODR = @ARGV[$i++];
-$ADR = @ARGV[$i++];
-$MBK = @ARGV[$i++];
+$scriptdir = @ARGV[0];
+$IDR = @ARGV[1];
+$ODR = @ARGV[2];
+$ADR = @ARGV[3];
+$MBK = @ARGV[4];
 
 # capture arguments
+$i=5;
 while($a = @ARGV[$i++]) {
   if    ($a =~ /^\s*margin=(\d+)\s*$/i) {$prepage = $1;}
   elsif ($a =~ /^\s*numpts=(\d+)\s*$/i) {$numpts = $1;}

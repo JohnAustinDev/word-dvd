@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 # This file is part of Word-DVD.
 #
-#   Copyright 2010 Dale Potter (gpl.programs.info@gmail.com)
+#   Copyright 2010 Dale Potter (ortoasia@gmail.com)
 #
 #   Word-DVD is free software: you can redistribute it and/or modify
 #   it under the terms of the GNU General Public License as published by
@@ -19,9 +19,12 @@
 # SCRIPT menus.pl creates mpg slides for VMGM and Titleset menus, plus the help menu
 # It also muxes in the appropriate buttons for each menu.
 
+#usage menus.pl scriptDir inputDir outputDir audioDir debugOn
+
 print "\nRUNNING menus.pl\n";
 
-$scriptdir = shift(@ARGV);
+$scriptdir = @ARGV[0];
+$debug = @ARGV[4];
 require "$scriptdir/shared.pl" || die "Can't require shared.pl";
 &readDataFiles();
 
@@ -103,7 +106,7 @@ foreach $menu (keys %allMenus) {
 TOCSPUMUX:
   `spumux -v $Verbosity -m dvd $outdir/spumux.xml < $videodir/$menu.mpg > $videodir/fin-$menu.mpg`;
   #print "Rerun spumux? "; $pause = <>; if ($pause =~ /^\s*y\s*$/i) {goto TOCSPUMUX;}
-  `rm -r $videodir/$menu.mpg`;
+  if (!$debug)  {`rm -r $videodir/$menu.mpg`;}
   `rm -r $outdir/spumux.xml`;
 }
 
@@ -136,9 +139,9 @@ PROJSPUMUX:
   `spumux -v $Verbosity -m dvd $outdir/spumux.xml < $videodir/$menu.mpg > $videodir/fin-$menu.mpg`;
   #print "Rerun spumux? "; $pause = <>; if ($pause =~ /^\s*y\s*$/i) {goto PROJSPUMUX;}
 
-  `rm -r $videodir/$menu.mpg`;
+  if (!$debug) {`rm -r $videodir/$menu.mpg`;}
   `rm -r $outdir/spumux.xml`;
 }
 
 
-#`rm -r $videodir/menutmp`;
+if (!$debug) {`rm -r $videodir/menutmp`;}

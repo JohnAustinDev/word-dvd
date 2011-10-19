@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 # This file is part of Word-DVD.
 #
-#   Copyright 2010 Dale Potter (gpl.programs.info@gmail.com)
+#   Copyright 2010 Dale Potter (ortoasia@gmail.com)
 #
 #   Word-DVD is free software: you can redistribute it and/or modify
 #   it under the terms of the GNU General Public License as published by
@@ -20,9 +20,12 @@
 # Either audio or silence is included in the mpg clip. So each jpg image results
 # in a separate mpeg file.
 
+#usage imgs2mpeg.pl scriptDir inputDir outputDir audioDir debugOn
+
 print "\nRUNNING imgs2mpeg.pl\n";
 
-$scriptdir = shift(@ARGV);
+$scriptdir = @ARGV[0];
+$debug = @ARGV[4];
 require "$scriptdir/shared.pl";
 &readDataFiles();
 
@@ -36,6 +39,9 @@ if (!(-e $videodir)) {`mkdir $videodir`;}
 if (!(-e "$videodir/videotmp")) {`mkdir $videodir/videotmp`;}
 unlink("$outaudiodir/multiChapterTiming.txt");
 
+#GET FFMPEG VERSION
+`ffmpeg -version` =~ /^FFmpeg[^\:]+\:([^-,]+)/;
+$ffmpgVersion = $1;
 
 #CREATE MPG FILES
 foreach $book (sort {$books{$a}<=>$books{$b}} keys %books) {
@@ -44,6 +50,7 @@ foreach $book (sort {$books{$a}<=>$books{$b}} keys %books) {
   for ($ch=0; $ch<=$lastChapter{$book}; $ch++) {
     if (!$chapters{"$book-$ch"}) {next;}
     print "Creating mpg for $book-$ch (".$haveAudio{"$book-$ch"}.")";
+    $nextPTS = 0;
 
     if ($haveAudio{"$book-$ch"} ne "still") {
       $multChapFileOFS = 0;
@@ -92,8 +99,10 @@ foreach $book (sort {$books{$a}<=>$books{$b}} keys %books) {
         if (!$tlen) {print "ERROR: tlen was null!!!\n"; die;}
         `jpeg2yuv -v 0 -n 1 -I p -f 25 -j $imagedir/$book/$book-$ch-$pg.jpg | mpeg2enc -v 0 -f 8 -g 1 -G 1 -o $videodir/videotmp/$book-$ch-$pg.m2v`;
         $fseekto = ($seekto + $multChapFileOFS);
-        $ffmpegt = ($tlen+$fseekto);
-        # NOTE about ffmpeg: -t is NOT duration as the man page says, it is the time code at which encoding stops.
+        
+        # NOTE about ffmpeg 0.5: -t is NOT duration as the man page says, it is the time code at which encoding stops.
+        if ($ffmpgVersion=~/^0\.5\./) {$ffmpegt = ($tlen+$fseekto);}
+        else {$ffmpegt = $tlen;}
         `ffmpeg -v $Verbosity -t $ffmpegt -i $audiofile -ss $fseekto -acodec copy -y $videodir/videotmp/$book-$ch-$pg.m2a`;
         #mux audio and video clips...
         if ($mpgIsMultiPage{"$book-$ch"} eq "true") {
@@ -102,6 +111,7 @@ foreach $book (sort {$books{$a}<=>$books{$b}} keys %books) {
           $startPTS = ($seekto+$gap);
           $gap = ($gap+0.040); #this gap insures there is at least 1 frame between last audio and first video packets even after rounding (for dvdauthor)
           `mplex -v $Verbosity -V $seqend -T $startPTS -f 8 $videodir/videotmp/$book-$ch-$pg.m2v $videodir/videotmp/$book-$ch-$pg.m2a -o $videodir/$book/$book-$ch-$pg.mpg`;
+          #$nextPTS = &readPTS("$videodir/$book/$book-$ch-$pg.mpg") + 0.04;
         }
         else {
           `mplex -v $Verbosity -V -f 8 $videodir/videotmp/$book-$ch-$pg.m2v $videodir/videotmp/$book-$ch-$pg.m2a -o $videodir/$book/$book-$ch-$pg.mpg`;
@@ -116,7 +126,7 @@ foreach $book (sort {$books{$a}<=>$books{$b}} keys %books) {
       }
     }
 
-    `rm -r $videodir/videotmp/*.*`;
+    if (!$debug)  {`rm -r $videodir/videotmp/*.*`;}
   }
   if ($multChapListing ne "") {
     open(OUTF, ">>$outaudiodir/multiChapterTiming.txt") || die "Could not open $outaudiodir/multiChapterTiming.txt\n";
@@ -124,5 +134,33 @@ foreach $book (sort {$books{$a}<=>$books{$b}} keys %books) {
     close(OUTF);
     $multChapListing = "";
   }
+}
+
+if (!$debug) {`rm -r $videodir/videotmp`;}
+
+sub readPTS($) {
+	my $f = shift;
+	my $lastPTS = -1;
+	my $firstPTS = -1;
+	if (open(PTS, ">$videodir/videotmp/pts.txt")) {
+		print PTS `dvbsnoop -s ps -if $f`;
+		close(PTS);
+		open(PTS, "<$videodir/videotmp/pts.txt");
+		while (<PTS>) {
+			chomp;
+			if ($_ =~ /^Stream_id:/) {$streamid = $_;}
+			if ($_ =~ /\s+(\d+)\s+\(.*?\)\s+\[= 90 kHz-Timestamp:\s*(.*?)\]/) {
+				my $t = $1;
+				my $ts = $2;
+				if ($streamid =~ /MPEG_pack_start/) {
+					$lastPTS = $t*(1/90000);
+					if ($firstPTS == -1) {$firstPTS = $t*(1/90000);}
+				}
+			}
+		}
+		close(PTS);
+	}
+	#print "FIRST PTS=$firstPTS\n";
+	return $lastPTS;
 }
 

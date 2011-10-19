@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 # This file is part of Word-DVD.
 #
-#   Copyright 2010 Dale Potter (gpl.programs.info@gmail.com)
+#   Copyright 2010 Dale Potter (ortoasia@gmail.com)
 #
 #   Word-DVD is free software: you can redistribute it and/or modify
 #   it under the terms of the GNU General Public License as published by
@@ -21,9 +21,12 @@
 # Either audio or silence is included in the mpg clip. So each jpg image results
 # in a separate mpeg file.
 
+#usage imgs2web mplex.pl scriptDir inputDir outputDir audioDir debugOn
+
 print "\nRUNNING imgs2web.pl\n";
 
-$scriptdir = shift(@ARGV);
+$scriptdir = @ARGV[0];
+$debug = @ARGV[4];
 require "$scriptdir/shared.pl";
 &readDataFiles();
 
@@ -79,7 +82,7 @@ print "jpeg2yuv -v 0 -n $numf -I p -f $framesPS -j $imagedir/$book/$book-$ch-$pg
         if (-e "$webdir/videotmp/chapter.m2v") {
           `cat $webdir/videotmp/chapter.m2v $webdir/videotmp/$book-$ch-$pg.m2v > $webdir/videotmp/tmp.mpg`;
           `mv $webdir/videotmp/tmp.mpg $webdir/videotmp/chapter.m2v`;
-          `rm $webdir/videotmp/$book-$ch-$pg.m2v`;
+          if (!$debug) {`rm $webdir/videotmp/$book-$ch-$pg.m2v`;}
         }
         else {`mv $webdir/videotmp/$book-$ch-$pg.m2v $webdir/videotmp/chapter.m2v`;}
       }
@@ -94,7 +97,7 @@ print "jpeg2yuv -v 0 -n $numf -I p -f $framesPS -j $imagedir/$book/$book-$ch-$pg
     `mplex -v $Verbosity -f 8 $webdir/videotmp/chapter.m2v $a -o $webdir/$book/$book-$ch-%d.mpg`;
     #`ffmpeg -v $Verbosity -i $a -acodec copy -i $webdir/videotmp/chapter.m2v -vcodec copy -y $webdir/$book/$book-$ch.mpg`;
   }
-  #`rm -r $webdir/videotmp/*.*`;
+  if (!$debug) {`rm -r $webdir/videotmp/*.*`;}
 }
 
         

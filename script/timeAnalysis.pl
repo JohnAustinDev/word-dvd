@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 # This file is part of Word-DVD.
 #
-#   Copyright 2010 Dale Potter (gpl.programs.info@gmail.com)
+#   Copyright 2010 Dale Potter (ortoasia@gmail.com)
 #
 #   Word-DVD is free software: you can redistribute it and/or modify
 #   it under the terms of the GNU General Public License as published by
@@ -19,6 +19,8 @@
 # SCRIPT timeAnalysis.pl reads manually generated timing values from the
 # pageTiming.txt file and saves this information so that it can be used to
 # force page timing to the manually measured values.
+
+#usage timeAnalysis.pl scriptDir inputDir outputDir audioDir
 
 print "\nRUNNING timeAnalysis.pl\n";
 

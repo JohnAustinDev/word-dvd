@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 # This file is part of Word-DVD.
 #
-#   Copyright 2010 Dale Potter (gpl.programs.info@gmail.com)
+#   Copyright 2010 Dale Potter (ortoasia@gmail.com)
 #
 #   Word-DVD is free software: you can redistribute it and/or modify
 #   it under the terms of the GNU General Public License as published by
@@ -19,9 +19,12 @@
 # SCRIPT navbuttons.pl adds buttons to all audio-text, silent-text, and footnotes pages.
 # It also concatenates "$mpgIsMultiPage" pages into a final multi chapter mpg.
 
+#usage navbuttons.pl scriptDir inputDir outputDir audioDir debugOn
+
 print "\nRUNNING navbuttons.pl\n";
 
-$scriptdir = shift(@ARGV);
+$scriptdir = @ARGV[0];
+$debug = @ARGV[4];
 require "$scriptdir/shared.pl";
 &readDataFiles();
 if (!(-e "$videodir/videotmp")) {`mkdir $videodir/videotmp`;}
@@ -83,7 +86,7 @@ foreach $book (sort {$books{$a}<=>$books{$b}} keys %books) {
       if (!$pages{"$book-$ch-$pg"}) {next;}
       if (-e "$videodir/$book/$book-$ch-$pg.mpg") {
         `spumux -v $Verbosity -m dvd $outdir/spumux.xml < $videodir/$book/$book-$ch-$pg.mpg > $videodir/$book/fin-$book-$ch-$pg.mpg`;
-        `rm -r $outdir/video/$book/$book-$ch-$pg.mpg`;
+        if (!$debug)  {`rm -r $outdir/video/$book/$book-$ch-$pg.mpg`;}
       }
       else {print "ERROR: Missing file: $videodir/$book/$book-$ch-$pg.mpg\n"; die;}
     }
@@ -94,7 +97,7 @@ foreach $book (sort {$books{$a}<=>$books{$b}} keys %books) {
       $pgn=1;
       while (-e "$videodir/$book/fn-$book-$ch-$pg-$pgn.mpg") {
         `spumux -v $Verbosity -m dvd $outdir/spumux.xml < $videodir/$book/fn-$book-$ch-$pg-$pgn.mpg > $videodir/$book/fin-fn-$book-$ch-$pg-$pgn.mpg`;
-        `rm -r $videodir/$book/fn-$book-$ch-$pg.mpg`;
+        if (!$debug)  {`rm -r $videodir/$book/fn-$book-$ch-$pg.mpg`;}
         $pgn++;
       }
     }  

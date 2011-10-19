@@ -1,6 +1,8 @@
 #!/usr/bin/perl
 
-$scriptdir = shift(@ARGV);
+#usage lencalc.pl scriptDir inputDir outputDir audioDir
+
+$scriptdir = @ARGV[0];
 require "$scriptdir/shared.pl" || die "Can't require shared.pl";
 &readDataFiles();
 
