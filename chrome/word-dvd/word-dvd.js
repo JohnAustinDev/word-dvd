@@ -531,7 +531,7 @@ function resume() {
   RunPause.setAttribute("oncommand", "pause();");
   Paused = false;
   if (!RenderWin) return;
-  window.setTimeout(RenderWin.ContinueFunc, 0);
+  RenderWin.setTimeout(RenderWin.ContinueFunc, 0);
 }
 
 function rendernext() {
