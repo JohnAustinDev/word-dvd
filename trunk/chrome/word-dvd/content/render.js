@@ -86,7 +86,7 @@ function startMenuGeneration() {
 
 function startTextGeneration() {
   MainWin.document.getElementById("rendernext").disabled = false;
-  RenderFrame.contentDocument.defaultView.location.assign("chrome://word-dvd/content/web/render-page.html");
+  RenderFrame.contentDocument.defaultView.location.assign("chrome://word-dvd/content/web/text.html");
   if (!MainWin.document.getElementById("skiptext").checked) {
     readPageTiming();
     MainWin.logmsg("Generating Text Pages...");
