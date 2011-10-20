@@ -25,36 +25,28 @@ const INDIR=0, AUDIO=1, OUTDIR=2;
 const INPUTLABELS=["Input Directory", "Audio Directory", "Output Directory"];
 const NUMINPUTS=3; 
 const MYGUID="{f597ab2a-3a14-11de-a792-e68e56d89593}";
-const OSISPL="osis2html.pl", RUNOSISPL="xosis2html.sh";
-const AUDIOGEN="audio.pl", RUNAUDIOGEN="xaudio.sh";
-const IMAGEPL="imgs2mpeg.pl", RUNIMAGEPL="ximgs2mpeg.sh";
-const IMG2WEB="imgs2web.pl", RUNIMG2WEB="ximgs2web.sh";
-const NAVBUT="navbuttons.pl", RUNNAVBUT="xnavbuttons.sh";
-const MENUS="menus.pl", RUNMENUS="xmenus.sh";
-const MPEGPL="mpeg2vob.pl", RUNMPEGPL="xmpeg2vob.sh";
-const LENCALC="lencalc.pl", RUNLENCALC="xlencalc.sh";
-const TIMEANAL="timeAnalysis.pl", RUNTIMEANAL="xtimeAnalysis.sh";
-const AUDACITY="audacity.pl", RUNAUDACITY="xaudacity.sh";
-const ECASOUND="ecasound.pl", RUNECASOUND="xecasound.sh";
-const BURNVERIFY="burnverifydvd.sh", RUNBURNVERIFY="xburnverify.sh";
-const WORDDVD="word-dvd.sh", RUNWORDDVD="xword-dvd.sh";
-const VIDEOFILES="word-video.sh", RUNVIDEOFILES="xword-video.sh";
-const CREATEISO="createiso.pl", RUNCREATEISO="xcreateiso.sh";
+const NEWCHAPTER = "<span name=\"chapter.";
+// Output directory
+const CODE="word-dvd/script";
+const RESOURCE="word-dvd/resource";
+const OSISPL="osis2html.pl";
+const WORDDVD="word-dvd.sh";
+const VIDEOFILES="word-video.sh";
 const DBLOGFILE="logfile.txt";
-const OSISFILE = "osis.xml";
-const STYLESHEET="chrome/word-dvd/web/pal.css";
 const CAPTURE="import.sh";
-const HTMLDIR="html";
-const IMGDIR="images";
 const SCRIPT="script";
 const LISTING="listing";
 const OUTAUDIODIR="audio";
+const IMGDIR="images";
 const MENUSFILE="MENU_BUTTONS.csv";
-const PAGETIMING="pageTiming.txt";
-const AUDIOICON="chrome/word-dvd/web/audio-icon.png";
-const LOCALEFILE="config.txt";
+const AUDIOICON="audio-icon.png";
 const IMAGEEXT="jpg";
-const NEWCHAPTER = "<span name=\"chapter.";
+// Input directory
+const OSISFILE = "osis.xml";
+const HTMLDIR="html";
+const PAGETIMING="pageTiming.txt";
+const LOCALEFILE="config.txt";
+const STYLESHEET="pal.css";
 
 /************************************************************************
  * Global Utility Functions
@@ -144,7 +136,8 @@ function escapeRE(text) {
  * Main Program
  ***********************************************************************/ 
 var UIfile = new Array(NUMINPUTS);
-var StatsFile, TransFile, ExtDir;
+var StatsFile, TransFile, ExtFile;
+var ExtVersion;
 var InputTextbox = new Array(NUMINPUTS);
 var RenderNext;
 var RunPause;
@@ -153,15 +146,39 @@ var LocaleFile;
 var ButtonId;
 var RenderWin;
 var DBLogFile;
+var CssFile;
 
 function loadedXUL() {
-  window.setTimeout("window.focus();", 500);
-  
-  ExtDir =  Components.classes["@mozilla.org/file/directory_service;1"].
-                     getService(Components.interfaces.nsIProperties).
-                     get("ProfD", Components.interfaces.nsIFile);
-  ExtDir.append("extensions");
-  ExtDir.append(MYGUID);
+	window.setTimeout("window.focus();", 500);
+
+	// get extension info
+	try {
+		// works for Firefox 4+
+		Components.utils.import("resource://gre/modules/AddonManager.jsm");
+		AddonManager.getAddonByID(MYGUID, function(addon) {
+			var win = Components.classes["@mozilla.org/embedcomp/window-watcher;1"]
+			.getService(Components.interfaces.nsIWindowWatcher).getWindowByName("word-dvd", window);
+			win.ExtVersion = addon.version;
+			win.ExtFile = addon.getResourceURI("").QueryInterface(Components.interfaces.nsIFileURL).file;
+			win.loadedXUL2();
+		});
+	}
+	catch(er) {
+		// works for Firefox < 4, where extension is unzipped
+		logmsg("Falling back to firefox < 4 extension manager");	
+		ExtFile =  Components.classes["@mozilla.org/file/directory_service;1"].
+					getService(Components.interfaces.nsIProperties).
+					get("ProfD", Components.interfaces.nsIFile);
+		ExtFile.append("extensions");
+		ExtFile.append(MYGUID);
+
+		var insrdf = ExtFile.clone();
+		insrdf.append("install.rdf");
+		ExtVersion = readFile(insrdf).match(/<em\:version>(.*?)<\/em\:version>/im)[1];
+		loadedXUL2();
+	}
+	
+	
   RenderNext = document.getElementById("rendernext");
   RunPause = document.getElementById("runpause");
 
@@ -200,16 +217,11 @@ function loadedXUL() {
       handleInput(elem)
     }
   }
-  
+}
+
+function loadedXUL2() {
   enableGO();
-  if (ExtDir.exists()) document.getElementById("installPrompt").disabled = false;
-
-
-    
-  // READ LOCALE FILE
-  LocaleFile = UIfile[INDIR].clone();
-  LocaleFile.append(LOCALEFILE);
-  LocaleFile = readFile(LocaleFile);
+  if (ExtFile.exists()) document.getElementById("installPrompt").disabled = false;
     
   // open render window, which itself runs startRenderer()
   RenderWin = window.open("chrome://word-dvd/content/render.xul", "render-win", "chrome=yes,alwaysRaised=yes");
@@ -248,7 +260,7 @@ function handleInput(elem) {
     
   case "noaudio":
     if (elem.checked) {
-      InputTextbox[1].value = "";
+      InputTextbox[AUDIO].value = "";
       document.getElementById("input-1").disabled=true;
       document.getElementById("browse-1").disabled=true;
     }
@@ -256,10 +268,10 @@ function handleInput(elem) {
       document.getElementById("input-1").disabled=false;
       document.getElementById("browse-1").disabled=false;
       try {
-        UIfile[1] = prefs.getComplexValue("File-1", Components.interfaces.nsILocalFile);
-        InputTextbox[1].value = UIfile[1].path;
+        UIfile[AUDIO] = prefs.getComplexValue("File-1", Components.interfaces.nsILocalFile);
+        InputTextbox[AUDIO].value = UIfile[AUDIO].path;
       }
-      catch(er) {InputTextbox[1].value = "";}
+      catch(er) {InputTextbox[AUDIO].value = "";}
     }
     break;
     
@@ -275,9 +287,11 @@ function handleInput(elem) {
   }
   
   enableGO();
-  var osis = UIfile[INDIR].clone();
-  osis.append(OSISFILE);
-  document.getElementById("osis2html").disabled = !osis.exists();
+  if (UIfile[INDIR]) {
+	  var osis = UIfile[INDIR].clone();
+	  osis.append(OSISFILE);
+	  document.getElementById("osis2html").disabled = !osis.exists();
+  }
 }
 
 function enableGO() {
@@ -316,20 +330,15 @@ function wordDVD() {
   DBLogFile.append(DBLOGFILE);
   var date = new Date();
   logmsg("Starting Word-DVD imager at " + date.toTimeString() + " " + date.toDateString());
-  var vers = ExtDir.clone();
-  try {
-    vers.append("install.rdf");
-    vers = readFile(vers).match(/<em\:version>(.*?)<\/em\:version>/im)[1];
-  }
-  catch (er) {vers=null;}
-  logmsg("Word-DVD Version: " + (vers ? vers:"(error reading version)"));
+  logmsg("Word-DVD Version: " + (ExtVersion ? ExtVersion:"undreadable"));
   
-  // Below is for Firefox 4+
-  //Components.utils.import("resource://gre/modules/AddonManager.jsm");    
-  //AddonManager.getAddonByID("{ec8030f7-c20a-464f-9b0e-13a3a9e97384}", function(addon) {alert("My extension's version is " + addon.version);});
-
   if (document.getElementById("delete1st").checked) logmsg("Cleaned OUTPUT directory:" + UIfile[OUTDIR].path + "...");
 
+  // READ LOCALE FILE
+  LocaleFile = UIfile[INDIR].clone();
+  LocaleFile.append(LOCALEFILE);
+  LocaleFile = readFile(LocaleFile);
+  
   // IMAGE DIRECTORY
   var imgdir = UIfile[OUTDIR].clone();
   imgdir.append(IMGDIR);
@@ -348,43 +357,10 @@ function wordDVD() {
   TransFile = UIfile[OUTDIR].clone();
   TransFile.append(LISTING);
   
-  // COPY MISC BITS TO OUTPUT DIR
-  const CFILE=[
-  "chrome/word-dvd/web/blankaudio.ac3",
-  "chrome/word-dvd/web/textbuttonsSEL.png",
-  "chrome/word-dvd/web/textbuttonsHIGH.png",
-  "chrome/word-dvd/web/menuNormHIGH.png",
-  "chrome/word-dvd/web/menuLeftHIGH.png",
-  "chrome/word-dvd/web/menuRightHIGH.png",
-  "chrome/word-dvd/web/menuBothHIGH.png",
-  "chrome/word-dvd/web/menuNormSEL.png",
-  "chrome/word-dvd/web/menuLeftSEL.png",
-  "chrome/word-dvd/web/menuRightSEL.png",
-  "chrome/word-dvd/web/menuBothSEL.png",
-  "chrome/word-dvd/web/transparent.png"];
-  const DESTDIR=[
-  OUTAUDIODIR,
-  IMGDIR,
-  IMGDIR,
-  IMGDIR,
-  IMGDIR,
-  IMGDIR,
-  IMGDIR,
-  IMGDIR,
-  IMGDIR,
-  IMGDIR,
-  IMGDIR,     
-  IMGDIR];
-  for (var f=0; f<CFILE.length; f++) {
-    var destdir = UIfile[OUTDIR].clone();
-    destdir.append(DESTDIR[f]);
-    if (!destdir.exists()) destdir.create(destdir.DIRECTORY_TYPE, 0777);
-    var cfile = ExtDir.clone();
-    var pth = CFILE[f].split("/");
-    for (var i=0; i<pth.length; i++) {cfile.append(pth[i]);}
-    if (cfile.exists()) cfile.copyTo(destdir, null);
-  }
-  
+  // COPY RESOURCES AND BUILD-CODE TO OUTPUT DIR
+  exportDir("resource", UIfile[OUTDIR].path + "/" + RESOURCE, true);
+  exportDir("script", UIfile[OUTDIR].path + "/" + CODE, true);
+
   // AUTOGENERATE ALL RUN SCRIPTS
   writeRunScripts();
   
@@ -397,23 +373,20 @@ function wordDVD() {
                       .createInstance(Components.interfaces.nsIProcess);                        
     var file = UIfile[OUTDIR].clone();
     file.append(SCRIPT);
-    file.append(RUNOSISPL);
+    file.append(runscript(OSISPL));
     process.init(file);
     var args = [];
     process.run(true, args, args.length);
   }
   else logmsg("Skipped HTML generation.");
   
+  // COPY CSS to HTML DIRECTORY AND RELOAD CAPTURE WINDOW
+  CssFile = exportFile("resource/" + STYLESHEET, UIfile[INDIR].path + "/" + HTMLDIR, false);
+  RenderWin.document.getElementById("render").contentDocument.defaultView.location.assign("chrome://word-dvd/content/web/menu.html");
+  
   // Read HTML books and maxchapters
   var htmlFiles = UIfile[INDIR].clone();
   htmlFiles.append(HTMLDIR);
-  var cfile = ExtDir.clone();
-  var pth = STYLESHEET.split("/");
-  for (var i=0; i<pth.length; i++) {cfile.append(pth[i]);}
-  var dest = htmlFiles.clone();
-  dest.append(pth[pth.length-1]);
-  if (dest.exists()) try{dest.remove(false);} catch (er) {logmsg("WARNING:" + er);}
-  try {cfile.copyTo(htmlFiles, null);} catch (er) {logmsg("WARNING:" + er);}
   if (!htmlFiles.exists() || !htmlFiles.isDirectory()) {
     logmsg("Error: HTML directory not found \"" + htmlFiles.path() + "\"\n");
     return;
@@ -450,7 +423,98 @@ function wordDVD() {
   if (document.getElementById("startbk").selected) prompForStartBook();
   
   RenderWin.focus();
-  RenderWin.startMenuGeneration();
+  window.setTimeout("RenderWin.startMenuGeneration();", 2000);
+}
+
+// if overwrite is set, the target file in outDirPath is deleted before copy
+// if overwrite is not set, the function will exit with null if target exists
+function exportFile(extfile, outDirPath, overwrite) {
+	if (!ExtFile.exists()) {logmsg("ERROR: Can't open firefox extension"); return null;}
+	var leaf = extfile.replace(/^.*?\/([^\/]+)$/, "$1");
+	var to = Components.classes["@mozilla.org/file/local;1"].createInstance(Components.interfaces.nsILocalFile);
+	to.initWithPath(outDirPath + "/" + leaf);
+	if (to.exists()) {
+		if (overwrite) to.remove();
+		else return to;
+	}
+	var toP = to.parent;
+	if (!toP.exists()) toP.create(toP.DIRECTORY_TYPE, 0777);
+	if (ExtFile.isDirectory()) {
+		var from = ExtFile.clone();
+		from.append(extfile);
+		if (from.isDirectory()) {logmsg("ERROR: From file does not exist-" + from.path); return null;}
+		from.copyTo(toP, to.leafName);
+	}
+	else {
+		var zReader = Components.classes["@mozilla.org/libjar/zip-reader;1"].createInstance(Components.interfaces.nsIZipReader);
+		try {zReader.open(ExtFile);}
+		catch (er) {logmsg("ERROR: cannot open-" + ExtFile.path); return null;}	
+		try {
+			var isdir = zReader.getEntry(extfile);
+			if (isdir.isDirectory) {logmsg("ERROR: From zip file does not exist-" + extfile); return null;}
+		}
+		catch(er) {logmsg("ERROR: reading zip entry-" + extfile); return null;}
+		zReader.extract(extfile, to);
+	}
+	if (!to.exists()) logmsg("ERROR: failed to export to-" + to.path);
+	return to;	
+}
+
+// if overwrite is set, the entire outDirPath is deleted before copy
+// if overwrite is not set, the function will exit with null if outDirPath exists
+function exportDir(extdir, outDirPath, overwrite) {
+	if (!ExtFile.exists()) {logmsg("ERROR: Can't open firefox extension"); return null;}
+	var to = Components.classes["@mozilla.org/file/local;1"].createInstance(Components.interfaces.nsILocalFile);
+	to.initWithPath(outDirPath);
+	if (to.exists()) {
+		if (overwrite) to.remove(true);
+		else return to;
+	}
+	var toP = to.parent;
+	if (!toP.exists()) toP.create(toP.DIRECTORY_TYPE, 0777);
+	if (ExtFile.isDirectory()) {
+		var from = ExtFile.clone();
+		from.append(extdir);
+		if (!from.isDirectory()) {logmsg("ERROR: From directory does not exist-" + from.path); return null;}
+		from.copyTo(toP, to.leafName);
+	}
+	else {
+		var zReader = Components.classes["@mozilla.org/libjar/zip-reader;1"].createInstance(Components.interfaces.nsIZipReader);
+		try {zReader.open(ExtFile);}
+		catch (er) {logmsg(er + "\nERROR: cannot open-" + ExtFile.path); return null;}	
+		try {
+			var isdir = zReader.getEntry(extdir + "/");
+			if (!isdir.isDirectory) {logmsg("ERROR: From zip directory does not exist-" + extdir); return null;}
+		}
+		catch(er) {logmsg(er + "\nERROR: reading zip entry-" + extdir); return null;}
+		// create output directories	
+		var entries = zReader.findEntries(null);
+		while (entries.hasMore()) {
+			var entry = entries.getNext();
+			if (entry.indexOf(extdir) != 0) {continue;}
+			try {var entryObj = zReader.getEntry(entry);}
+			catch (er) {logmsg(er + "\nError getting zip directory entry " + entry + ". " + er); continue;}
+			var newfile = Components.classes["@mozilla.org/file/local;1"].createInstance(Components.interfaces.nsILocalFile);
+			newfile.initWithPath(toP.path + "/" + entry);
+			if (entryObj.isDirectory && !newfile.exists()) newfile.create(newfile.DIRECTORY_TYPE, 0777);
+		}
+		// create output files	
+		var entries = zReader.findEntries(null);
+		while (entries.hasMore()) {
+			var entry = entries.getNext();
+			if (entry.indexOf(extdir) != 0) {continue;}
+			try {var entryObj = zReader.getEntry(entry);}
+			catch (er) {logmsg(er + "\nError getting zip file entry " + entry + ". " + er); continue;}
+			var newfile = Components.classes["@mozilla.org/file/local;1"].createInstance(Components.interfaces.nsILocalFile);
+			newfile.initWithPath(toP.path + "/" + entry);
+			if (!entryObj.isDirectory) {
+				zReader.extract(entry, newfile);
+				if (!newfile.exists()) logmsg("ERROR: filed to extract-" + entry);
+			}
+		}
+	}
+	if (!to.exists()) logmsg("ERROR: failed to export to-" + to.path);
+	return to;	
 }
 
 function booksort(a, b) {
@@ -492,28 +556,38 @@ function prompForStartBook() {
 }
 
 function writeRunScripts() {
+	var slist = [OSISPL, WORDDVD, VIDEOFILES,
+   "audio.pl", "imgs2mpeg.pl", "navbuttons.pl", 
+   "menus.pl", "mpeg2vob.pl", "lencalc.pl", 
+   "timeAnalysis.pl", "createiso.pl", "audacity.pl", 
+   "ecasound.pl", "burnverify.sh", "imgs2web.pl"];
+   
   // MAKE OUTPUT SCRIPT DIR
-  var file = UIfile[OUTDIR].clone();
-  file.append(SCRIPT);
+  var file = Components.classes["@mozilla.org/file/local;1"].createInstance(Components.interfaces.nsILocalFile);
+  file.initWithPath(UIfile[OUTDIR].path + "/" + SCRIPT);
   if (!file.exists()) file.create(file.DIRECTORY_TYPE, 0777);
   
-  var scriptdir = ExtDir.clone();
-  scriptdir.append(SCRIPT);
+  var scriptdir = Components.classes["@mozilla.org/file/local;1"].createInstance(Components.interfaces.nsILocalFile);
+  scriptdir.initWithPath(UIfile[OUTDIR].path + "/" + CODE);
 
   const st="\"", md="\" \"", en="\"";
   var commandline = scriptdir.path + md + UIfile[INDIR].path + md + UIfile[OUTDIR].path + md + UIfile[AUDIO].path + en + " $1 $2 $3";
-  var slist = [OSISPL, AUDIOGEN, IMAGEPL, NAVBUT, MENUS, MPEGPL, LENCALC, TIMEANAL, CREATEISO, AUDACITY, ECASOUND, BURNVERIFY, IMG2WEB, WORDDVD, VIDEOFILES];
-  var rlist = [RUNOSISPL, RUNAUDIOGEN, RUNIMAGEPL, RUNNAVBUT, RUNMENUS, RUNMPEGPL, RUNLENCALC, RUNTIMEANAL, RUNCREATEISO, RUNAUDACITY, RUNECASOUND, RUNBURNVERIFY, RUNIMG2WEB, RUNWORDDVD, RUNVIDEOFILES];
   for (var i=0; i<slist.length; i++) {
     var script = scriptdir.clone();
     script.append(slist[i]);
     if (script.exists()) {
       file = UIfile[OUTDIR].clone();
       file.append(SCRIPT);
-      file.append(rlist[i]);
+      file.append(runscript(slist[i]));
       write2File(file, "#!/bin/sh\n\"" + script.path + md + commandline, false);
     }
   }
+}
+
+function runscript(target) {
+	target = "x" + target;
+	target = target.replace(/\.[^\.]*$/, ".sh");
+	return target;
 }
 
 function pause() {
@@ -568,11 +642,11 @@ function stop() {
     var file = UIfile[OUTDIR].clone();
     file.append(SCRIPT);
     var rundir = file.path;
-    file.append(RUNWORDDVD);
+    file.append(runscript(WORDDVD));
     process.init(file);
     var args = [rundir];
     process.run(false, args, args.length);
-    logmsg("Launched RUNWORDDVD!");
+    logmsg("Launched " + runscript(WORDDVD));
   }
   else if (document.getElementById("runvideo").selected) {
     var process = Components.classes["@mozilla.org/process/util;1"]
@@ -580,11 +654,11 @@ function stop() {
     var file = UIfile[OUTDIR].clone();
     file.append(SCRIPT);
     var rundir = file.path;
-    file.append(RUNVIDEOFILES);
+    file.append(runscript(VIDEOFILES));
     process.init(file);
     var args = [rundir];
     process.run(false, args, args.length);
-    logmsg("Launched RUNVIDEOFILES!");  
+    logmsg("Launched" + runscript(VIDEOFILES));  
   }
   
   if (hasErrors) window.alert("Image rendering has completed, but WITH ERRORS!");

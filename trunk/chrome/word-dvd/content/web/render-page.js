@@ -7,17 +7,24 @@ var DebugPage=0;
 
 var CSSHeading1Color, CSSHeading2Color;
 
+MainWin = Components.classes["@mozilla.org/embedcomp/window-watcher;1"].getService(Components.interfaces.nsIWindowWatcher).getWindowByName("word-dvd", window);
+if (MainWin.CssFile) {
+	var csslink=document.createElement("link");
+	csslink.setAttribute("rel", "stylesheet");
+	csslink.setAttribute("type", "text/css");
+	csslink.setAttribute("href", "file://" + MainWin.CssFile.path);
+	document.getElementsByTagName("head")[0].appendChild(csslink);
+}
+  
 function init() {
   PageElem1 = document.getElementById("p1");
   PageElem2 = document.getElementById("p2");
   Body = document.getElementById("body");
-  MainWin = Components.classes["@mozilla.org/embedcomp/window-watcher;1"].getService(Components.interfaces.nsIWindowWatcher).getWindowByName("word-dvd", window);
   RenderWin = window.frameElement.ownerDocument.defaultView;
   var rule1 = getCSS(".title-1");
   var rule2 = getCSS(".title-2");
   CSSHeading1Color = rule1.style.color;
   CSSHeading2Color = rule2.style.color;
-  RenderWin.applyConfigCSS();
 }
 
 function fitScreen(book, chapter, aPage, textOnly, skipPage1, skipPage2) {

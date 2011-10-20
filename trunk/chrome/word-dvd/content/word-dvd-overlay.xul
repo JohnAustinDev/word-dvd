@@ -4,11 +4,14 @@
          xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
          
   <script type="text/javascript">
-    var WordDVDWin;
     function startWordDVD() {
       // close windows if they are allready open.
-      if (WordDVDWin) WordDVDWin.close();
-      var renderWin = Components.classes["@mozilla.org/embedcomp/window-watcher;1"].getService(Components.interfaces.nsIWindowWatcher).getWindowByName("render-win", window);
+      var controlWin = Components.classes["@mozilla.org/embedcomp/window-watcher;1"]
+      .getService(Components.interfaces.nsIWindowWatcher).getWindowByName("word-dvd", window);
+      if (controlWin) controlWin.close();
+      
+      var renderWin = Components.classes["@mozilla.org/embedcomp/window-watcher;1"]
+      .getService(Components.interfaces.nsIWindowWatcher).getWindowByName("render-win", window);
       if (renderWin) renderWin.close();
       
       // open word-dvd anew

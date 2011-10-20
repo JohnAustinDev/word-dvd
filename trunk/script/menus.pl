@@ -49,11 +49,11 @@ foreach $menu (keys %allMenus) {
   elsif ($allBTypes{$menu."-9"} ne "underline") {$btype = "menuLeft";}
   elsif ($allBTypes{$menu."-18"} ne "underline") {$btype = "menuRight";}
   else {$btype = "menuBoth";}
-  if (!(-e "$imagedir/".$btype."HIGH.png")) {print "ERROR: Must add or create button type \"".$btype."HIGH.png\" to use text buttons.\n"; $btype = "menuNorm";}
-  if (!(-e "$imagedir/".$btype."SEL.png"))  {print "ERROR: Must add or create button type \"".$btype."SEL.png\" to use text buttons.\n"; $btype = "menuNorm";}
+  if (!(-e "$resourcedir/".$btype."HIGH.png")) {print "ERROR: Must add or create button type \"".$btype."HIGH.png\" to use text buttons.\n"; $btype = "menuNorm";}
+  if (!(-e "$resourcedir/".$btype."SEL.png"))  {print "ERROR: Must add or create button type \"".$btype."SEL.png\" to use text buttons.\n"; $btype = "menuNorm";}
   $xml =        "<subpictures>\n";
   $xml = $xml . "\t<stream>\n";
-  $xml = $xml . "\t\t<spu force=\"yes\" start=\"00:00:00.00\" image=\"$imagedir/transparent.png\" highlight=\"$imagedir/".$btype."HIGH.png\" select=\"$imagedir/".$btype."SEL.png\" >\n";
+  $xml = $xml . "\t\t<spu force=\"yes\" start=\"00:00:00.00\" image=\"$resourcedir/transparent.png\" highlight=\"$resourcedir/".$btype."HIGH.png\" select=\"$resourcedir/".$btype."SEL.png\" >\n";
 
   # button rows  
   for ($b=1; $b<=18; $b++) {
