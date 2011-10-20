@@ -173,11 +173,11 @@ sub readDataFiles() {
         $image = $2;
         $high = $3;
         $sel = $4;
-        if ($image eq "transparent.png") {$image = $imagedir."/".$image;}
+        if ($image eq "transparent.png") {$image = $resourcedir."/".$image;}
         else {$image = $projmenusdir."/".$image;}
-        if ($high eq "transparent.png") {$high = $imagedir."/".$high;}
+        if ($high eq "transparent.png") {$high = $resourcedir."/".$high;}
         else {$high = $projmenusdir."/".$high;}
-        if ($sel eq "transparent.png") {$sel = $imagedir."/".$sel;}
+        if ($sel eq "transparent.png") {$sel = $resourcedir."/".$sel;}
         else {$sel = $projmenusdir."/".$sel;}
         
         $pmenuIMG{$menu} = $image;
@@ -494,8 +494,7 @@ sub makeSilentSlide($$) {
   $leaf = $1;
   `jpeg2yuv -v 0 -n 1 -I p -f 25 -j $path.jpg | mpeg2enc -v 0 -f 8 -g 1 -G 1 -o $videodir/videotmp/$leaf.m2v`;
   
-  `mplex -v $Verbosity -V -f 8 $videodir/videotmp/$leaf.m2v $outaudiodir/blankaudio.ac3 -o $videodir/$subdir$leaf.mpg`
-  #`ffmpeg -v $Verbosity -genpts 1 -i $videodir/videotmp/$name.m2v -i $outaudiodir/blankaudio.ac3 -target pal-dvd -vcodec copy -acodec copy -y $videodir/$path.mpg`;
+  `mplex -v $Verbosity -V -f 8 $videodir/videotmp/$leaf.m2v $resourcedir/blankaudio.ac3 -o $videodir/$subdir$leaf.mpg`
 }
 
 sub readPTS($) {

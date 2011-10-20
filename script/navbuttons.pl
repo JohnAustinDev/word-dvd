@@ -60,7 +60,7 @@ $bxf1 = $bxf+$bxhw;
 # spumux file for text and footnotes pages...
 $xml =        "<subpictures>\n";
 $xml = $xml . "\t<stream>\n";
-$xml = $xml . "\t\t<spu force=\"yes\" start=\"00:00:00.00\" end=\"00:00:00.00\" image=\"$imagedir/transparent.png\" highlight=\"$imagedir/textbuttonsHIGH.png\" select=\"$imagedir/textbuttonsSEL.png\" >\n";
+$xml = $xml . "\t\t<spu force=\"yes\" start=\"00:00:00.00\" end=\"00:00:00.00\" image=\"$resourcedir/transparent.png\" highlight=\"$resourcedir/textbuttonsHIGH.png\" select=\"$resourcedir/textbuttonsSEL.png\" >\n";
 $xml = $xml . "\t\t\t<button name=\"bhelp\"       left=\"bnext\"      right=\"bmainmenu\"   x0=\"".$bxa0."\" y0=\"".$by0."\" x1=\"".$bxa1."\" y1=\"".$by1."\" />\n";
 $xml = $xml . "\t\t\t<button name=\"bmainmenu\"   left=\"bhelp\"      right=\"bsubmenu\"    x0=\"".$bxb0."\" y0=\"".$by0."\" x1=\"".$bxb1."\" y1=\"".$by1."\" />\n";
 $xml = $xml . "\t\t\t<button name=\"bsubmenu\"    left=\"bmainmenu\"  right=\"bprevious\"   x0=\"".$bxc0."\" y0=\"".$by0."\" x1=\"".$bxc1."\" y1=\"".$by1."\" />\n";

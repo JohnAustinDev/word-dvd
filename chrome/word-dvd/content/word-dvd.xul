@@ -31,7 +31,7 @@
   <groupbox>
     <caption label="Setup"/>
     <hbox pack="start" style="margin-left:-6px;">
-      <button id="installPrompt" disabled="true" label="Install directory:" oncommand="window.alert('Your installation directory is:\n' + ExtDir.path);" tooltiptext="Click to see where Word-DVD is installed." />
+      <button id="installPrompt" disabled="true" label="Install directory:" oncommand="window.alert('Your installation directory is:\n' + ExtFile.path);" tooltiptext="Click to see where Word-DVD is installed." />
     </hbox>
     <grid>
       <columns>

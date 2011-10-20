@@ -45,20 +45,6 @@ function loadedRender() {
   window.setTimeout("window.resizeTo(RenderFrame.boxObject.width, document.getElementById('body').boxObject.height);", 0);
 }
 
-function applyConfigCSS() {
-  // apply CSS styles from configuration file
-  var cssre = "^\\s*CSS:([^:\\s]+):([^:\\s]+)\\s*=[\t ]*([^\\n\\r]*)[\t ]*[\\n\\r]";
-  var re = new RegExp(cssre, "gm");
-  var css = window.opener.LocaleFile.match(re);
-  for (var i=0; css && i<css.length; i++) {
-    var tcss = css[i].match(cssre, "m");
-    try {
-      document.getElementById("render").contentDocument.getElementById(tcss[1]).style[tcss[2]] = tcss[3];
-    }
-    catch (er) {window.opener.logmsg("WARNING: Problem applying CSS \"" + css[i] + "\"");}
-  }
-}
-
 function startMenuGeneration() {
   if (!MainWin.document.getElementById("skipmenus").checked) {
     MainWin.logmsg("Generating Menus...");
@@ -309,7 +295,7 @@ function writeButtonList(listArray, menuname, isLeft, doc) {
     doc.getElementById(id + String(i+1)).className = aClass;
     doc.getElementById(id + String(i+1)).innerHTML = aLabel;
     if (doc.getElementById(id + String(i+1)).className.search(/(^|\s)hasAudio(\s|$)/)!=-1)
-          doc.getElementById(id + String(i+1)).innerHTML += "<img src=\"File://" + getSubFilePath(MainWin.ExtDir, MainWin.AUDIOICON) + "\" style=\"-moz-margin-start:12px;\" >";
+          doc.getElementById(id + String(i+1)).innerHTML += "<img src=\"" + MainWin.AUDIOICON + "\" style=\"-moz-margin-start:12px;\" >";
     MainWin.write2File(MenusFile, formatMenuString(menuname, i, isLeft, aTarget), true);
   }
 }
@@ -534,12 +520,10 @@ function hasAudio(book, chapter) {
 }
 
 function captureImage(subfolder, imageName, returnFun) {
-  var capture = MainWin.ExtDir.clone();
-  capture.append(MainWin.SCRIPT);
+  var capture = Components.classes["@mozilla.org/file/local;1"].createInstance(Components.interfaces.nsILocalFile);
+  capture.initWithPath(MainWin.UIfile[MainWin.OUTDIR].path + "/" + MainWin.CODE + "/" + MainWin.CAPTURE);
   
-  var imgman = capture.clone();
   imageName += ".jpg";
-  capture.append(MainWin.CAPTURE);
       
   var imgfile = MainWin.UIfile[MainWin.OUTDIR].clone();
   imgfile.append(MainWin.IMGDIR);
