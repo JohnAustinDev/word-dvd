@@ -15,6 +15,14 @@ if (!$dir) {$dir = ".";}
 $dir = File::Spec->rel2abs($dir);
 if (!-e $dir) {die;}
 
+# get word-dvd version
+if (!open(INST, "<../../install.rdf")) {die;}
+while(<INST>) {
+	if ($_ =~ /<em\:version>(.*?)<\/em\:version>/) {$version=$1;}
+}
+close(INST);
+if (!$version) {die;}
+
 $eid = "{f597ab2a-3a14-11de-a792-e68e56d89593}";
 $isext = ($dir =~ /\/extensions\\?$/);
 $dest = $isext ? "$dir/$eid":"$dir/word-dvd-$version";
@@ -29,14 +37,6 @@ if ($isext && $nozip == 3) {
 	`echo $code> $eid`;
 	exit;	
 }
-
-# get word-dvd version
-if (!open(INST, "<../../install.rdf")) {die;}
-while(<INST>) {
-	if ($_ =~ /<em\:version>(.*?)<\/em\:version>/) {$version=$1;}
-}
-close(INST);
-if (!$version) {die;}
 
 # copy files to tmp dir
 $tmp = "tmp-src2xpi";
