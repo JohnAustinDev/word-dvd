@@ -165,12 +165,12 @@ function loadedXUL() {
 	}
 	catch(er) {
 		// works for Firefox < 4, where extension is unzipped
-		logmsg("Falling back to firefox < 4 extension manager");	
 		ExtFile =  Components.classes["@mozilla.org/file/directory_service;1"].
 					getService(Components.interfaces.nsIProperties).
 					get("ProfD", Components.interfaces.nsIFile);
 		ExtFile.append("extensions");
 		ExtFile.append(MYGUID);
+		if (!ExtFile.exists()) ExtFile.append(".xpi");
 
 		var insrdf = ExtFile.clone();
 		insrdf.append("install.rdf");
@@ -440,8 +440,8 @@ function exportFile(extfile, outDirPath, overwrite) {
 	var toP = to.parent;
 	if (!toP.exists()) toP.create(toP.DIRECTORY_TYPE, 0777);
 	if (ExtFile.isDirectory()) {
-		var from = ExtFile.clone();
-		from.append(extfile);
+		var from = Components.classes["@mozilla.org/file/local;1"].createInstance(Components.interfaces.nsILocalFile);
+		from.initWithPath(ExtFile.path + "/" + extfile);
 		if (from.isDirectory()) {logmsg("ERROR: From file does not exist-" + from.path); return null;}
 		from.copyTo(toP, to.leafName);
 	}
@@ -473,8 +473,8 @@ function exportDir(extdir, outDirPath, overwrite) {
 	var toP = to.parent;
 	if (!toP.exists()) toP.create(toP.DIRECTORY_TYPE, 0777);
 	if (ExtFile.isDirectory()) {
-		var from = ExtFile.clone();
-		from.append(extdir);
+		var from = Components.classes["@mozilla.org/file/local;1"].createInstance(Components.interfaces.nsILocalFile);
+		from.initWithPath(ExtFile.path + "/" + extdir);
 		if (!from.isDirectory()) {logmsg("ERROR: From directory does not exist-" + from.path); return null;}
 		from.copyTo(toP, to.leafName);
 	}
