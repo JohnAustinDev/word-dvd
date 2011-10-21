@@ -371,8 +371,8 @@ function wordDVD() {
     logmsg("Generating HTML from OSIS...");
     var process = Components.classes["@mozilla.org/process/util;1"]
                       .createInstance(Components.interfaces.nsIProcess);                        
-    var file = UIfile[OUTDIR].clone();
-    file.append(SCRIPT);
+    var file = UIfile[INDIR].clone();
+    file.append(CODE);
     file.append(runscript(OSISPL));
     process.init(file);
     var args = [];
@@ -673,6 +673,11 @@ function CloseThis() {
 }
 
 function unloadXUL() {
+  var tmp = UIfile[OUTDIR].clone();
+  tmp.append(LISTING);
+  tmp.append("tmp");
+  if (tmp.exists()) tmp.remove(true);
+  
   for (var i=0; i<NUMINPUTS; i++) {
     if (!UIfile[i]) continue;
     prefs.setComplexValue("File-" + i, Components.interfaces.nsILocalFile, UIfile[i]);

@@ -130,5 +130,5 @@ CONCAT:
 #CONCATENATE PAGE MPGs INTO CHAPTER MPGs
 &mpgPages2Chapter($webdir, "", 1, $debug);
 
-
+if (!$debug) {`rm -f -r $videodir/videotmp`;}
         

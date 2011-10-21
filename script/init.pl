@@ -7,15 +7,15 @@ $outdir = @ARGV[2];
 $audiodir = @ARGV[3];
 
 $projmenusdir = "$indir/menus";
+$resourcedir = "$indir/resource";
 $locale = "$indir/config.txt";
+$htmldir = "$indir/html";
 $outaudiodir = "$outdir/audio";
 $videodir = "$outdir/video";
 $webdir = "$outdir/web";
 $imagedir = "$outdir/images";
-$htmldir = "$indir/html";
 $listdir = "$outdir/listing";
 $dvddir = "$outdir/dvd";
-$resourcedir = "$indir/resource";
 
 $MENUSFILE = "MENU_BUTTONS.csv";
 

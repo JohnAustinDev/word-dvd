@@ -295,7 +295,7 @@ function writeButtonList(listArray, menuname, isLeft, doc) {
     doc.getElementById(id + String(i+1)).className = aClass;
     doc.getElementById(id + String(i+1)).innerHTML = aLabel;
     if (doc.getElementById(id + String(i+1)).className.search(/(^|\s)hasAudio(\s|$)/)!=-1)
-          doc.getElementById(id + String(i+1)).innerHTML += "<img src=\"" + MainWin.AUDIOICON + "\" style=\"-moz-margin-start:12px;\" >";
+          doc.getElementById(id + String(i+1)).innerHTML += "<img src=\"file://" + MainWin.UIfile[MainWin.INDIR].path + "/" + MainWin.RESOURCE + "/" + MainWin.AUDIOICON + "\" style=\"-moz-margin-start:12px;\" >";
     MainWin.write2File(MenusFile, formatMenuString(menuname, i, isLeft, aTarget), true);
   }
 }
@@ -521,7 +521,7 @@ function hasAudio(book, chapter) {
 
 function captureImage(subfolder, imageName, returnFun) {
   var capture = Components.classes["@mozilla.org/file/local;1"].createInstance(Components.interfaces.nsILocalFile);
-  capture.initWithPath(MainWin.UIfile[MainWin.OUTDIR].path + "/" + MainWin.CODE + "/" + MainWin.CAPTURE);
+  capture.initWithPath(MainWin.UIfile[MainWin.INDIR].path + "/" + MainWin.CODE + "/" + MainWin.CAPTURE);
   
   imageName += ".jpg";
       
