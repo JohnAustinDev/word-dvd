@@ -136,5 +136,5 @@ foreach $book (sort {$books{$a}<=>$books{$b}} keys %books) {
   }
 }
 
-if (!$debug) {`rm -r $videodir/videotmp`;}
+if (!$debug) {`rm -f -r $videodir/videotmp`;}
 

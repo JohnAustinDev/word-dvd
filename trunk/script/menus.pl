@@ -143,5 +143,5 @@ PROJSPUMUX:
   `rm -r $outdir/spumux.xml`;
 }
 
-
-if (!$debug) {`rm -r $videodir/menutmp`;}
+if (!$debug) {`rm -f -r $videodir/menutmp`;}
+if (!$debug) {`rm -f -r $videodir/videotmp`;}
