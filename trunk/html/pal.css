@@ -9,20 +9,11 @@ body {
 }
 
 .menu {
-  background-image: url(chrome://word-dvd/content/web/image-02.jpg);
+  background-image: url(../resource/menu.jpg);
 }
 
 .content {
-  background-image: url(chrome://word-dvd/content/web/image-01.jpg);
-}
-
-.help {
-  background-image: url(chrome://word-dvd/content/web/parchback.jpg);
-  color:white;
-}
-
-.pagehelp {
-  padding:30px;
+  background-image: url(../resource/text.jpg);
 }
 
 .textonly {
