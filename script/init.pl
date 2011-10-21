@@ -15,7 +15,7 @@ $imagedir = "$outdir/images";
 $htmldir = "$indir/html";
 $listdir = "$outdir/listing";
 $dvddir = "$outdir/dvd";
-$resourcedir = "$outdir/word-dvd/resource";
+$resourcedir = "$indir/resource";
 
 $MENUSFILE = "MENU_BUTTONS.csv";
 
