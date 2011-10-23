@@ -284,6 +284,17 @@ function handleInput(elem) {
       document.getElementById("skiptext").disabled = false;  
     }
     break;
+    
+    case "runvideo":
+		document.getElementById("skipmenus").checked = true;
+		document.getElementById("skipfootnotes").checked = true;
+    break;
+    
+    case "runword-dvd":
+		document.getElementById("skipmenus").checked = false;
+		document.getElementById("skipfootnotes").checked = false;
+    break;
+    
   }
   
   enableGO();

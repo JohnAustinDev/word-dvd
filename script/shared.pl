@@ -424,6 +424,7 @@ sub mpgPages2Chapter($$$$) {
       if (-e "$dir/videotmp/chapter.mpg") {
 		  if ($postFlag == 1) {
 			`ffmpeg -i "$dir/videotmp/chapter.mpg" -vcodec copy -acodec libmp3lame -y "$dir/$book/fin-$book-$ch.mpg"`;
+			`rm "$dir/videotmp/chapter.mpg"`;
 		  }
 		  else {`mv $dir/videotmp/chapter.mpg $dir/$book/fin-$book-$ch.mpg`;}
 	  }

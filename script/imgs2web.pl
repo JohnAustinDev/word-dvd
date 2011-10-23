@@ -39,7 +39,11 @@ require "$scriptdir/shared.pl";
 #PREPARE OUTPUT DIRECTORY
 if (!(-e $webdir)) {`mkdir $webdir`;}
 if (!(-e "$webdir/videotmp")) {`mkdir $webdir/videotmp`;}
+unlink("$outaudiodir/multiChapterTiming.txt");
 
+#GET FFMPEG VERSION
+`ffmpeg -version` =~ /^FFmpeg[^\:]+\:([^-,]+)/;
+$ffmpgVersion = $1;
 
 #CREATE MPG FILES
 foreach $book (sort {$books{$a}<=>$books{$b}} keys %books) {
@@ -130,5 +134,5 @@ CONCAT:
 #CONCATENATE PAGE MPGs INTO CHAPTER MPGs
 &mpgPages2Chapter($webdir, "", 1, $debug);
 
-if (!$debug) {`rm -f -r $videodir/videotmp`;}
+if (!$debug) {`rm -f -r $webdir/videotmp`;}
         
