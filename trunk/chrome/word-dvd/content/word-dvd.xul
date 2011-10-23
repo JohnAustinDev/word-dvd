@@ -69,8 +69,8 @@
         <checkbox id="osis2html" label="Convert OSIS to HTML" checked="false" disabled="true" oncommand="handleInput(this);" tooltiptext="Run the OSIS to HTML converter to generate new HTML. This command is disabled unless there is an osis file named 'osis.xml' located in the Input Directory listed above." />
         <radiogroup orient="vertical">
           <radio label="Render images only" tooltiptext="Render images, and then stop." />
-          <radio id="runword-dvd" label="Create DVD" selected="true" tooltiptext="Create final DVD files." />
-          <radio id="runvideo" label="Create Video Files" tooltiptext="Create separate video files for internet etc." />
+          <radio id="runword-dvd" label="Create DVD" oncommand="handleInput(this);" selected="true" tooltiptext="Create final DVD files." />
+          <radio id="runvideo" label="Create Video Files" oncommand="handleInput(this);" tooltiptext="Create separate video files for internet etc." />
         </radiogroup>
         <spacer height="20" />
         <hbox>

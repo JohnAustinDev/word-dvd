@@ -38,7 +38,7 @@ body {
   padding-bottom:12px;
 }
 
-#p1 {
+#menu-p1 {
   margin-right:18px;
   top:0px;
   right:50%;
@@ -46,7 +46,23 @@ body {
   left:0px;
 }
 
-#p2 {
+#menu-p2 {
+  margin-left:18px;
+  top:0px;
+  right:0px;
+  bottom:45px;
+  left:50%;
+}
+
+#text-p1 {
+  margin-right:18px;
+  top:0px;
+  right:50%;
+  bottom:45px;
+  left:0px;
+}
+
+#text-p2 {
   margin-left:18px;
   top:0px;
   right:0px;
@@ -147,6 +163,14 @@ body {
   top:0px;
   visibility:hidden;
   z-index:2;
+}
+
+#text-controls {
+  position:absolute;
+  text-align:center;
+  left:0px;
+  top:0px;
+  z-index:3;
 }
 
 .menuartworkleft {

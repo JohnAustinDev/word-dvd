@@ -380,7 +380,6 @@ function renderNewScreen() {
   mdoc.getElementById("imagePageLeft").style.visibility = "hidden";
   mdoc.getElementById("imagePageRight").style.visibility = "hidden";
   var skipPage1 = false;
-  var skipPage2 = false;
   var artwork;
   if (Page.pagenumber==1 && Chapter==1) artwork = getSubFilePath(MainWin.UIfile[MainWin.INDIR], Book[Bindex].shortName + "-1" + ".png");
   if (artwork) {
@@ -388,6 +387,8 @@ function renderNewScreen() {
     mdoc.getElementById("imagePageLeft").src = "File://" + artwork;
     mdoc.getElementById("imagePageLeft").style.visibility = "visible";
   }
+  var tstyle = mdoc.defaultView.getComputedStyle(mdoc.getElementById("text-p2"), null);
+  var skipPage2 = (tstyle.visibility == "hidden"); // this allows single column display by setting text-p2 visibility=hidden
   
   RenderFrame.contentDocument.defaultView.fitScreen(Book[Bindex].shortName, Chapter, Page, false, skipPage1, skipPage2);
 //window.alert("STOPPING");

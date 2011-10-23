@@ -1,7 +1,7 @@
 // JavaScript Document
 const SPACE = " ";
 var MainWin, RenderWin;
-var PageElem1, PageElem2, Body;
+var PageElem1, PageElem2,Body;
 var DebugChapter=0;
 var DebugPage=0;
 
@@ -17,14 +17,16 @@ if (MainWin.CssFile) {
 }
   
 function init() {
-  PageElem1 = document.getElementById("p1");
-  PageElem2 = document.getElementById("p2");
+  PageElem1 = document.getElementById("text-p1");
+  PageElem2 = document.getElementById("text-p2");
   Body = document.getElementById("body");
   RenderWin = window.frameElement.ownerDocument.defaultView;
   var rule1 = getCSS(".title-1");
   var rule2 = getCSS(".title-2");
   CSSHeading1Color = rule1.style.color;
   CSSHeading2Color = rule2.style.color;
+  if (!MainWin.document.getElementById("runvideo").selected) 
+	document.getElementById("text-controls").setAttribute("src", "file://" + MainWin.UIfile[MainWin.INDIR].path + "/" + MainWin.RESOURCE + "/control-buttons.png");
 }
 
 function fitScreen(book, chapter, aPage, textOnly, skipPage1, skipPage2) {

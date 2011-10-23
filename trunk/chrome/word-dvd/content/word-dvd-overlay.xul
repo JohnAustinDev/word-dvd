@@ -15,7 +15,7 @@
       if (renderWin) renderWin.close();
       
       // open word-dvd anew
-      WordDVDWin = window.open("chrome://word-dvd/content", "word-dvd", "chrome=yes");
+      window.open("chrome://word-dvd/content", "word-dvd", "chrome=yes");
     }
   </script>
   
