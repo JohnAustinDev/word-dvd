@@ -1,4 +1,7 @@
-/* CSS Document */
+/******************/
+/* GENERAL LAYOUT */
+/******************/
+
 body {
   /* Let the background overscan, but restrict the content to title-safe. */
   font-family:arial, sans-serif;
@@ -8,25 +11,12 @@ body {
   color:rgb(60,60,0);
 }
 
-.menu {
-  background-image: url(../resource/menu.jpg);
-}
-
-.content {
-  background-image: url(../resource/text.jpg);
-}
-
-.textonly {
-  background:rgb(185,175,150);
-}
-
 .usable {
   position: relative;
   left:62px;
   top:57px;
   width:580px;
   height:460px;
-  /*background: rgb(150,150,255);*/
   z-index:-1;
 }
 
@@ -38,7 +28,17 @@ body {
   padding-bottom:12px;
 }
 
-#menu-p1 {
+
+/******************/
+/* MENU PAGES CSS */
+/******************/
+
+.menu {
+  background-image: url(../resource/menu.jpg);
+  background-repeat:no-repeat;
+}
+
+#menu-page1 {
   margin-right:18px;
   top:0px;
   right:50%;
@@ -46,7 +46,7 @@ body {
   left:0px;
 }
 
-#menu-p2 {
+#menu-page2 {
   margin-left:18px;
   top:0px;
   right:0px;
@@ -54,32 +54,178 @@ body {
   left:50%;
 }
 
-#text-p1 {
-  margin-right:18px;
-  top:0px;
-  right:50%;
-  bottom:45px;
+#menu-image-left {
+  position:absolute;
+  text-align:center;
   left:0px;
-}
-
-#text-p2 {
-  margin-left:18px;
   top:0px;
-  right:0px;
-  bottom:45px;
-  left:50%;
+  visibility:hidden;
+  z-index:2;
 }
 
-.header {
+#menu-button-left {
+  position:absolute;
+  text-align:center;
+  left:0px;
+  top:0px;
+  visibility:hidden;
+  z-index:2;
+}
+
+#menu-button-right {
+  position:absolute;
+  text-align:center;
+  left:0px;
+  top:0px;
+  visibility:hidden;
+  z-index:2;
+}
+
+/* NOTE: if "max-width" is specified here in px, it will 
+actually be removed from the CSS rules, and will instead be 
+enforced dynamically by reducing font-size size to acheive
+the desired width. */
+.menu-header {
+  max-width:220px;
   font-weight:bold;
-  font-size:24px; /* also specified in writeHeader()! */
+  font-size:24px;
+  text-align:center;
+  white-space:nowrap;
+}
+
+.menu-header div {
+  display:inline;
+  height:100%;
+  border:1px solid transparent; /* otherwise height is ignored! */
+}
+
+.menu-header span {
+  vertical-align:middle;
+}
+
+/* adjusting for example "book" background image */
+#menu-header-left {}
+
+/* adjusting for example "book" background image */
+#menu-header-right {
+  position:relative;
+  left:-20px;
+  top:-2px;
+}
+
+.hasAudio {}
+
+.custombutton {
+  font-weight:bold;
+}
+
+.button {
+  font-size:20px;
+  text-align:center;
+}
+
+.navbutton {
+  font-size:20px;
+  text-align:center;
+}
+
+
+/******************/
+/* TEXT PAGES CSS */
+/******************/
+
+.text {
+  background-image: url(../resource/text.jpg);
+  background-repeat:no-repeat;
+}
+
+#text-page1 {
+  margin-right:18px;
+  top:0px;
+  right:50%;
+  bottom:45px;
+  left:0px;
+}
+
+/* NOTE: If "visibility:hidden;" is used here, then text 
+will be rendered only to page 1, and page 2 will be skipped */
+#text-page2 {
+  margin-left:18px;
+  top:0px;
+  right:0px;
+  bottom:45px;
+  left:50%;
+}
+
+#text-image-left {
+  position:absolute;
+  text-align:center;
+  left:0px;
+  top:0px;
+  visibility:hidden;
+  z-index:2;
+}
+
+#text-image-right {
+  position:absolute;
+  text-align:center;
+  right:0px;
+  top:0px;
+  visibility:hidden;
+  z-index:2;
+}
+
+#text-controls {
+  position:absolute;
+  text-align:center;
+  left:0px;
+  top:0px;
+  z-index:3;
+}
+
+/* NOTE: if "max-width" is specified here in px, it will 
+actually be removed from the CSS rules, and will instead be 
+enforced dynamically by reducing font-size size to acheive
+the desired width. */
+.text-header {
+  max-width:220px;
+  font-weight:bold;
+  font-size:24px;
   text-align:center;
   height:30px;
   margin-bottom:35px;
   white-space:nowrap;
 }
 
-.booktext {
+.text-header div {
+  display:inline;
+  height:100%;
+  border:1px solid transparent; /* otherwise height is ignored! */
+}
+
+.text-header span {
+  vertical-align:middle;
+}
+
+/* adjusting for example "book" background image */
+#text-header-left {
+  position:relative;
+  top:-2px;
+}
+
+/* adjusting for example "book" background image */
+#text-header-right {
+  position:relative;
+  left:-20px;
+}
+
+.paragraph-start {
+  display:inline-block;
+  /*height:1em;*/
+  width:20px;
+}
+
+.book-title {
   color:rgb(100,0,0);
   font-size:24px;
   text-align:left;
@@ -114,73 +260,21 @@ body {
   padding-top:0.5em;
   padding-bottom:0.5em;
 }
-.list1 {
 
-}
-.list2 {
+.list1 {}
 
-}
+.list2 {}
+
 .listitem {
   margin-bottom:1em;
   text-indent:-1em;
   padding-left:1em;
 }
 
-/* MENU STYLES */
-.hasAudio {
-}
 
-.custombutton {
-  font-weight:bold;
-}
-
-.button {
-  font-size:20px;
-  text-align:center;
-  height:34px;
-}
-
-.navbutton {
-  margin-top:36px;
-  font-size:20px;
-  text-align:center;
-  height:30px;
-}
-
-#imagePageLeft {
-  position:absolute;
-  text-align:center;
-  left:0px;
-  top:0px;
-  visibility:hidden;
-  z-index:2;
-}
-
-#imagePageRight {
-  position:absolute;
-  text-align:center;
-  right:0px;
-  top:0px;
-  visibility:hidden;
-  z-index:2;
-}
-
-#text-controls {
-  position:absolute;
-  text-align:center;
-  left:0px;
-  top:0px;
-  z-index:3;
-}
-
-.menuartworkleft {
-  position:absolute;
-  text-align:center;
-  left:0px;
-  top:0px;
-  visibility:hidden;
-  z-index:2;
-}
+/********************/
+/* FOOTNOTE RELATED */
+/********************/
 
 .footnote {
   margin-top:1em;

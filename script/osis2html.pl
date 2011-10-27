@@ -29,10 +29,10 @@ $infile = "$indir/osis.xml";
 
 $AddChapterNumbers = $localeFile{"AddChNums2Text"};
 
-$INDENT = "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;";
+$INDENT = "<span class=\"paragraph-start\"></span>";
 $PARAGRAPH = "<br>$INDENT";
 $NEWCHAPTER = "<span name=\"chapter.";
-$TITLES = "title-1|title-2|booktext|chapter-title|header"; 
+$TITLES = "title-1|title-2|book-title|chapter-title|text-header|menu-header"; 
 
 open (LOGF, ">>$outdir/logfile.txt");
 $log = "Starting osis2html.pl\n"; &Log;
@@ -127,10 +127,12 @@ if (!(-e $htmldir)) {`mkdir $htmldir`;}
 `cp "$scriptdir/../chrome/word-dvd/web/pal.css" "$htmldir"`;
 
 # Write the html files...
-$htmlheader = "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\"><html><head><meta http-equiv=\"content-type\" content=\"text/html; charset=utf-8\"><meta name=\"generator\" content=\"PSPad editor, www.pspad.com\"><title></title><link rel=\"stylesheet\" type=\"text/css\" media=\"screen\" href=\"pal.css\" /></head>";
-$htmlheader = $htmlheader."<body class=\"content\">";
-$htmlheader = $htmlheader."<div class=\"usable\">";
-$htmlheader = $htmlheader."<div id=\"p1\" class=\"page\" style=\"overflow:visible\">\n";
+$htmlheader = "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\"><html><head><meta http-equiv=\"content-type\" content=\"text/html; charset=utf-8\"><link rel=\"stylesheet\" type=\"text/css\" href=\"pal.css\" /></head>";
+$htmlheader .= "<body class=\"text\">";
+$htmlheader .= "<div class=\"usable\">";
+$htmlheader .= "<div id=\"text-page1\" class=\"page\" style=\"overflow:visible\">";
+# NOTE everything up to first \n is stripped off by Word-DVD!
+$htmlheader .= "<div id=\"text-header-left\" class=\"text-header\"></div>\n";
 
 $htmlfooter = "</div></div></body>";
 $htmlfooter = $htmlfooter."</html>";
@@ -147,7 +149,7 @@ foreach $bk (sort keys %book) {
     if ($alltext{"$bk.$ch"} =~ /^\s*$/) {next;}
     
     # Show book name at top of chapter 1
-    if ($ch == -5) {$print = $NEWCHAPTER."1\"><\/span><div class=\"booktext\">$booklocal</div>";}
+    if ($ch == -5) {$print = $NEWCHAPTER."1\"><\/span><div class=\"book-title\">$booklocal</div>";}
     else {$print = $NEWCHAPTER.$ch."\"><\/span>";}
     
     if ($ch > 0) {
