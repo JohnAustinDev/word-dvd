@@ -21,14 +21,14 @@
  ***********************************************************************/ 
 const APPROXLINE = 24;
 const APPNUMLINE = 12;
-const PARSTART = "<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;";
+const PARSTART = "<br><span class=\"paragraph-start\"></span>";
 const NOTESTART = "<div class=\"footnote\">";
 const NOTEREF  = "<span class=\"verseref\"";
 const NOTESYMBOL = "<span class=\"fnsymbol\"";
 const PAGEBREAK = "<span class=\"pagebreak\"></span>";
 const NEWVERSE = "<sup>[\\d\\s-]+<\/sup>";
 const SPLITABLEDIVS = "majorquote|list1|list2|list3|footnote|canonical|x-list-1|x-list-2|x-enumlist-1|x-enumlist-2|x-enumlist-3";
-const TITLES = "title-1|title-2|booktext|chapter-title|header";
+const TITLES = "title-1|title-2|book-title|chapter-title|text-header|menu-header";
 
 var RenderFrame, MainWin;
 var ILastPage;
@@ -213,6 +213,7 @@ function getSubFilePath(parent, subpath) {
   else return "";
 }
 
+var MenuHeaders = {};
 function renderMenu(menubase, menunumber, listArrayL, listArrayR, isFirstMenu, isLastMenu, returnFun) {
   if (listArrayL.length>8 || listArrayR.length>8) {
     MainWin.jsdump("ERROR: Too many headings for menu page: " + menuname);
@@ -245,34 +246,34 @@ function renderMenu(menubase, menunumber, listArrayL, listArrayR, isFirstMenu, i
   
   // page 1 & 2 headers
   var mdoc = RenderFrame.contentDocument;
-  writeHeader(names[TL], "p1head");
-  writeHeader(names[TR], "p2head");
+  applyHeader(names[TL], RenderFrame.contentDocument.getElementById("menu-header-left"), MenuHeaders);
+  applyHeader(names[TR], RenderFrame.contentDocument.getElementById("menu-header-right"), MenuHeaders);
   
   // page 1 button list
-  mdoc.getElementById("artwork").style.visibility = "hidden";
+  mdoc.getElementById("menu-image-left").style.visibility = "hidden";
   if (listArrayL.length) writeButtonList(listArrayL, menuname, true, mdoc);
   else {
     for (var i=0; i<8; i++) {mdoc.getElementById("p1b" + String(i+1)).innerHTML = "";}
     var artwork = getSubFilePath(MainWin.UIfile[MainWin.INDIR], menubase + "-m" + menunumber + ".png");
     if (artwork) {
-      mdoc.getElementById("artwork").src = "File://" + artwork;
-      mdoc.getElementById("artwork").style.visibility = "visible";
+      mdoc.getElementById("menu-image-left").src = "File://" + artwork;
+      mdoc.getElementById("menu-image-left").style.visibility = "visible";
     }
   }
   
   // page 1 footers
-  mdoc.getElementById("p1foot").innerHTML = names[BL];
+  mdoc.getElementById("menu-footer-left").innerHTML = names[BL];
   var btype = (names[BL] && targets[BL] ? "underline":"normal");
-  mdoc.getElementById("p1footimg").style.visibility = (btype=="normal" && targets[BL] ? "visible":"hidden");  
+  mdoc.getElementById("menu-button-left").style.visibility = (btype=="normal" && targets[BL] ? "visible":"hidden");  
   MainWin.write2File(MenusFile, formatMenuString(menuname, 8, true, targets[BL], btype), true);  
   
   // page 2 button list
   writeButtonList(listArrayR, menuname, false, mdoc);
   
   // page 2 footers
-  mdoc.getElementById("p2foot").innerHTML = names[BR];
+  mdoc.getElementById("menu-footer-right").innerHTML = names[BR];
   btype = (names[BR] && targets[BR] ? "underline":"normal");
-  mdoc.getElementById("p2footimg").style.visibility = (btype=="normal" && targets[BR] ? "visible":"hidden");
+  mdoc.getElementById("menu-button-right").style.visibility = (btype=="normal" && targets[BR] ? "visible":"hidden");
   
   MainWin.write2File(MenusFile, formatMenuString(menuname, 8, false, targets[BR], btype), true); 
 
@@ -304,28 +305,42 @@ function formatMenuString(name, row, isLeft, target, type) {
   return name + ".button-" + String(row+(isLeft ? 1:10)) + (target ? ", " + target + (type ? ", " + type:""):"") + "\n"
 }
 
-// Adjust page header to fit inside HEADMAX width.
-var Headers = {};
-function writeHeader(text, elemid) {
-  const HEADWMAX = 220;
-  const DEFFONTSIZE = 24;
+// Adjust page header to fit inside max-width.
+function applyHeader(text, elem, cache) {
+  elem.innerHTML = "<div><span>" + text + "</span></div>";
+  elem.style.maxWidth = ""; // clear so we get stylesheet CSS
+  elem.style.width = "";
+  var save = null;
+  var maxw = elem.ownerDocument;
+  if (maxw) {
+    maxw = maxw.defaultView.getComputedStyle(elem, null);
+    maxw = maxw.maxWidth;
+    if (maxw) {
+      maxw = maxw.match(/^(\d+)\s*px$/);
+      if (maxw && maxw[1]) {
+        maxw = Number(maxw[1]);
+        elem.style.maxWidth = "999px";
+        elem.style.width = "100%";
+        if (cache[text]) elem.innerHTML = cache[text];
+        else {
+          elem.innerHTML = "<div><span style=\"font-size:100%;\" >" + text + "</span></div>";
+          save = elem.style.overflow;
+          elem.style.overflow = "visible";                
+          var fs = 100;
+          var wt = elem.firstChild;
+          while (wt.offsetWidth > maxw) {
+            fs -= 5;
+            elem.innerHTML = "<div><span style=\"font-size:" + fs + "%;\" >" + text + "</span></div>";
+            wt = elem.firstChild;
+            cache[text] = elem.innerHTML;
+          }
+        }
+      }
+    }
+  }
   
-  var elem = RenderFrame.contentDocument.getElementById(elemid);
-  var fs = DEFFONTSIZE;
-  var b = (elem.id=="p1head" ? -2:-0);
-  elem.innerHTML = "<span style=\"position:relative; bottom:" + b + "px; font-size:" + fs + "px;\" >" + text + "</span>";
-  var wt = elem.firstChild;
-  if (wt.offsetWidth > HEADWMAX) {
-    fs -= 2;
-    b -= 2;
-  }
-  while (wt.offsetWidth > HEADWMAX) {
-    fs--;
-    b--;
-    elem.innerHTML = "<span style=\"position:relative; bottom:" + b + "px; font-size:" + fs + "px;\" >" + text + "</span>";
-    Headers[text] = elem.innerHTML;
-    wt = elem.firstChild;
-  }
+  if (save) elem.style.overflow = save;
+
   //elem.innerHTML = text;
 }
 
@@ -377,20 +392,20 @@ function renderNewScreen() {
 //MainWin.jsdump("Starting fit:" + Book[Bindex].shortName + " " + Chapter + ", s=" + Page.beg + ", e=" + Page.end);
   
   var mdoc = RenderFrame.contentDocument;
-  mdoc.getElementById("imagePageLeft").style.visibility = "hidden";
-  mdoc.getElementById("imagePageRight").style.visibility = "hidden";
+  mdoc.getElementById("text-image-left").style.visibility = "hidden";
+  mdoc.getElementById("text-image-right").style.visibility = "hidden";
   var skipPage1 = false;
   var artwork;
   if (Page.pagenumber==1 && Chapter==1) artwork = getSubFilePath(MainWin.UIfile[MainWin.INDIR], Book[Bindex].shortName + "-1" + ".png");
   if (artwork) {
     skipPage1 = true;
-    mdoc.getElementById("imagePageLeft").src = "File://" + artwork;
-    mdoc.getElementById("imagePageLeft").style.visibility = "visible";
+    mdoc.getElementById("text-image-left").src = "File://" + artwork;
+    mdoc.getElementById("text-image-reft").style.visibility = "visible";
   }
-  var tstyle = mdoc.defaultView.getComputedStyle(mdoc.getElementById("text-p2"), null);
-  var skipPage2 = (tstyle.visibility == "hidden"); // this allows single column display by setting text-p2 visibility=hidden
+  var tstyle = mdoc.defaultView.getComputedStyle(mdoc.getElementById("text-page2"), null);
+  var skipPage2 = (tstyle.visibility == "hidden"); // this allows single column display by setting text-page2 visibility=hidden
   
-  RenderFrame.contentDocument.defaultView.fitScreen(Book[Bindex].shortName, Chapter, Page, false, skipPage1, skipPage2);
+  RenderFrame.contentDocument.defaultView.fitScreen(Book[Bindex].shortName, Chapter, Page, skipPage1, skipPage2);
 //window.alert("STOPPING");
 //window.close(); 
   AfterDrawCompleteFunc = screenDrawComplete;
@@ -842,7 +857,7 @@ function renderNewFNScreen() {
   }
 
   var tstart = Page.end;
-  RenderFrame.contentDocument.defaultView.fitScreen(Book[Bindex].shortName, Chapter, Page, false, false, false);
+  RenderFrame.contentDocument.defaultView.fitScreen(Book[Bindex].shortName, Chapter, Page, false, false);
 
   // couldn't fit this last page, so start new page with it...
   if (!ContinuePage && !Page.complete) {

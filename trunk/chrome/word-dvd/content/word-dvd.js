@@ -382,8 +382,8 @@ function wordDVD() {
     logmsg("Generating HTML from OSIS...");
     var process = Components.classes["@mozilla.org/process/util;1"]
                       .createInstance(Components.interfaces.nsIProcess);                        
-    var file = UIfile[INDIR].clone();
-    file.append(CODE);
+    var file = UIfile[OUTDIR].clone();
+    file.append(SCRIPT);
     file.append(runscript(OSISPL));
     process.init(file);
     var args = [];
@@ -497,35 +497,35 @@ function exportDir(extdir, outDirPath, overwrite) {
 // if overwrite is set, the target file in outDirPath is deleted before copy
 // if overwrite is not set, the function will exit with null if target exists
 function exportFile(extfile, outDirPath, overwrite) {
-	if (!ExtFile.exists()) {logmsg("ERROR: Can't open firefox extension"); return null;}
-	var leaf = extfile.replace(/^.*?\/([^\/]+)$/, "$1");
-	var to = Components.classes["@mozilla.org/file/local;1"].createInstance(Components.interfaces.nsILocalFile);
-	to.initWithPath(outDirPath + "/" + leaf);
-	if (to.exists()) {
-		if (overwrite) to.remove();
-		else return to;
-	}
-	var toP = to.parent;
-	if (!toP.exists()) toP.create(toP.DIRECTORY_TYPE, 0777);
-	if (ExtFile.isDirectory()) {
-		var from = Components.classes["@mozilla.org/file/local;1"].createInstance(Components.interfaces.nsILocalFile);
-		from.initWithPath(ExtFile.path + "/" + extfile);
-		if (from.isDirectory()) {logmsg("ERROR: From file does not exist-" + from.path); return null;}
-		from.copyTo(toP, to.leafName);
-	}
-	else {
-		var zReader = Components.classes["@mozilla.org/libjar/zip-reader;1"].createInstance(Components.interfaces.nsIZipReader);
-		try {zReader.open(ExtFile);}
-		catch (er) {logmsg("ERROR: cannot open-" + ExtFile.path); return null;}	
-		try {
-			var isdir = zReader.getEntry(extfile);
-			if (isdir.isDirectory) {logmsg("ERROR: From zip file does not exist-" + extfile); return null;}
-		}
-		catch(er) {logmsg("ERROR: reading zip entry-" + extfile); return null;}
-		zReader.extract(extfile, to);
-	}
-	if (!to.exists()) logmsg("ERROR: failed to export to-" + to.path);
-	return to;	
+  if (!ExtFile.exists()) {logmsg("ERROR: Can't open firefox extension"); return null;}
+  var leaf = extfile.replace(/^.*?\/([^\/]+)$/, "$1");
+  var to = Components.classes["@mozilla.org/file/local;1"].createInstance(Components.interfaces.nsILocalFile);
+  to.initWithPath(outDirPath + "/" + leaf);
+  if (to.exists()) {
+    if (overwrite) to.remove();
+    else return to;
+  }
+  var toP = to.parent;
+  if (!toP.exists()) toP.create(toP.DIRECTORY_TYPE, 0777);
+  if (ExtFile.isDirectory()) {
+    var from = Components.classes["@mozilla.org/file/local;1"].createInstance(Components.interfaces.nsILocalFile);
+    from.initWithPath(ExtFile.path + "/" + extfile);
+    if (from.isDirectory()) {logmsg("ERROR: From file does not exist-" + from.path); return null;}
+    from.copyTo(toP, to.leafName);
+  }
+  else {
+    var zReader = Components.classes["@mozilla.org/libjar/zip-reader;1"].createInstance(Components.interfaces.nsIZipReader);
+    try {zReader.open(ExtFile);}
+    catch (er) {logmsg("ERROR: cannot open-" + ExtFile.path); return null;}	
+    try {
+      var isdir = zReader.getEntry(extfile);
+      if (isdir.isDirectory) {logmsg("ERROR: From zip file does not exist-" + extfile); return null;}
+    }
+    catch(er) {logmsg("ERROR: reading zip entry-" + extfile); return null;}
+    zReader.extract(extfile, to);
+  }
+  if (!to.exists()) logmsg("ERROR: failed to export to-" + to.path);
+  return to;	
 }
 
 function booksort(a, b) {

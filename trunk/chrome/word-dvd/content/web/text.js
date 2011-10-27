@@ -17,41 +17,27 @@ if (MainWin.CssFile) {
 }
   
 function init() {
-  PageElem1 = document.getElementById("text-p1");
-  PageElem2 = document.getElementById("text-p2");
+  PageElem1 = document.getElementById("text-page1");
+  PageElem2 = document.getElementById("text-page2");
   Body = document.getElementById("body");
   RenderWin = window.frameElement.ownerDocument.defaultView;
-  var rule1 = getCSS(".title-1");
-  var rule2 = getCSS(".title-2");
-  CSSHeading1Color = rule1.style.color;
-  CSSHeading2Color = rule2.style.color;
   if (!MainWin.document.getElementById("runvideo").selected) 
-	document.getElementById("text-controls").setAttribute("src", "file://" + MainWin.UIfile[MainWin.INDIR].path + "/" + MainWin.RESOURCE + "/control-buttons.png");
+    document.getElementById("text-controls").setAttribute("src", "file://" + MainWin.UIfile[MainWin.INDIR].path + "/" + MainWin.RESOURCE + "/control-buttons.png");
 }
 
-function fitScreen(book, chapter, aPage, textOnly, skipPage1, skipPage2) {
+function fitScreen(book, chapter, aPage, skipPage1, skipPage2) {
 MainWin.logmsg("fontFamily=" + Body.style.fontFamily);
 MainWin.jsdump("Chapter=" + chapter + ", Pagenumber=" + aPage.pagenumber);
   RenderWin.DoneDrawing = false;
   DisplayBook = book;
   DisplayChapter = chapter;
-  var rule1 = getCSS(".title-1");
-  var rule2 = getCSS(".title-2");
-  var rule3 = getCSS(".header");
-  
-  rule1.style.color = (textOnly ? "":CSSHeading1Color);
-  rule2.style.color = (textOnly ? "":CSSHeading2Color);
-  rule1.style.fontWeight = (textOnly ? "bold":"");
-  rule2.style.fontWeight = (textOnly ? "bold":"");
-  rule3.style.borderBottom = (textOnly ? "2px solid black":"");
-  Body.className = (textOnly ? "textonly":"content");
   
   var newChapter = {exists:false, preserveTextTiming:false, preserved:false, beg:-1, endTextTiming:-1, atPageTop:false};
   if (aPage.newChapterVTinfo) copyPropsA2B(aPage.newChapterVTinfo, newChapter);
   aPage.newChapterVTinfo = null;
   
   // render page Left   
-  if (skipPage1) PageElem1.innerHTML=formatPage(PageElem1, null, false);
+  if (skipPage1) formatPage(PageElem1, null, false);
   else fitPage(PageElem1, book, chapter, aPage, SPACE, newChapter);
   
   // save page 1 for verse timing preservation
@@ -63,9 +49,9 @@ MainWin.jsdump("Chapter=" + chapter + ", Pagenumber=" + aPage.pagenumber);
   else if (newChapter.preserveTextTiming && newChapter.preserved) {
     MainWin.logmsg("WARNING " + book + "-" + chapter + "-" + aPage.pagenumber + ": Preserving transition by skipping left page.");
     PageElem2.innerHTML = PageElem1.innerHTML;
-    PageElem1.innerHTML = formatPage(PageElem1, null, false);
+    formatPage(PageElem1, null, false);
   }
-  else if (skipPage2) PageElem2.innerHTML=formatPage(PageElem2, null, false);
+  else if (skipPage2) formatPage(PageElem2, null, false);
   else {
     fitPage(PageElem2, book, chapter, aPage, SPACE, newChapter);
     if (aPage.end < aPage.beg) {
@@ -73,7 +59,7 @@ MainWin.jsdump("Chapter=" + chapter + ", Pagenumber=" + aPage.pagenumber);
       page1.end = newChapter.beg;
       page1.bottomSplitTag = "";
       copyPropsA2B(page1, aPage); 
-      PageElem1.innerHTML=formatPage(PageElem1, aPage, false);      
+      formatPage(PageElem1, aPage, false);      
     }
   }
 
@@ -102,7 +88,7 @@ function fitPage(elem, book, chapter, page, sep, newChapter) {
   page.beg = page.end;
   page.topSplitTag = page.bottomSplitTag;
   page.bottomSplitTag = "";
-  elem.innerHTML = formatPage(elem, page, windowCheck);
+  formatPage(elem, page, windowCheck);
   var goodpage={};
   while (elem.scrollHeight <= elem.clientHeight) {
     copyPropsA2B(page, goodpage);
@@ -114,7 +100,7 @@ function fitPage(elem, book, chapter, page, sep, newChapter) {
     if (!shiftup(elem, page, sep, windowCheck, isFirstPass)) {
       // either end of passage, or impossible to shift up
       page.end = page.passage.length;
-      elem.innerHTML = formatPage(elem, page, false);
+      formatPage(elem, page, false);
       copyPropsA2B(page, goodpage);
       if (!goodpage.isNotes) {
         goodpage.complete = true;
@@ -151,7 +137,7 @@ jsdump2(page, "WindowCheck:charsLeft=" + charsLeft + ", startFinalLine=" + page.
         if (page.end < startingIndex) page.end = startingIndex;
         if (!checkTags(elem, page, sep, windowCheck, false)) page.end = page.passage.length;
       }
-      elem.innerHTML = formatPage(elem, page, windowCheck);
+      formatPage(elem, page, windowCheck);
     }
     if (!newChapter.exists) checkForNewChapter(book, page, newChapter);
     
@@ -169,7 +155,7 @@ jsdump2(page, "Finished " + elem.id + ", page break before:" + page.passage.subs
     }
   }
   copyPropsA2B(goodpage, page);
-  elem.innerHTML = formatPage(elem, page, false);
+  formatPage(elem, page, false);
 //MainWin.jsdump(elem.innerHTML);
 }
 
@@ -222,7 +208,7 @@ jsdump2(page, "Examining break point:" + page.passage.substr(end,16));
     MainWin.logmsg("ERROR(shiftup): Could not progress before=\"" + startingIndex + "\" after=\"" + page.end + "\"", true);
     return false;
   }
-  elem.innerHTML = formatPage(elem, page, windowCheck);
+  formatPage(elem, page, windowCheck);
   return true;
 }
 
@@ -390,7 +376,7 @@ function adjustIndexForTag(elem, page, sep, tag, windowCheck, minPossibleShift, 
 function findFinalLine(elem, page) {
   var saveEnd = page.end;
   var saveHTML = elem.innerHTML;
-  elem.innerHTML = formatPage(elem, page, true);
+  formatPage(elem, page, true);
   while (elem.scrollHeight > elem.clientHeight) {
     var t1 = page.passage.lastIndexOf(SPACE, page.end-1);
     var t2 = page.passage.lastIndexOf(String.fromCharCode(173), page.end-1); // soft hyphen
@@ -398,7 +384,7 @@ function findFinalLine(elem, page) {
     page.end = (t1 > t2 ? t1:t2);
     page.end = (page.end > t3 ? page.end:t3);
     if (page.end == -1) break;
-    elem.innerHTML = formatPage(elem, page, true);
+    formatPage(elem, page, true);
   }
   var ret = page.end;
   elem.innerHTML = saveHTML;
@@ -474,7 +460,7 @@ function countPrintChars(beg, end, string, dontCountWhiteSpace) {
   if (end<=beg) return 0;
   if (PCRES===undefined) {
     PCRES = new Object();
-    PCRES.parSRE = new RegExp("\\s*" + RenderWin.PARSTART + "\\s*", "gi");
+    PCRES.parSRE = new RegExp("\\s*" + MainWin.escapeRE(RenderWin.PARSTART) + "\\s*", "gi");
     
     PCRES.tag1RE = new RegExp("^[^<]*>");
     PCRES.tag2RE = new RegExp("<[^>]*$");
@@ -579,6 +565,7 @@ function resetHTML(elem) {
 
 var DisplayBook;
 var DisplayChapter;
+var TextHeaders = {};
 function formatPage(elem, page, windowCheck) {
   resetHTML(elem);
   var html = (page && page.beg < page.end ? page.passage.substring(page.beg, page.end):"");
@@ -587,7 +574,7 @@ function formatPage(elem, page, windowCheck) {
   var bottomSplitTag = (page ? page.bottomSplitTag:"");
 
   //look for special case new chapter
-  var isLeftPage = elem.id=="p1";
+  var isLeftPage = elem.id=="text-page1";
   if (isLeftPage) {
     var re = new RegExp("^((<[^>]+>)|\\s)*" + MainWin.NEWCHAPTER + "(\\d+)\">", "i");
     var special = html.match(re);
@@ -595,15 +582,17 @@ function formatPage(elem, page, windowCheck) {
   }
   
   //build page header
-  var ch = (DisplayChapter==0 ?  MainWin.getLocaleString("IntroLink"):MainWin.getLocaleString("Chaptext", DisplayChapter, DisplayBook));
+  var ch = (DisplayChapter==0 ?  
+    MainWin.getLocaleString("IntroLink"):
+    MainWin.getLocaleString("Chaptext", DisplayChapter, DisplayBook));
   if (ch==0) ch = "";
-  var header;
   var bklocale = MainWin.getLocaleString(DisplayBook);
-  if (RenderWin.Headers[bklocale]) {
-    bklocale = RenderWin.Headers[bklocale].replace(/position:relative; bottom:"\d+"px; /, "");
-  }
+  var myid = "text-header-" + (isLeftPage ? "left":"right");
+  elem.innerHTML = "<div id=\"" + myid + "\" class=\"text-header\"></div>";
+  var header;
   if (!isNotes) header = isLeftPage ? bklocale:ch;
   else header = bklocale;
+  RenderWin.applyHeader(header, document.getElementById(myid), TextHeaders); 
   
   // Remove any leading <br> or paragraphs on page
   var firstBR = html.indexOf("<br>");
@@ -632,11 +621,9 @@ function formatPage(elem, page, windowCheck) {
     if (tag) html += "</" + tag[1] + ">";
   }
   
-  html = "<div class=\"header\">" + header + "</div>" + html;
+  elem.innerHTML += html;
 
-  
 //MainWin.jsdump(html);
-  return html;
 }
 
 function jsdump2(page, str) {
