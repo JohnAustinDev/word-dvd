@@ -123,16 +123,13 @@ foreach $key (keys %alltext) {
 # Prepare output directory
 if (!(-e $htmldir)) {`mkdir $htmldir`;}
 
-# Copy over the css file
-`cp "$scriptdir/../chrome/word-dvd/web/pal.css" "$htmldir"`;
-
 # Write the html files...
 $htmlheader = "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\"><html><head><meta http-equiv=\"content-type\" content=\"text/html; charset=utf-8\"><link rel=\"stylesheet\" type=\"text/css\" href=\"pal.css\" /></head>";
 $htmlheader .= "<body class=\"text\">";
 $htmlheader .= "<div class=\"usable\">";
 $htmlheader .= "<div id=\"text-page1\" class=\"page\" style=\"overflow:visible\">";
 # NOTE everything up to first \n is stripped off by Word-DVD!
-$htmlheader .= "<div id=\"text-header-left\" class=\"text-header\"></div>\n";
+$htmlheader .= "<div id=\"text-header-left\" class=\"text-header\" style=\"max-width:999px; width:100%;\">THISBK</div>\n";
 
 $htmlfooter = "</div></div></body>";
 $htmlfooter = $htmlfooter."</html>";
@@ -143,7 +140,9 @@ foreach $bk (sort keys %book) {
   utf8::upgrade($booklocal);
   $booklocal = $localeFile{$booklocal};
 
-  &Write($htmlheader);
+  my $hdr = $htmlheader;
+  $hdr =~ s/THISBOOK/$booklocal/;
+  &Write($hdr);
   $introduction = "";
   for ($ch=0; $ch<=$maxchap{$bk}; $ch++) {
     if ($alltext{"$bk.$ch"} =~ /^\s*$/) {next;}
@@ -199,7 +198,7 @@ foreach $bk (sort keys %book) {
   # Save introduction to separate file
   if ($introduction ne "") {
     open (OUTF, ">$htmldir/$bk.intr.html") || finish("Could not open outfile $htmldir/$bk.intr.html\n");
-    &Write($htmlheader);
+    &Write($hdr);
     &Write($introduction, "true");
     &Write($htmlfooter);
     close (OUTF);
@@ -209,7 +208,12 @@ foreach $bk (sort keys %book) {
 # Write the footnote files...
 foreach $bk (sort keys %book) {
   open (OUTF, ">$htmldir/$bk.fn.html") || finish("Could not open outfile $htmldir/$bk.fn.html\n");
-  &Write($htmlheader);
+  my $bkl = decode("utf8", $bk);
+  utf8::upgrade($bkl);
+  $bkl = $localeFile{$bkl};
+  my $fhdr = $htmlheader;
+  $fhdr =~ s/THISBOOK/$bkl/;
+  &Write($fhdr);
   for ($ch=1; $ch<=$maxchap{$bk}; $ch++) {
     &Write($allnotes{"$bk.$ch"}, "true");
   }
