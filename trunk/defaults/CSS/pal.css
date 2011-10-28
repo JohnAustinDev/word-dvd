@@ -222,7 +222,7 @@ the desired width. */
 .paragraph-start {
   display:inline-block;
   /*height:1em;*/
-  width:20px;
+  width:16px;
 }
 
 .book-title {

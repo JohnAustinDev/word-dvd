@@ -29,6 +29,7 @@ $infile = "$indir/osis.xml";
 
 $AddChapterNumbers = $localeFile{"AddChNums2Text"};
 
+$CSSFILE = "../defaults/CSS/pal.css";
 $INDENT = "<span class=\"paragraph-start\"></span>";
 $PARAGRAPH = "<br>$INDENT";
 $NEWCHAPTER = "<span name=\"chapter.";
@@ -124,7 +125,8 @@ foreach $key (keys %alltext) {
 if (!(-e $htmldir)) {`mkdir $htmldir`;}
 
 # Write the html files...
-$htmlheader = "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\"><html><head><meta http-equiv=\"content-type\" content=\"text/html; charset=utf-8\"><link rel=\"stylesheet\" type=\"text/css\" href=\"pal.css\" /></head>";
+$htmlheader = "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\"><html><head><meta http-equiv=\"content-type\" content=\"text/html; charset=utf-8\">";
+$htmlheader .= "<link rel=\"stylesheet\" type=\"text/css\" href=\"".$CSSFILE."\" /></head>";
 $htmlheader .= "<body class=\"text\">";
 $htmlheader .= "<div class=\"usable\">";
 $htmlheader .= "<div id=\"text-page1\" class=\"page\" style=\"overflow:visible\">";
@@ -141,7 +143,7 @@ foreach $bk (sort keys %book) {
   $booklocal = $localeFile{$booklocal};
 
   my $hdr = $htmlheader;
-  $hdr =~ s/THISBOOK/$booklocal/;
+  $hdr =~ s/THISBK/$booklocal/;
   &Write($hdr);
   $introduction = "";
   for ($ch=0; $ch<=$maxchap{$bk}; $ch++) {
@@ -212,7 +214,7 @@ foreach $bk (sort keys %book) {
   utf8::upgrade($bkl);
   $bkl = $localeFile{$bkl};
   my $fhdr = $htmlheader;
-  $fhdr =~ s/THISBOOK/$bkl/;
+  $fhdr =~ s/THISBK/$bkl/;
   &Write($fhdr);
   for ($ch=1; $ch<=$maxchap{$bk}; $ch++) {
     &Write($allnotes{"$bk.$ch"}, "true");

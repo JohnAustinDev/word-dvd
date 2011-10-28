@@ -25,6 +25,8 @@
     title="word-dvd-1.4.2"
     onload="loadedXUL()"
     onunload="unloadXUL()"
+    screenX="0" screenY="0"
+    persist = "screenX screenY"
     xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
 <script type="application/x-javascript" src="chrome://word-dvd/content/word-dvd.js" />
 <vbox id="body">

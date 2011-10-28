@@ -8,29 +8,36 @@
 
 use File::Spec;
 $dir = shift;
-$nozip = shift;
+$nozipflag = shift;
 
-if (`pwd` !~ /\/script\/utilities\s*$/) {die;} # insure we're run from util dir
+$totrunk = "../../.."; # relative path from this script to word-dvd trunk
+$tohere = "defaults/script/utilities"; # reverse path to here
+$tocontent = "chrome/word-dvd"; # content of word-dvd.jar
+
 if (!$dir) {$dir = ".";}
 $dir = File::Spec->rel2abs($dir);
 if (!-e $dir) {die;}
 
+if (`pwd` !~ /\Q$tohere\E\s*$/) {die;} # insure we're run from util dir
+if (!chdir($totrunk)) {die;}
+$trunk = `pwd`; chomp($trunk);
+
 # get word-dvd version
-if (!open(INST, "<../../install.rdf")) {die;}
+if (!open(INST, "<install.rdf")) {die;}
 while(<INST>) {
 	if ($_ =~ /<em\:version>(.*?)<\/em\:version>/) {$version=$1;}
 }
 close(INST);
 if (!$version) {die;}
+print "Version is $version\n";
 
 $eid = "{f597ab2a-3a14-11de-a792-e68e56d89593}";
 $isext = ($dir =~ /\/extensions\\?$/);
 $dest = $isext ? "$dir/$eid":"$dir/word-dvd-$version";
 
-if ($isext && $nozip == 3) {
+if ($isext && $nozipflag == 3) {
 	if (-e "$dest.xpi") {`rm $dest.xpi`;}
 	if (-e "$dest") {`rm -r -f $dest`;}
-	if (!chdir("../../")) {die;}
 	$code = `pwd`;
 	chomp($code);
 	if (!chdir("$dir")) {die;}
@@ -40,14 +47,14 @@ if ($isext && $nozip == 3) {
 
 # copy files to tmp dir
 $tmp = "tmp-src2xpi";
-`svn export ../../. $tmp`;
+`svn export . $tmp`;
 
 # create chrome contents jar if requested
-if (!chdir("$tmp/chrome/word-dvd")) {die;}
-if (!$nozip || $nozip < 2) {
+if (!chdir("$trunk/$tmp/$tocontent")) {die;}
+if (!$nozipflag || $nozipflag == 1) {
 	# set manifest to point to jar contents
-	`echo content word-dvd jar:chrome/word-dvd.jar!/content/ > ../../chrome.manifest`;
-	`echo overlay chrome://browser/content/browser.xul chrome://word-dvd/content/word-dvd-overlay.xul >> ../../chrome.manifest`;
+	`echo content word-dvd jar:chrome/word-dvd.jar!/content/ > "$trunk/$tmp/chrome.manifest"`;
+	`echo overlay chrome://browser/content/browser.xul chrome://word-dvd/content/word-dvd-overlay.xul >> "$trunk/$tmp/chrome.manifest"`;
 	
 	`zip -r ../word-dvd.jar content`;
 	if (!chdir("../")) {die;}
@@ -55,24 +62,20 @@ if (!$nozip || $nozip < 2) {
 }
 else {
 	# set manifest to point to file NOT jar contents
-	`echo content word-dvd file:chrome/word-dvd/content/ > ../../chrome.manifest`;
-	`echo overlay chrome://browser/content/browser.xul chrome://word-dvd/content/word-dvd-overlay.xul >> ../../chrome.manifest`;	
-	if (!chdir("../")) {die;}
+	`echo content word-dvd file:chrome/word-dvd/content/ > "$trunk/$tmp/chrome.manifest"`;
+	`echo overlay chrome://browser/content/browser.xul chrome://word-dvd/content/word-dvd-overlay.xul >> "$trunk/$tmp/chrome.manifest"`;	
 }
 
 # create xpi file/dir
-if (!chdir("../")) {die;}
-if ($nozip) {
-	if (-e "$dest") {`rm -f -r $dest`;}
-	if ($isext && -e "$dest.xpi") {`rm $dest.xpi`;}
+if (!chdir("$trunk/$tmp")) {die;}
+if (-e "$dest.xpi") {`rm $dest.xpi`;}
+if (($nozipflag || $isext) && -e "$dest") {`rm -r -f $dest`;}
+if ($nozipflag) {
 	`mkdir $dest`;
 	`cp -r * $dest`;
 }
-else {
-	if ($isext && -e "$dest") {`rm -r -f $dest`;}
-	`zip -r $dest.xpi .`;
-}
+else {`zip -r $dest.xpi .`;}
 
 # cleanup
-if (!chdir("../")) {die;}
+if (!chdir("$trunk")) {die;}
 `rm -r -f $tmp`;
