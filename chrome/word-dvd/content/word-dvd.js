@@ -213,20 +213,6 @@ function loadedXUL() {
   if (noaudio) noaudioelem.checked=true;
   else noaudioelem.checked=false;
   handleInput(noaudioelem);
-  
-  var elem = document.getElementById("delete1st");
-  if (!UIfile[OUTDIR]) {
-    elem.checked = true;
-    handleInput(elem)  
-  }
-  else {
-    var logfile = UIfile[OUTDIR].clone();
-    logfile.append(DBLOGFILE);
-    if (!logfile.exists()) {
-      elem.checked = true;
-      handleInput(elem)
-    }
-  }
 }
 
 function loadedXUL2() {
@@ -387,6 +373,8 @@ function wordDVD() {
   // Log File
   DBLogFile = UIfile[OUTDIR].clone();
   DBLogFile.append(DBLOGFILE);
+  if (DBLogFile.exists()) DBLogFile = moveToBackup(DBLogFile);
+
   var date = new Date();
   logmsg("Starting Word-DVD imager at " + date.toTimeString() + " " + date.toDateString());
   logmsg("Word-DVD Version: " + (ExtVersion ? ExtVersion:"undreadable"));
@@ -406,7 +394,8 @@ function wordDVD() {
   // LISTING DIRECTORY
   var listdir = UIfile[OUTDIR].clone();
   listdir.append(LISTING);
-  if (!listdir.exists()) listdir.create(listdir.DIRECTORY_TYPE, 0777);
+  if (listdir.exists()) listdir = moveToBackup(listdir);
+  listdir.create(listdir.DIRECTORY_TYPE, 0777);
   
   // TIMING STATISTICS FILES
   StatsFile = UIfile[OUTDIR].clone();
@@ -430,7 +419,7 @@ function wordDVD() {
     logmsg("Generating HTML from OSIS...");
     var process = Components.classes["@mozilla.org/process/util;1"]
                       .createInstance(Components.interfaces.nsIProcess);                        
-    var tmpscript = getTempRunScript(OSISPL); 
+    var tmpscript = getTempRunScript(OSISPL);
     process.init(tmpscript);
     var args = [];
     process.run(true, args, args.length);
@@ -538,6 +527,22 @@ function exportDir(extdir, outDirPath, overwrite) {
   }
   if (!to.exists()) logmsg("ERROR: failed to export to-" + to.path);
   return to;	
+}
+
+// returns original (to be non-existent) file because the aFile 
+// file object takes on post-move identity.
+function moveToBackup(aFile) {
+  var orig = aFile.path;
+  var n = 0;
+  do {
+    n++;
+    var save = Components.classes["@mozilla.org/file/local;1"].createInstance(Components.interfaces.nsILocalFile);
+    save.initWithPath(aFile.path.replace(/([^\/]+)$/, n + "-$1"));
+  } while (save.exists());
+  aFile.moveTo(save.parent, save.leafName);
+  aFile = Components.classes["@mozilla.org/file/local;1"].createInstance(Components.interfaces.nsILocalFile);
+  aFile.initWithPath(orig);
+  return aFile;
 }
 
 // if overwrite is set, the target file in outPath is deleted before copy
@@ -685,9 +690,9 @@ function getPathOrRelativePath(aFile, rFile, rootFile) {
   return path;
 }
 
-function getTempRunScript(script) {      
-  var scriptdir = UIfile[INDIR].clone();
-  scriptdir.append(SCRIPT);
+function getTempRunScript(script) {
+  var scriptdir = Components.classes["@mozilla.org/file/local;1"].createInstance(Components.interfaces.nsILocalFile);
+  scriptdir.initWithPath(UIfile[INDIR].path + "/" + CODE);
   var temp = Components.classes["@mozilla.org/file/directory_service;1"].
 			    getService(Components.interfaces.nsIProperties).
 			    get("TmpD", Components.interfaces.nsIFile);		      
