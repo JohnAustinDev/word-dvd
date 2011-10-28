@@ -26,7 +26,6 @@ function init() {
 }
 
 function fitScreen(book, chapter, aPage, skipPage1, skipPage2) {
-MainWin.logmsg("fontFamily=" + Body.style.fontFamily);
 MainWin.jsdump("Chapter=" + chapter + ", Pagenumber=" + aPage.pagenumber);
   RenderWin.DoneDrawing = false;
   DisplayBook = book;

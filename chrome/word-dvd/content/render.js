@@ -169,7 +169,7 @@ function renderMenuSection() {
     MenuNumber++;
     var arrayL = [];
     var arrayR = [];
-    var haveart = getSubFilePath(MainWin.UIfile[MainWin.INDIR], Basename + "-m" + MenuNumber + ".png");
+    var haveart = getSubFilePath(MainWin.UIfile[MainWin.INDIR], MainWin.ARTWORK + "/" + Basename + "-m" + MenuNumber + ".png");
     var doneLeft = false;
     var doneRight = false;
     for (var r=1; r<=16; r++) {
@@ -254,7 +254,7 @@ function renderMenu(menubase, menunumber, listArrayL, listArrayR, isFirstMenu, i
   if (listArrayL.length) writeButtonList(listArrayL, menuname, true, mdoc);
   else {
     for (var i=0; i<8; i++) {mdoc.getElementById("p1b" + String(i+1)).innerHTML = "";}
-    var artwork = getSubFilePath(MainWin.UIfile[MainWin.INDIR], menubase + "-m" + menunumber + ".png");
+    var artwork = getSubFilePath(MainWin.UIfile[MainWin.INDIR], MainWin.ARTWORK + "/" + menubase + "-m" + menunumber + ".png");
     if (artwork) {
       mdoc.getElementById("menu-image-left").src = "File://" + artwork;
       mdoc.getElementById("menu-image-left").style.visibility = "visible";
@@ -396,11 +396,12 @@ function renderNewScreen() {
   mdoc.getElementById("text-image-right").style.visibility = "hidden";
   var skipPage1 = false;
   var artwork;
-  if (Page.pagenumber==1 && Chapter==1) artwork = getSubFilePath(MainWin.UIfile[MainWin.INDIR], Book[Bindex].shortName + "-1" + ".png");
+  if (Page.pagenumber==1 && Chapter==1) 
+    artwork = getSubFilePath(MainWin.UIfile[MainWin.INDIR], MainWin.ARTWORK + "/" + Book[Bindex].shortName + "-1" + ".png");
   if (artwork) {
     skipPage1 = true;
     mdoc.getElementById("text-image-left").src = "File://" + artwork;
-    mdoc.getElementById("text-image-reft").style.visibility = "visible";
+    mdoc.getElementById("text-image-left").style.visibility = "visible";
   }
   var tstyle = mdoc.defaultView.getComputedStyle(mdoc.getElementById("text-page2"), null);
   var skipPage2 = (tstyle.visibility == "hidden"); // this allows single column display by setting text-page2 visibility=hidden
@@ -421,7 +422,6 @@ function afterDrawComplete() {
     window.setTimeout("afterDrawComplete()", 200);
   }
 }
-
 
 function screenDrawComplete() {
   var newchap = saveScreenImage(Book[Bindex].shortName, Chapter, Page.pagenumber, Page.passage.substring(ILastPage, Page.end));
@@ -516,6 +516,7 @@ function hasAudio(book, chapter) {
   if (!AudioChapters) {
     AudioChapters = {};
     var audiodir = MainWin.UIfile[MainWin.AUDIO].clone();
+    if (!audiodir.exists()) return null;
     var files = audiodir.directoryEntries;
     while (files.hasMoreElements()) {
       var file = files.getNext().QueryInterface(Components.interfaces.nsIFile);

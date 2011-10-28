@@ -27,26 +27,30 @@ const NUMINPUTS=3;
 const MYGUID="{f597ab2a-3a14-11de-a792-e68e56d89593}";
 const NEWCHAPTER = "<span name=\"chapter.";
 // Output directory
+const OUTDIRNAME="OUTPUTS";
+const SCRIPT="script";
+const LISTING="listing";
+const OUTAUDIODIR="audio";
+const IMGDIR="images";
 const OSISPL="osis2html.pl";
 const WORDDVD="word-dvd.sh";
 const VIDEOFILES="word-video.sh";
 const DBLOGFILE="logfile.txt";
 const CAPTURE="import.sh";
-const SCRIPT="script";
-const LISTING="listing";
-const OUTAUDIODIR="audio";
-const IMGDIR="images";
 const MENUSFILE="MENU_BUTTONS.csv";
 const AUDIOICON="audio-icon.png";
 const IMAGEEXT="jpg";
 // Input directory
-const OSISFILE = "osis.xml";
+const DEFAULTS = "defaults";
 const HTMLDIR="html";
+const INAUDIODIR="audio";
+const ARTWORK="artwork";
+const STYLESHEET=DEFAULTS + "/CSS/pal.css";
+const CODE=DEFAULTS + "/script";
+const RESOURCE=DEFAULTS + "/resource";
+const OSISFILE = "osis.xml";
 const PAGETIMING="pageTiming.txt";
 const LOCALEFILE="config.txt";
-const STYLESHEET="pal.css";
-const CODE="script";
-const RESOURCE="resource";
 
 /************************************************************************
  * Global Utility Functions
@@ -147,38 +151,38 @@ var ButtonId;
 var RenderWin;
 var DBLogFile;
 var CssFile;
+var OUTFILERE = new RegExp("(" + OUTDIRNAME + ")(\\/|$)");
 
 function loadedXUL() {
-	window.setTimeout("window.focus();", 500);
+  window.setTimeout("window.focus();", 500);
 
-	// get extension info
-	try {
-		// works for Firefox 4+
-		Components.utils.import("resource://gre/modules/AddonManager.jsm");
-		AddonManager.getAddonByID(MYGUID, function(addon) {
-			var win = Components.classes["@mozilla.org/embedcomp/window-watcher;1"]
-			.getService(Components.interfaces.nsIWindowWatcher).getWindowByName("word-dvd", window);
-			win.ExtVersion = addon.version;
-			win.ExtFile = addon.getResourceURI("").QueryInterface(Components.interfaces.nsIFileURL).file;
-			win.loadedXUL2();
-		});
-	}
-	catch(er) {
-		// works for Firefox < 4, where extension is unzipped
-		ExtFile =  Components.classes["@mozilla.org/file/directory_service;1"].
-					getService(Components.interfaces.nsIProperties).
-					get("ProfD", Components.interfaces.nsIFile);
-		ExtFile.append("extensions");
-		ExtFile.append(MYGUID);
-		if (!ExtFile.exists()) ExtFile.append(".xpi");
+  // get extension info
+  try {
+    // works for Firefox 4+
+    Components.utils.import("resource://gre/modules/AddonManager.jsm");
+    AddonManager.getAddonByID(MYGUID, function(addon) {
+      var win = Components.classes["@mozilla.org/embedcomp/window-watcher;1"]
+      .getService(Components.interfaces.nsIWindowWatcher).getWindowByName("word-dvd", window);
+      win.ExtVersion = addon.version;
+      win.ExtFile = addon.getResourceURI("").QueryInterface(Components.interfaces.nsIFileURL).file;
+      win.loadedXUL2();
+    });
+  }
+  catch(er) {
+    // works for Firefox < 4, where extension is unzipped
+    ExtFile =  Components.classes["@mozilla.org/file/directory_service;1"].
+			    getService(Components.interfaces.nsIProperties).
+			    get("ProfD", Components.interfaces.nsIFile);
+    ExtFile.append("extensions");
+    ExtFile.append(MYGUID);
+    if (!ExtFile.exists()) ExtFile.append(".xpi");
 
-		var insrdf = ExtFile.clone();
-		insrdf.append("install.rdf");
-		ExtVersion = readFile(insrdf).match(/<em\:version>(.*?)<\/em\:version>/im)[1];
-		loadedXUL2();
-	}
-	
-	
+    var insrdf = ExtFile.clone();
+    insrdf.append("install.rdf");
+    ExtVersion = readFile(insrdf).match(/<em\:version>(.*?)<\/em\:version>/im)[1];
+    loadedXUL2();
+  }
+		
   RenderNext = document.getElementById("rendernext");
   RunPause = document.getElementById("runpause");
 
@@ -187,13 +191,19 @@ function loadedXUL() {
     InputTextbox[i].previousSibling.value = INPUTLABELS[i] + ":";
     try {
       UIfile[i] = prefs.getComplexValue("File-" + i, Components.interfaces.nsILocalFile);
-      if (!UIfile[i].exists()) {throw true;}
+      if (!UIfile[i]) {throw true;}
       InputTextbox[i].value = UIfile[i].path;
     }
     catch(er) {
       InputTextbox[i].value = "";
       document.getElementById("runpause").disabled = true;
     }
+  }
+  
+  if (UIfile[INDIR]) {
+    var htmlFiles = UIfile[INDIR].clone();
+    htmlFiles.append(HTMLDIR);
+    if (!htmlFiles.exists()) document.getElementById("osis2html").checked = true;
   }
   
   var noaudio = true;
@@ -238,10 +248,6 @@ function handleInput(elem) {
     var kFilePicker = Components.classes[kFilePickerContractID].createInstance(kFilePickerIID);
     var input = Number(elem.id.substr(elem.id.length-1,1));
     switch(input) {
-    //case FILE:
-    //  kFilePicker.init(window, INPUTLABELS[input], kFilePickerIID.modeOpen);
-    //  kFilePicker.appendFilters(INPUTEXT[input]);
-    //  break;
     case INDIR:
     case AUDIO:
     case OUTDIR:
@@ -254,19 +260,31 @@ function handleInput(elem) {
         if (!kFilePicker.file) return false;
     }
     else return;
+    if (input == OUTDIR) {
+      if (!kFilePicker.file.path.match(OUTFILERE)) {
+	window.alert("Output directory \"" +  kFilePicker.file.path + "\" must be have \"" + OUTDIRNAME + "\" somewhere in its path.");
+	return;
+      }
+    }  
     UIfile[input] = kFilePicker.file;
     InputTextbox[input].value = kFilePicker.file.path;
+    if (input == INDIR) setInputDirsToDefault();
     break;
     
   case "noaudio":
     if (elem.checked) {
       InputTextbox[AUDIO].value = "";
-      document.getElementById("input-1").disabled=true;
-      document.getElementById("browse-1").disabled=true;
+      document.getElementById("input-1").disabled = true;
+      document.getElementById("browse-1").disabled = true;
+      document.getElementById("runvideo").disabled = true;
+      var selnow = document.getElementById("runword-dvd");
+      selnow.parentNode.selectedItem = selnow;
+      document.getElementById("skipmenus").checked = false;
+      document.getElementById("skipfootnotes").checked = false;
     }
     else {
-      document.getElementById("input-1").disabled=false;
-      document.getElementById("browse-1").disabled=false;
+      document.getElementById("runvideo").disabled = false;
+      document.getElementById("browse-1").disabled = false;
       try {
         UIfile[AUDIO] = prefs.getComplexValue("File-1", Components.interfaces.nsILocalFile);
         InputTextbox[AUDIO].value = UIfile[AUDIO].path;
@@ -285,14 +303,19 @@ function handleInput(elem) {
     }
     break;
     
-    case "runvideo":
-		document.getElementById("skipmenus").checked = true;
-		document.getElementById("skipfootnotes").checked = true;
+  case "runvideo":
+      document.getElementById("skipmenus").checked = true;
+      document.getElementById("skipfootnotes").checked = true;
     break;
     
-    case "runword-dvd":
-		document.getElementById("skipmenus").checked = false;
-		document.getElementById("skipfootnotes").checked = false;
+  case "runword-dvd":
+      document.getElementById("skipmenus").checked = false;
+      document.getElementById("skipfootnotes").checked = false;
+    break;
+    
+  case "restoreDefaults":
+      if (elem.checked)
+	window.alert("WARNING!: This will permanently delete any changes you have made to all files in the defaults directory.");
     break;
     
   }
@@ -303,6 +326,23 @@ function handleInput(elem) {
 	  osis.append(OSISFILE);
 	  document.getElementById("osis2html").disabled = !osis.exists();
   }
+}
+
+function setInputDirsToDefault() {
+  if (!UIfile[INDIR] || !UIfile[INDIR].exists()) {
+    for (var i=0; i<NUMINPUTS; i++) {
+      UIfile[i] = "";
+      InputTextbox[i].value = "";
+    }
+  }
+  else {
+    UIfile[AUDIO] = UIfile[INDIR].clone();
+    UIfile[AUDIO].append(INAUDIODIR);
+    InputTextbox[AUDIO].value = UIfile[AUDIO].path;
+    UIfile[OUTDIR] = UIfile[INDIR].clone();
+    UIfile[OUTDIR].append(OUTDIRNAME);
+    InputTextbox[OUTDIR].value = UIfile[OUTDIR].path;
+  } 
 }
 
 function enableGO() {
@@ -318,14 +358,22 @@ function wordDVD() {
   jsdump("Checking Inputs...");
   for (var i=0; i<NUMINPUTS; i++) {
     if (!UIfile[i]) {
-      Components.classes["@mozilla.org/sound;1"].createInstance(Components.interfaces.nsISound).beep();
+      window.alert("STOPPING!: Not all input directories are set.");
       return;
     }
   }
+  if (!UIfile[INDIR].exists()) {
+    window.alert("STOPPING!: Input directory does not exist.");
+    return;
+  }
+  if (!document.getElementById("noaudio").checked && !UIfile[AUDIO].exists()) {
+    window.alert("STOPPING!: Audio directory does not exist.");
+    return;
+  }
   
   // Check output directory and clean if needed
-  if (!UIfile[OUTDIR].path.match(/(OUTPUTS)(\/|$)/)) {
-    window.alert("STOPPING!: Output directory \"" + UIfile[OUTDIR].leafName + "\" must be under a directory called \"OUTPUTS\"!");
+  if (!UIfile[OUTDIR].path.match(OUTFILERE)) {
+    window.alert("STOPPING!: Output directory \"" + UIfile[OUTDIR].leafName + "\" must be under a directory called \"" + OUTDIRNAME + "\"!");
     return;
   }
   if (!UIfile[OUTDIR].exists()) UIfile[OUTDIR].create(UIfile[OUTDIR].DIRECTORY_TYPE, 0777);
@@ -368,9 +416,9 @@ function wordDVD() {
   TransFile = UIfile[OUTDIR].clone();
   TransFile.append(LISTING);
   
-  // COPY RESOURCES AND BUILD-CODE TO INPUT DIR
-  exportDir(RESOURCE, UIfile[INDIR].path + "/" + RESOURCE, false);
-  exportDir(CODE, UIfile[INDIR].path + "/" + CODE, false);
+  // COPY RESOURCES AND BUILD-CODE TO INDIR
+  exportDir(RESOURCE, UIfile[INDIR].path + "/" + RESOURCE, document.getElementById("restoreDefaults").checked);
+  exportDir(CODE, UIfile[INDIR].path + "/" + CODE, document.getElementById("restoreDefaults").checked);
 
   // AUTOGENERATE ALL RUN SCRIPTS
   writeRunScripts();
@@ -382,29 +430,27 @@ function wordDVD() {
     logmsg("Generating HTML from OSIS...");
     var process = Components.classes["@mozilla.org/process/util;1"]
                       .createInstance(Components.interfaces.nsIProcess);                        
-    var file = UIfile[OUTDIR].clone();
-    file.append(SCRIPT);
-    file.append(runscript(OSISPL));
-    process.init(file);
+    var tmpscript = getTempRunScript(OSISPL); 
+    process.init(tmpscript);
     var args = [];
     process.run(true, args, args.length);
   }
   else logmsg("Skipped HTML generation.");
   
   // COPY CSS to HTML DIRECTORY AND RELOAD CAPTURE WINDOW
-  CssFile = exportFile(HTMLDIR + "/" + STYLESHEET, UIfile[INDIR].path + "/" + HTMLDIR, false);
+  CssFile = exportFile(STYLESHEET, UIfile[INDIR].path + "/" + STYLESHEET, document.getElementById("restoreDefaults").checked);
   RenderWin.document.getElementById("render").contentDocument.defaultView.location.assign("chrome://word-dvd/content/web/menu.html");
   
   // Read HTML books and maxchapters
   var htmlFiles = UIfile[INDIR].clone();
   htmlFiles.append(HTMLDIR);
   if (!htmlFiles.exists() || !htmlFiles.isDirectory()) {
-    logmsg("Error: HTML directory not found \"" + htmlFiles.path() + "\"\n");
+    window.alert("Stopping!: HTML directory not found \"" + htmlFiles.path + "\"\n");
     return;
   }
   htmlFiles = htmlFiles.directoryEntries;
   if (!htmlFiles) {
-    logmsg("Error: No HTML files not found in \"" + UIfile[INDIR].path() + "/" + HTMLDIR + "\"\n");
+    window.alert("Stopping!: No HTML files not found in \"" + UIfile[INDIR].path + "/" + HTMLDIR + "\"\n");
     return;  
   }
   RenderWin.Book = [];
@@ -414,7 +460,7 @@ function wordDVD() {
     if (!fileName || fileName[2]!="html") continue;
     var data = readFile(file);
     if (!data) {
-      logmsg("ERROR: Empty HTML file, or could not read \"" + file.path() + "\"");
+      logmsg("ERROR: Empty HTML file, or could not read \"" + file.path + "\"");
       continue;
     }
     RenderWin.Book.push(null);
@@ -423,7 +469,7 @@ function wordDVD() {
     var re = new RegExp("(" + NEWCHAPTER + ")", "gim");
     data = data.match(re);
     if (!data) {
-      logmsg("ERROR: HTML file has no chapters \"" + file.path() + "\"");
+      logmsg("ERROR: HTML file has no chapters \"" + file.path + "\"");
       continue;
     }
     RenderWin.Book[RenderWin.Book.length-1].maxChapter = data.length;
@@ -440,69 +486,74 @@ function wordDVD() {
 // if overwrite is set, the entire outDirPath is deleted before copy
 // if overwrite is not set, the function will exit with null if outDirPath exists
 function exportDir(extdir, outDirPath, overwrite) {
-	if (!ExtFile.exists()) {logmsg("ERROR: Can't open firefox extension"); return null;}
-	var to = Components.classes["@mozilla.org/file/local;1"].createInstance(Components.interfaces.nsILocalFile);
-	to.initWithPath(outDirPath);
-	if (to.exists()) {
-		if (overwrite) to.remove(true);
-		else return to;
-	}
-	var toP = to.parent;
-	if (!toP.exists()) toP.create(toP.DIRECTORY_TYPE, 0777);
-	if (ExtFile.isDirectory()) {
-		var from = Components.classes["@mozilla.org/file/local;1"].createInstance(Components.interfaces.nsILocalFile);
-		from.initWithPath(ExtFile.path + "/" + extdir);
-		if (!from.isDirectory()) {logmsg("ERROR: From directory does not exist-" + from.path); return null;}
-		from.copyTo(toP, to.leafName);
-	}
-	else {
-		var zReader = Components.classes["@mozilla.org/libjar/zip-reader;1"].createInstance(Components.interfaces.nsIZipReader);
-		try {zReader.open(ExtFile);}
-		catch (er) {logmsg(er + "\nERROR: cannot open-" + ExtFile.path); return null;}	
-		try {
-			var isdir = zReader.getEntry(extdir + "/");
-			if (!isdir.isDirectory) {logmsg("ERROR: From zip directory does not exist-" + extdir); return null;}
-		}
-		catch(er) {logmsg(er + "\nERROR: reading zip entry-" + extdir); return null;}
-		// create output directories	
-		var entries = zReader.findEntries(null);
-		while (entries.hasMore()) {
-			var entry = entries.getNext();
-			if (entry.indexOf(extdir) != 0) {continue;}
-			try {var entryObj = zReader.getEntry(entry);}
-			catch (er) {logmsg(er + "\nError getting zip directory entry " + entry + ". " + er); continue;}
-			var newfile = Components.classes["@mozilla.org/file/local;1"].createInstance(Components.interfaces.nsILocalFile);
-			newfile.initWithPath(toP.path + "/" + entry);
-			if (entryObj.isDirectory && !newfile.exists()) newfile.create(newfile.DIRECTORY_TYPE, 0777);
-		}
-		// create output files	
-		var entries = zReader.findEntries(null);
-		while (entries.hasMore()) {
-			var entry = entries.getNext();
-			if (entry.indexOf(extdir) != 0) {continue;}
-			try {var entryObj = zReader.getEntry(entry);}
-			catch (er) {logmsg(er + "\nError getting zip file entry " + entry + ". " + er); continue;}
-			var newfile = Components.classes["@mozilla.org/file/local;1"].createInstance(Components.interfaces.nsILocalFile);
-			newfile.initWithPath(toP.path + "/" + entry);
-			if (!entryObj.isDirectory) {
-				zReader.extract(entry, newfile);
-				if (!newfile.exists()) logmsg("ERROR: filed to extract-" + entry);
-			}
-		}
-	}
-	if (!to.exists()) logmsg("ERROR: failed to export to-" + to.path);
-	return to;	
+  if (!ExtFile.exists()) {logmsg("ERROR: Can't open firefox extension"); return null;}
+  var to = Components.classes["@mozilla.org/file/local;1"].createInstance(Components.interfaces.nsILocalFile);
+  to.initWithPath(outDirPath);
+  if (to.exists()) {
+    if (overwrite) to.remove(true);
+    else return to;
+  }
+  var toP = to.parent;
+  if (!toP.exists()) toP.create(toP.DIRECTORY_TYPE, 0777);
+  if (ExtFile.isDirectory()) {
+    var from = Components.classes["@mozilla.org/file/local;1"].createInstance(Components.interfaces.nsILocalFile);
+    from.initWithPath(ExtFile.path + "/" + extdir);
+    if (!from.exists() || !from.isDirectory()) {logmsg("ERROR: From directory does not exist-" + from.path); return null;}
+    from.copyTo(toP, to.leafName);
+  }
+  else {
+    var zReader = Components.classes["@mozilla.org/libjar/zip-reader;1"].createInstance(Components.interfaces.nsIZipReader);
+    try {zReader.open(ExtFile);}
+    catch (er) {logmsg(er + "\nERROR: cannot open-" + ExtFile.path); return null;}	
+    try {
+      var isdir = zReader.getEntry(extdir + "/");
+      if (!isdir.exists || !isdir.isDirectory) {logmsg("ERROR: From zip directory does not exist-" + extdir); return null;}
+    }
+    catch(er) {logmsg(er + "\nERROR: reading zip entry-" + extdir); return null;}
+    // create output directories	
+    var entries = zReader.findEntries(null);
+    while (entries.hasMore()) {
+      var entry = entries.getNext();
+      if (entry.indexOf(extdir) != 0) {continue;}
+      try {var entryObj = zReader.getEntry(entry);}
+      catch (er) {logmsg(er + "\nError getting zip directory entry " + entry + ". " + er); continue;}
+      var newfile = Components.classes["@mozilla.org/file/local;1"].createInstance(Components.interfaces.nsILocalFile);
+      newfile.initWithPath(toP.path + "/" + entry);
+      if (entryObj.isDirectory && !newfile.exists()) newfile.create(newfile.DIRECTORY_TYPE, 0777);
+    }
+    // create output files	
+    var entries = zReader.findEntries(null);
+    while (entries.hasMore()) {
+      var entry = entries.getNext();
+      if (entry.indexOf(extdir) != 0) {continue;}
+      try {var entryObj = zReader.getEntry(entry);}
+      catch (er) {logmsg(er + "\nError getting zip file entry " + entry + ". " + er); continue;}
+      var newfile = Components.classes["@mozilla.org/file/local;1"].createInstance(Components.interfaces.nsILocalFile);
+      newfile.initWithPath(toP.path + "/" + entry);
+      if (!entryObj.isDirectory) {
+	zReader.extract(entry, newfile);
+	if (!newfile.exists()) logmsg("ERROR: filed to extract-" + entry);
+      }
+    }
+  }
+  if (!to.exists()) logmsg("ERROR: failed to export to-" + to.path);
+  return to;	
 }
 
-// if overwrite is set, the target file in outDirPath is deleted before copy
+// if overwrite is set, the target file in outPath is deleted before copy
 // if overwrite is not set, the function will exit with null if target exists
-function exportFile(extfile, outDirPath, overwrite) {
+function exportFile(extfile, outPath, overwrite) {
   if (!ExtFile.exists()) {logmsg("ERROR: Can't open firefox extension"); return null;}
   var leaf = extfile.replace(/^.*?\/([^\/]+)$/, "$1");
+  var outIsFile = outPath.match(/^(.*?)\/([^\/]+\.[^\.\/]+)$/);
+  if (outIsFile) {
+    outPath = outIsFile[1];
+    leaf = outIsFile[2];
+  }
   var to = Components.classes["@mozilla.org/file/local;1"].createInstance(Components.interfaces.nsILocalFile);
-  to.initWithPath(outDirPath + "/" + leaf);
+  to.initWithPath(outPath + "/" + leaf);
   if (to.exists()) {
-    if (overwrite) to.remove();
+    if (overwrite) to.remove(false);
     else return to;
   }
   var toP = to.parent;
@@ -510,7 +561,7 @@ function exportFile(extfile, outDirPath, overwrite) {
   if (ExtFile.isDirectory()) {
     var from = Components.classes["@mozilla.org/file/local;1"].createInstance(Components.interfaces.nsILocalFile);
     from.initWithPath(ExtFile.path + "/" + extfile);
-    if (from.isDirectory()) {logmsg("ERROR: From file does not exist-" + from.path); return null;}
+    if (!from.exists() || from.isDirectory()) {logmsg("ERROR: From file does not exist-" + from.path); return null;}
     from.copyTo(toP, to.leafName);
   }
   else {
@@ -519,7 +570,7 @@ function exportFile(extfile, outDirPath, overwrite) {
     catch (er) {logmsg("ERROR: cannot open-" + ExtFile.path); return null;}	
     try {
       var isdir = zReader.getEntry(extfile);
-      if (isdir.isDirectory) {logmsg("ERROR: From zip file does not exist-" + extfile); return null;}
+      if (!isdir.exists || isdir.isDirectory) {logmsg("ERROR: From zip file does not exist-" + extfile); return null;}
     }
     catch(er) {logmsg("ERROR: reading zip entry-" + extfile); return null;}
     zReader.extract(extfile, to);
@@ -567,12 +618,12 @@ function prompForStartBook() {
 }
 
 function writeRunScripts() {
-	var slist = [OSISPL, WORDDVD, VIDEOFILES,
+  var slist = [OSISPL, WORDDVD, VIDEOFILES,
    "audio.pl", "imgs2mpeg.pl", "navbuttons.pl", 
    "menus.pl", "mpeg2vob.pl", "lencalc.pl", 
    "timeAnalysis.pl", "createiso.pl", "audacity.pl", 
    "ecasound.pl", "burnverify.sh", "imgs2web.pl"];
-   
+  
   // MAKE OUTPUT SCRIPT DIR
   var file = Components.classes["@mozilla.org/file/local;1"].createInstance(Components.interfaces.nsILocalFile);
   file.initWithPath(UIfile[OUTDIR].path + "/" + SCRIPT);
@@ -580,25 +631,70 @@ function writeRunScripts() {
   
   var scriptdir = Components.classes["@mozilla.org/file/local;1"].createInstance(Components.interfaces.nsILocalFile);
   scriptdir.initWithPath(UIfile[INDIR].path + "/" + CODE);
+  
+  var rundir = Components.classes["@mozilla.org/file/local;1"].createInstance(Components.interfaces.nsILocalFile);
+  rundir.initWithPath(UIfile[OUTDIR].path + "/" + SCRIPT);
 
+  for (var i=0; i<slist.length; i++) {writeRunScript(slist[i], scriptdir, rundir);}
+}
+
+function writeRunScript(script, scriptdir, rundir) {
+  // Convert paths to relative if default input dirs are being used
+  var pscript, pscriptdir, pindir, poutdir, paudiodir;
+  pscriptdir = getPathOrRelativePath(scriptdir, rundir, UIfile[INDIR]);
+  pindir     = getPathOrRelativePath(UIfile[INDIR], rundir, UIfile[INDIR]);
+  poutdir    = getPathOrRelativePath(UIfile[OUTDIR], rundir, UIfile[INDIR]);
+  paudiodir  = getPathOrRelativePath(UIfile[AUDIO], rundir, UIfile[INDIR]);
+  
   const st="\"", md="\" \"", en="\"";
-  var commandline = scriptdir.path + md + UIfile[INDIR].path + md + UIfile[OUTDIR].path + md + UIfile[AUDIO].path + en + " $1 $2 $3";
-  for (var i=0; i<slist.length; i++) {
-    var script = scriptdir.clone();
-    script.append(slist[i]);
-    if (script.exists()) {
-      file = UIfile[OUTDIR].clone();
-      file.append(SCRIPT);
-      file.append(runscript(slist[i]));
-      write2File(file, "#!/bin/sh\n\"" + script.path + md + commandline, false);
-    }
-  }
+  var commandline = pscriptdir + md + pindir + md + poutdir + md + paudiodir + en + " $1 $2 $3";
+  pscript = scriptdir.clone();
+  pscript.append(script);
+  pscript = getPathOrRelativePath(pscript, rundir, UIfile[INDIR]);
+  var file = rundir.clone();
+  file.append(runscript(script));
+  if (file.exists()) file.remove(false);
+  write2File(file, "#!/bin/sh\n\"" + pscript + md + commandline, false);
 }
 
 function runscript(target) {
 	target = "x" + target;
 	target = target.replace(/\.[^\.]*$/, ".sh");
 	return target;
+}
+
+// returns the complete aFile.path unless aFile and rFile are both
+// located within rootFile, in which case a relative path from
+// rFile to aFile is returned (if rFile and rootFile are existing dirs).
+function getPathOrRelativePath(aFile, rFile, rootFile) {
+  var path = aFile.path;
+  if (!rFile.exists || !rFile.isDirectory()) return path;
+  if (!rootFile.exists || !rootFile.isDirectory()) return path;
+  var rpath = rFile.path;
+  var root = rootFile.path;
+  if (path.indexOf(root) == 0 && rpath.indexOf(root) == 0) {
+    path = path.replace(root, "");
+    rpath = rpath.replace(root, "");
+    if (!rpath) rpath = "./";
+    else {
+      rpath = rpath.replace(/[^\/]+/g, "..").substring(1);
+    }
+    path = rpath + path;
+  }
+  
+  return path;
+}
+
+function getTempRunScript(script) {      
+  var scriptdir = UIfile[INDIR].clone();
+  scriptdir.append(SCRIPT);
+  var temp = Components.classes["@mozilla.org/file/directory_service;1"].
+			    getService(Components.interfaces.nsIProperties).
+			    get("TmpD", Components.interfaces.nsIFile);		      
+  writeRunScript(script, scriptdir, temp);
+  temp.append(runscript(script));
+  if (!temp.exists()) logmsg("ERROR: Could not create temporary run script.");
+  return temp;
 }
 
 function pause() {
@@ -649,25 +745,20 @@ function stop() {
   
   if (document.getElementById("runword-dvd").selected) {
     var process = Components.classes["@mozilla.org/process/util;1"]
-                      .createInstance(Components.interfaces.nsIProcess);                        
-    var file = UIfile[OUTDIR].clone();
-    file.append(SCRIPT);
-    var rundir = file.path;
-    file.append(runscript(WORDDVD));
-    process.init(file);
-    var args = [rundir];
+                      .createInstance(Components.interfaces.nsIProcess); 
+		      
+    var tmpscript = getTempRunScript(WORDDVD); 
+    process.init(tmpscript);
+    var args = [];
     process.run(false, args, args.length);
     logmsg("Launched " + runscript(WORDDVD));
   }
   else if (document.getElementById("runvideo").selected) {
     var process = Components.classes["@mozilla.org/process/util;1"]
-                      .createInstance(Components.interfaces.nsIProcess);                        
-    var file = UIfile[OUTDIR].clone();
-    file.append(SCRIPT);
-    var rundir = file.path;
-    file.append(runscript(VIDEOFILES));
-    process.init(file);
-    var args = [rundir];
+                      .createInstance(Components.interfaces.nsIProcess);
+    var tmpscript = getTempRunScript(VIDEOFILES); 
+    process.init(tmpscript);
+    var args = [];
     process.run(false, args, args.length);
     logmsg("Launched" + runscript(VIDEOFILES));  
   }

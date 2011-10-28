@@ -22,7 +22,7 @@
 
 <window
     id="word-dvd" xmlns:html="http://www.w3.org/1999/xhtml"
-    title="word-dvd"
+    title="word-dvd-1.4.2"
     onload="loadedXUL()"
     onunload="unloadXUL()"
     xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
@@ -30,9 +30,6 @@
 <vbox id="body">
   <groupbox>
     <caption label="Setup"/>
-    <hbox pack="start" style="margin-left:-6px;">
-      <button id="installPrompt" disabled="true" label="Install directory:" oncommand="window.alert('Your installation directory is:\n' + ExtFile.path);" tooltiptext="Click to see where Word-DVD is installed." />
-    </hbox>
     <grid>
       <columns>
         <column />
@@ -47,15 +44,15 @@
           <button id="browse-0" label="browse" oncommand="handleInput(this);" /> 
         </row>
         <row align="center">
-          <label tooltiptext="Directory where audio files (with names of the form: lang-book-ch.ac3) are located." />
-          <textbox id="input-1" width="400" readonly="true" />
-          <button id="browse-1" label="browse" oncommand="handleInput(this);" />
-          <checkbox id="noaudio" label="none" oncommand="handleInput(this);" tooltiptext="Check if there is no audio for this DVD." />
+          <label tooltiptext="Directory where audio files (with names having the form: lang-book-ch.ac3) are located." />
+          <textbox id="input-1" width="400" readonly="true" disabled="true" />
+          <button id="browse-1" label="change" oncommand="handleInput(this);" />
+          <checkbox id="noaudio" label="no audio" oncommand="handleInput(this);" tooltiptext="Check this if you don't want audio to be included." />
         </row>
         <row align="center">
           <label tooltiptext="Directory where DVD output files will be put." />
-          <textbox id="input-2" width="400" readonly="true" />
-          <button id="browse-2" label="browse" oncommand="handleInput(this);" />
+          <textbox id="input-2" width="400" readonly="true" disabled="true" />
+          <button id="browse-2" label="change" oncommand="handleInput(this);" />
         </row>
       </rows>
     </grid>
@@ -70,7 +67,7 @@
         <radiogroup orient="vertical">
           <radio label="Render images only" tooltiptext="Render images, and then stop." />
           <radio id="runword-dvd" label="Create DVD" oncommand="handleInput(this);" selected="true" tooltiptext="Create final DVD files." />
-          <radio id="runvideo" label="Create Video Files" oncommand="handleInput(this);" tooltiptext="Create separate video files for internet etc." />
+          <radio id="runvideo" label="Create Video Files" oncommand="handleInput(this);" tooltiptext="Create separate video files for internet etc. These require audio, so 'no audio' must not be checked above." />
         </radiogroup>
         <spacer height="20" />
         <hbox>
@@ -100,6 +97,13 @@
         <checkbox id="skipfootnotes" label="Footnote Generation" checked="false" tooltiptext="Don't render footnotes pages." />
       </vbox>
     </groupbox>
+    <groupbox >
+      <caption label="Misc"/>
+      <vbox>
+        <checkbox id="restoreDefaults" label="Restore Default Files" checked="false" oncommand="handleInput(this);" tooltiptext="Restore the default image, code, and CSS files which were included with Word-DVD." />
+        <button id="installPrompt" disabled="true" label="Install directory:" oncommand="window.alert('Your installation directory is:\n' + ExtFile.path);" tooltiptext="Click to see where Word-DVD is installed." />
+      </vbox>
+    </groupbox>    
   </hbox>
 </vbox>
 </window>
