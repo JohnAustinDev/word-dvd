@@ -28,7 +28,7 @@ If you get an "illegal instruction" error when running jpeg2yuv, mplex, or mpeg2
 
 2) Install the `"Word-DVD-xx.xpi"` Firefox extension included with this distribution. Then, firefox's "Tools" menu will show "Word-DVD...". Click this to start the program.
 
-3) Click the browse button for the input directory and choose the directory where your input files are located (to use the example inputs, unzip the folder somewhere and choose it). If you have audio, uncheck the "none" checkbox and browse for your audio directory (to use the example audio, choose the `"audio"` directory within the example directory). Create a directory called `"OUTPUTS"` somewhere, then click the browse button and choose this as your output directory.
+3) Click the browse button for the input directory and choose the directory where your input files are located (to use the example inputs, [http://word-dvd.googlecode.com/files/Example-1.4.2.zip download the archive], unzip the folder somewhere, and then choose it).
 
 4) Click Go! You should see a prompt when it's finished. If not, see the [http://code.google.com/p/word-dvd/wiki/Debugging debugging wiki] page for hints.
 
