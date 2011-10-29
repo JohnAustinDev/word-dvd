@@ -1,0 +1,16 @@
+<?xml version="1.0"?>
+<?xml-stylesheet href="chrome://global/skin/" type="text/css"?>
+<window
+    id="message" xmlns:html="http://www.w3.org/1999/xhtml"
+    title="Converting OSIS to HTML"
+    onload="sizeToContent()"
+    xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
+
+  <hbox pack="center">
+    <vbox pack="center" style="margin:25px 40px 40px 40px;">
+      <label style="font-size:20px;">Please Wait:</label>
+      <label>Conversion from OSIS to HTML could take a few minutes.</label>
+      <label>This window will close when conversion has finished.</label>
+    </vbox>
+  </hbox>
+</window>

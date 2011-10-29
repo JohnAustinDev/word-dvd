@@ -499,8 +499,12 @@ sub removeTags(\$) {
 }
 
 sub finish($) {
-  $log = $_[0];
+  $log = shift;
   &Log;
+  # drop a file to tell firefox we're done
+  open(OUTF, ">$outdir/conversion-finished");
+  print OUTF "conversion-finished";
+  close(OUTF);
   exit;
 }
 

@@ -41,6 +41,7 @@ const CAPTURE="import.sh";
 const MENUSFILE="MENU_BUTTONS.csv";
 const AUDIOICON="audio-icon.png";
 const IMAGEEXT="jpg";
+const CONVERSIONDONE="conversion-finished";
 // Input directory
 const DEFAULTS = "defaults";
 const HTMLDIR="html";
@@ -65,9 +66,9 @@ var aConsoleListener =
     catch(er) {aMessage=null;}
     if (aMessage) {
       var isException = aMessage.flags & aMessage.exceptionFlag;
-      if (isException) {
+      if (isException && aMessage.message.match("/word-dvd/content/")) {
         this.haveException = true;
-        window.alert("Unhandled Exception:\n" + aMessage.message);
+        window.alert("Unhandled " + aMessage.category + " Exception:\n" + aMessage.message);
       }
     }
   },
@@ -98,8 +99,8 @@ function setConsoleService(addListener) {
 
 setConsoleService(aConsoleListener);
 
-var Date = new Date();
-var BackupPrefix = Date.getTime();
+var StartDate = new Date();
+var BackupPrefix = StartDate.getTime();
 
 /************************************************************************
  * Global Utility Functions
@@ -251,119 +252,112 @@ function loadedXUL() {
       document.getElementById("runpause").disabled = true;
     }
   }
-  
-  if (UIfile[INDIR]) {
-    var htmlFiles = UIfile[INDIR].clone();
-    htmlFiles.append(HTMLDIR);
-    if (!htmlFiles.exists()) document.getElementById("osis2html").checked = true;
-  }
-  
-  var noaudio = true;
-  var noaudioelem = document.getElementById("noaudio");
-  try {noaudio = prefs.getBoolPref("noaudio");}
-  catch (er) {}
-  if (noaudio) noaudioelem.checked=true;
-  else noaudioelem.checked=false;
-  handleInput(noaudioelem);
 }
 
 function loadedXUL2() {
-  enableGO();
-  if (ExtFile.exists()) document.getElementById("installPrompt").disabled = false;
+  handleInput();
     
   // open render window, which itself runs startRenderer()
   RenderWin = window.open("chrome://word-dvd/content/render.xul", "render-win", "chrome=yes,alwaysRaised=yes");
 }
 
 function handleInput(elem) {
-  switch (elem.id) {
-  case "browse-0":
-  case "browse-1":
-  case "browse-2":
-    const kFilePickerContractID = "@mozilla.org/filepicker;1";
-    const kFilePickerIID = Components.interfaces.nsIFilePicker;
-    const INPUTEXT=[kFilePickerIID.filterXML, ""];
-    var kFilePicker = Components.classes[kFilePickerContractID].createInstance(kFilePickerIID);
-    var input = Number(elem.id.substr(elem.id.length-1,1));
-    switch(input) {
-    case INDIR:
-    case AUDIO:
-    case OUTDIR:
-      kFilePicker.init(window, INPUTLABELS[input], kFilePickerIID.modeGetFolder);
-      break;
-    default:
-      return;
-    }
-    if (kFilePicker.show() != kFilePickerIID.returnCancel) {
-        if (!kFilePicker.file) return false;
-    }
-    else return;
-    if (input == OUTDIR) {
-      if (!kFilePicker.file.path.match(OUTFILERE)) {
-	window.alert("Output directory must be have \"" + OUTDIRNAME + "\" somewhere in its path.");
+  if (elem) {
+    switch (elem.id) {
+    case "browse-0":
+    case "browse-1":
+    case "browse-2":
+      const kFilePickerContractID = "@mozilla.org/filepicker;1";
+      const kFilePickerIID = Components.interfaces.nsIFilePicker;
+      const INPUTEXT=[kFilePickerIID.filterXML, ""];
+      var kFilePicker = Components.classes[kFilePickerContractID].createInstance(kFilePickerIID);
+      var input = Number(elem.id.substr(elem.id.length-1,1));
+      switch(input) {
+      case INDIR:
+      case AUDIO:
+      case OUTDIR:
+	kFilePicker.init(window, INPUTLABELS[input], kFilePickerIID.modeGetFolder);
+	break;
+      default:
 	return;
       }
-    }  
-    UIfile[input] = kFilePicker.file;
-    InputTextbox[input].value = kFilePicker.file.path;
-    if (input == INDIR) setInputDirsToDefault();
-    else InputTextbox[input].value = InputTextbox[input].value.replace(UIfile[INDIR].path, "<Input Directory>");
-    break;
-    
-  case "noaudio":
-    if (elem.checked) {
-      InputTextbox[AUDIO].value = "";
-      document.getElementById("input-1").disabled = true;
-      document.getElementById("browse-1").disabled = true;
-      document.getElementById("runvideo").disabled = true;
-      var selnow = document.getElementById("runword-dvd");
-      selnow.parentNode.selectedItem = selnow;
-      document.getElementById("skipmenus").checked = false;
-      document.getElementById("skipfootnotes").checked = false;
-    }
-    else {
-      document.getElementById("runvideo").disabled = false;
-      document.getElementById("browse-1").disabled = false;
-      try {
-        UIfile[AUDIO] = prefs.getComplexValue("File-1", Components.interfaces.nsILocalFile);
-        InputTextbox[AUDIO].value = UIfile[AUDIO].path.replace(UIfile[INDIR].path, "<Input Directory>");
+      if (kFilePicker.show() != kFilePickerIID.returnCancel) {
+	  if (!kFilePicker.file) return false;
       }
-      catch(er) {InputTextbox[AUDIO].value = "";}
+      else return;
+      if (input == OUTDIR) {
+	if (!kFilePicker.file.path.match(OUTFILERE)) {
+	  window.alert("Output directory must be have \"" + OUTDIRNAME + "\" somewhere in its path.");
+	  return;
+	}
+      }  
+      UIfile[input] = kFilePicker.file;
+      InputTextbox[input].value = kFilePicker.file.path;
+      if (input == INDIR) setInputDirsToDefault();
+      else InputTextbox[input].value = InputTextbox[input].value.replace(UIfile[INDIR].path, "<Input Directory>");
+      break;
+      
+    case "noaudio":
+      if (elem.checked) {
+	InputTextbox[AUDIO].value = "";
+	document.getElementById("input-1").disabled = true;
+	document.getElementById("browse-1").disabled = true;
+	document.getElementById("runvideo").disabled = true;
+	var selnow = document.getElementById("runword-dvd");
+	selnow.parentNode.selectedItem = selnow;
+	document.getElementById("skipmenus").checked = false;
+	document.getElementById("skipfootnotes").checked = false;
+      }
+      else {
+	document.getElementById("runvideo").disabled = false;
+	document.getElementById("browse-1").disabled = false;
+	try {
+	  UIfile[AUDIO] = prefs.getComplexValue("File-1", Components.interfaces.nsILocalFile);
+	  InputTextbox[AUDIO].value = UIfile[AUDIO].path.replace(UIfile[INDIR].path, "<Input Directory>");
+	}
+	catch(er) {InputTextbox[AUDIO].value = "";}
+      }
+      break;
+      
+    case "delete1st":
+      if (elem.checked) {
+	document.getElementById("skiptext").checked = false;
+	document.getElementById("skiptext").disabled = true;
+      }
+      else {
+	document.getElementById("skiptext").disabled = false;  
+      }
+      break;
+      
+    case "runvideo":
+	document.getElementById("skipmenus").checked = true;
+	document.getElementById("skipfootnotes").checked = true;
+      break;
+      
+    case "runword-dvd":
+	document.getElementById("skipmenus").checked = false;
+	document.getElementById("skipfootnotes").checked = false;
+      break;
+      
+    case "restoreDefaults":
+	if (elem.checked)
+	  window.alert("WARNING!: This will permanently delete any changes you have made to all files in the defaults directory.");
+      break;
+      
     }
-    break;
-    
-  case "delete1st":
-    if (elem.checked) {
-      document.getElementById("skiptext").checked = false;
-      document.getElementById("skiptext").disabled = true;
-    }
-    else {
-      document.getElementById("skiptext").disabled = false;  
-    }
-    break;
-    
-  case "runvideo":
-      document.getElementById("skipmenus").checked = true;
-      document.getElementById("skipfootnotes").checked = true;
-    break;
-    
-  case "runword-dvd":
-      document.getElementById("skipmenus").checked = false;
-      document.getElementById("skipfootnotes").checked = false;
-    break;
-    
-  case "restoreDefaults":
-      if (elem.checked)
-	window.alert("WARNING!: This will permanently delete any changes you have made to all files in the defaults directory.");
-    break;
-    
   }
   
   enableGO();
+  
+  document.getElementById("installPrompt").disabled = !ExtFile.exists();
   if (UIfile[INDIR]) {
-	  var osis = UIfile[INDIR].clone();
-	  osis.append(OSISFILE);
-	  document.getElementById("osis2html").disabled = !osis.exists();
+    var osis = UIfile[INDIR].clone();
+    osis.append(OSISFILE);
+    document.getElementById("osis2html").disabled = !osis.exists();
+
+    var htmlFiles = UIfile[INDIR].clone();
+    htmlFiles.append(HTMLDIR);
+    if (!document.getElementById("osis2html").disabled && !htmlFiles.exists()) document.getElementById("osis2html").checked = true;
   }
 }
 
@@ -392,6 +386,8 @@ function enableGO() {
   document.getElementById("runpause").disabled = (i!=NUMINPUTS);
 }
 
+var MessageWin;
+var Osis2HtmlInterval;
 function wordDVD() {
   jsdump("Checking Inputs...");
   for (var i=0; i<NUMINPUTS; i++) {
@@ -432,7 +428,7 @@ function wordDVD() {
   DBLogFile.append(DBLOGFILE);
   if (DBLogFile.exists()) DBLogFile = moveToBackup(DBLogFile);
 
-  logmsg("Starting Word-DVD imager at " + Date.toTimeString() + " " + Date.toDateString());
+  logmsg("Starting Word-DVD imager at " + StartDate.toTimeString() + " " + StartDate.toDateString());
   logmsg("Word-DVD Version: " + (ExtVersion ? ExtVersion:"undreadable"));
   
   // BACKUP XPI AND VERSION NUMBERS
@@ -464,6 +460,7 @@ function wordDVD() {
   vscript += "echo ========= DVDAUTHOR VERSION INFO ============== >> " + DBLogFile.path + "\n";
   vscript += "echo \\$dvdauthor >> " + DBLogFile.path + "\n";
   vscript += "dvdauthor " + " 2>> " + DBLogFile.path + "\n";
+  vscript += "exit\n";
   var tmpscript = Components.classes["@mozilla.org/file/directory_service;1"].
 			    getService(Components.interfaces.nsIProperties).
 			    get("TmpD", Components.interfaces.nsIFile);	
@@ -513,24 +510,44 @@ function wordDVD() {
   // AUTOGENERATE ALL RUN SCRIPTS
   writeRunScripts();
   
-  // RUN OSIS CONVERTER SCRIPT
-  var data = UIfile[INDIR].clone();
-  data.append(HTMLDIR);
+  // COPY CSS to HTML DIRECTORY AND RELOAD CAPTURE WINDOW
+  CssFile = exportFile(STYLESHEET, UIfile[INDIR].path + "/" + STYLESHEET, document.getElementById("restoreDefaults").checked);
+  RenderWin.document.getElementById("render").contentDocument.defaultView.location.assign("chrome://word-dvd/content/web/menu.html");
+  
+  // START OSIS CONVERTER SCRIPT
   if (document.getElementById("osis2html").checked) {
+    var cf = UIfile[OUTDIR].clone();
+    cf.append(CONVERSIONDONE);
+    if (cf.exists()) cf.remove(false);
+    MessageWin = window.open("chrome://word-dvd/content/message.xul", "message", "chrome=yes,alwaysRaised=yes,centerscreen=yes");
     logmsg("Generating HTML from OSIS...");
     var process = Components.classes["@mozilla.org/process/util;1"]
                       .createInstance(Components.interfaces.nsIProcess);                        
     var tmpscript = getTempRunScript(OSISPL);
     process.init(tmpscript);
     var args = [];
-    process.run(true, args, args.length);
+    process.run(false, args, args.length);
+    Osis2HtmlInterval = window.setInterval("checkOSISConverion();", 500);
+    return;
   }
-  else logmsg("Skipped HTML generation.");
   
-  // COPY CSS to HTML DIRECTORY AND RELOAD CAPTURE WINDOW
-  CssFile = exportFile(STYLESHEET, UIfile[INDIR].path + "/" + STYLESHEET, document.getElementById("restoreDefaults").checked);
-  RenderWin.document.getElementById("render").contentDocument.defaultView.location.assign("chrome://word-dvd/content/web/menu.html");
-  
+  logmsg("Skipped HTML generation.");
+  readHtmlFiles();
+}  
+
+function checkOSISConverion() {
+  MessageWin.focus();
+  var cf = UIfile[OUTDIR].clone();
+  cf.append(CONVERSIONDONE);
+  if (cf.exists()) {
+    window.clearInterval(Osis2HtmlInterval);
+    MessageWin.close();
+    cf.remove(false);
+    readHtmlFiles();
+  }
+}
+
+function readHtmlFiles() {
   // Read HTML books and maxchapters
   var htmlFiles = UIfile[INDIR].clone();
   htmlFiles.append(HTMLDIR);
@@ -702,7 +719,7 @@ function prompForSingleBook() {
   var items = [];
   for (var i=0; i<RenderWin.Book.length; i++) {items.push(RenderWin.Book[i].shortName);}
   var result = prompts.select(null, "Select Book", "Create a DVD for which book?", items.length, items, selected);
-  if (!result) return;
+  if (!result) {quit(); return;}
   for (var i=0; i<RenderWin.Book.length; i++) {
     if (RenderWin.Book[i].shortName == items[selected.value]) continue;
     RenderWin.Book.splice(i, 1);
@@ -717,7 +734,7 @@ function prompForStartBook() {
   var items = [];
   for (var i=0; i<RenderWin.Book.length; i++) {items.push(RenderWin.Book[i].shortName);}
   var result = prompts.select(null, "Select Book", "Which book do you want to start from?", items.length, items, selected);
-  if (!result) return;
+  if (!result) {quit(); return;}
   for (var i=0; i<RenderWin.Book.length; i++) {
     if (RenderWin.Book[i].shortName != items[selected.value]) continue;
     RenderWin.StartingBindex = i;
@@ -829,8 +846,15 @@ function rendernext() {
   RenderWin.renderNewScreen();
 }
 
+function quit() {
+  var endDate = new Date();
+  logmsg("Quitting Word-DVD imager at " + endDate.toTimeString() + " " + endDate.toDateString());  
+  window.alert("Quitting Word-DVD.");
+  CloseThis(); 
+}
+
 function stop() {
-  var date = new Date();
+  var endDate = new Date();
   var unUtilizedAudio = "";
   if (RenderWin) {
     for each (var files in RenderWin.CheckAudioChapters) {
@@ -850,7 +874,7 @@ function stop() {
     var logf = readFile(DBLogFile);
     if (logf) hasErrors = (logf.search(/ERR/i)!=-1);
   }
-  logmsg("Finishing Word-DVD imager at " + date.toTimeString() + " " + date.toDateString());
+  logmsg("Finishing Word-DVD imager at " + endDate.toTimeString() + " " + endDate.toDateString());
   
   if (document.getElementById("runword-dvd").selected) {
     var process = Components.classes["@mozilla.org/process/util;1"]
@@ -869,7 +893,7 @@ function stop() {
     process.init(tmpscript);
     var args = [];
     process.run(false, args, args.length);
-    logmsg("Launched" + runscript(VIDEOFILES));  
+    logmsg("Launched " + runscript(VIDEOFILES));  
   }
   
   if (hasErrors) window.alert("Image rendering has completed, but WITH ERRORS!");

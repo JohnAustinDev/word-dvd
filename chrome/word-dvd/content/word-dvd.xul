@@ -65,7 +65,7 @@
       <caption label="Run"/>
       <vbox>
         <checkbox id="delete1st" label="Clean Output Dir" checked="false" oncommand="handleInput(this);" tooltiptext="Wipe output directory and start from scratch." />
-        <checkbox id="osis2html" label="Convert OSIS to HTML" checked="false" disabled="true" oncommand="handleInput(this);" tooltiptext="Run the OSIS to HTML converter to generate new HTML. This command is disabled unless there is an osis file named 'osis.xml' located in the Input Directory listed above." />
+        <checkbox id="osis2html" label="Convert OSIS to HTML" checked="false" disabled="false" oncommand="handleInput(this);" tooltiptext="Run the OSIS to HTML converter to generate new HTML. This command is disabled unless there is an osis file named 'osis.xml' located in the Input Directory listed above." />
         <radiogroup orient="vertical">
           <radio label="Render images only" tooltiptext="Render images, and then stop." />
           <radio id="runword-dvd" label="Create DVD" oncommand="handleInput(this);" selected="true" tooltiptext="Create final DVD files." />

@@ -511,7 +511,7 @@ function saveScreenImage(book, chapter, pagenumber, screentext) {
     ReportedAudioFiles[hasAudio1] = true;
   }
   if (hasAudio2 && !ReportedAudioFiles[hasAudio2]) {
-    MainWinlogmsg("Utilizing audio file: " + hasAudio2);
+    MainWin.logmsg("Utilizing audio file: " + hasAudio2);
     ReportedAudioFiles[hasAudio2] = true;
   }
   
