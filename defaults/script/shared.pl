@@ -422,13 +422,13 @@ sub mpgPages2Chapter($$$$) {
       }
       
       if (-e "$dir/videotmp/chapter.mpg") {
-		  if ($postFlag == 1) {
-			`ffmpeg -i "$dir/videotmp/chapter.mpg" -vcodec copy -acodec libmp3lame -y "$dir/$book/fin-$book-$ch.mpg"`;
-			if (!$debug) {`rm "$dir/videotmp/chapter.mpg"`;}
-			else {`mv "$dir/videotmp/chapter.mpg" "$dir/$book/tmp-$book-$ch.mpg"`;}
-		  }
-		  else {`mv $dir/videotmp/chapter.mpg $dir/$book/fin-$book-$ch.mpg`;}
-	  }
+        if ($postFlag == 1) {
+          `ffmpeg -i "$dir/videotmp/chapter.mpg" -vcodec copy -acodec libmp3lame -y "$dir/$book/fin-$book-$ch.mpg"`;
+          if (!$debug) {`rm "$dir/videotmp/chapter.mpg"`;}
+          else {`mv "$dir/videotmp/chapter.mpg" "$dir/$book/tmp-$book-$ch.mpg"`;}
+        }
+        else {`mv $dir/videotmp/chapter.mpg $dir/$book/fin-$book-$ch.mpg`;}
+      }
       print "Concatenating pages for fin-$book-$ch.mpg\n";
     }
   }
