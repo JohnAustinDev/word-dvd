@@ -467,6 +467,7 @@ function stripHeaderFooter(html) {
   return html;
 }
 
+var ReportedAudioFiles = {};
 function saveScreenImage(book, chapter, pagenumber, screentext) {
 //MainWin.jsdump("Processing:" + book + " to " + Page.beg + " of " + Page.passage.length);
 //MainWin.logmsg(book + "-" + chapter + "-" + pagenumber + " = " + screentext);
@@ -504,6 +505,14 @@ function saveScreenImage(book, chapter, pagenumber, screentext) {
       if (!imgfile || hasAudio1 != hasAudio2) imgfile = captureImage(book, basename);
       else imgfile.copyTo(null, basename + "." + imgfile.leafName.match(/\.(.*)$/)[1]);
     }
+  }
+  if (hasAudio1 && !ReportedAudioFiles[hasAudio1]) {
+    MainWin.logmsg("Utilizing audio file: " + hasAudio1);
+    ReportedAudioFiles[hasAudio1] = true;
+  }
+  if (hasAudio2 && !ReportedAudioFiles[hasAudio2]) {
+    MainWinlogmsg("Utilizing audio file: " + hasAudio2);
+    ReportedAudioFiles[hasAudio2] = true;
   }
   
   return chapter;

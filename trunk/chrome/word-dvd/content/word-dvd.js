@@ -32,6 +32,7 @@ const SCRIPT="script";
 const LISTING="listing";
 const OUTAUDIODIR="audio";
 const IMGDIR="images";
+const BACKUP="backup";
 const OSISPL="osis2html.pl";
 const WORDDVD="word-dvd.sh";
 const VIDEOFILES="word-video.sh";
@@ -51,6 +52,54 @@ const RESOURCE=DEFAULTS + "/resource";
 const OSISFILE = "osis.xml";
 const PAGETIMING="pageTiming.txt";
 const LOCALEFILE="config.txt";
+
+/************************************************************************
+ * Exception Handling
+ ***********************************************************************/ 
+var aConsoleListener =
+{
+  haveException:false,
+  observe:function( aMessage ) {
+    if (this.haveException) return;
+    try {aMessage = aMessage.QueryInterface(Components.interfaces.nsIScriptError);}
+    catch(er) {aMessage=null;}
+    if (aMessage) {
+      var isException = aMessage.flags & aMessage.exceptionFlag;
+      if (isException) {
+        this.haveException = true;
+        window.alert("Unhandled Exception:\n" + aMessage.message);
+      }
+    }
+  },
+  QueryInterface: function (iid) {
+    if (!iid.equals(Components.interfaces.nsIConsoleListener) &&
+            !iid.equals(Components.interfaces.nsISupports)) {
+                  throw Components.results.NS_ERROR_NO_INTERFACE;
+          }
+    return this;
+  }
+};
+
+function setConsoleService(addListener) {
+  if (addListener) {
+    var consoleService = Components.classes["@mozilla.org/consoleservice;1"]
+        .getService(Components.interfaces.nsIConsoleService);
+        consoleService.registerListener(aConsoleListener);
+  }
+  else {
+    try {
+      var consoleService = Components.classes["@mozilla.org/consoleservice;1"]
+          .getService(Components.interfaces.nsIConsoleService);
+          consoleService.unregisterListener(aConsoleListener);
+    }
+    catch(er) {}
+  }
+}
+
+setConsoleService(aConsoleListener);
+
+var Date = new Date();
+var BackupPrefix = Date.getTime();
 
 /************************************************************************
  * Global Utility Functions
@@ -151,6 +200,7 @@ var ButtonId;
 var RenderWin;
 var DBLogFile;
 var CssFile;
+var BackupDir;
 var OUTFILERE = new RegExp("(" + OUTDIRNAME + ")(\\/|$)");
 
 function loadedXUL() {
@@ -193,6 +243,8 @@ function loadedXUL() {
       UIfile[i] = prefs.getComplexValue("File-" + i, Components.interfaces.nsILocalFile);
       if (!UIfile[i]) {throw true;}
       InputTextbox[i].value = UIfile[i].path;
+      if (i>INDIR) 
+	InputTextbox[i].value = InputTextbox[i].value.replace(UIfile[INDIR].path, "<Input Directory>");
     }
     catch(er) {
       InputTextbox[i].value = "";
@@ -248,13 +300,14 @@ function handleInput(elem) {
     else return;
     if (input == OUTDIR) {
       if (!kFilePicker.file.path.match(OUTFILERE)) {
-	window.alert("Output directory \"" +  kFilePicker.file.path + "\" must be have \"" + OUTDIRNAME + "\" somewhere in its path.");
+	window.alert("Output directory must be have \"" + OUTDIRNAME + "\" somewhere in its path.");
 	return;
       }
     }  
     UIfile[input] = kFilePicker.file;
     InputTextbox[input].value = kFilePicker.file.path;
     if (input == INDIR) setInputDirsToDefault();
+    else InputTextbox[input].value = InputTextbox[input].value.replace(UIfile[INDIR].path, "<Input Directory>");
     break;
     
   case "noaudio":
@@ -273,7 +326,7 @@ function handleInput(elem) {
       document.getElementById("browse-1").disabled = false;
       try {
         UIfile[AUDIO] = prefs.getComplexValue("File-1", Components.interfaces.nsILocalFile);
-        InputTextbox[AUDIO].value = UIfile[AUDIO].path;
+        InputTextbox[AUDIO].value = UIfile[AUDIO].path.replace(UIfile[INDIR].path, "<Input Directory>");
       }
       catch(er) {InputTextbox[AUDIO].value = "";}
     }
@@ -324,10 +377,10 @@ function setInputDirsToDefault() {
   else {
     UIfile[AUDIO] = UIfile[INDIR].clone();
     UIfile[AUDIO].append(INAUDIODIR);
-    InputTextbox[AUDIO].value = UIfile[AUDIO].path;
+    InputTextbox[AUDIO].value = UIfile[AUDIO].path.replace(UIfile[INDIR].path, "<Input Directory>");
     UIfile[OUTDIR] = UIfile[INDIR].clone();
     UIfile[OUTDIR].append(OUTDIRNAME);
-    InputTextbox[OUTDIR].value = UIfile[OUTDIR].path;
+    InputTextbox[OUTDIR].value = UIfile[OUTDIR].path.replace(UIfile[INDIR].path, "<Input Directory>");
   } 
 }
 
@@ -338,7 +391,6 @@ function enableGO() {
   }
   document.getElementById("runpause").disabled = (i!=NUMINPUTS);
 }
-
 
 function wordDVD() {
   jsdump("Checking Inputs...");
@@ -359,7 +411,7 @@ function wordDVD() {
   
   // Check output directory and clean if needed
   if (!UIfile[OUTDIR].path.match(OUTFILERE)) {
-    window.alert("STOPPING!: Output directory \"" + UIfile[OUTDIR].leafName + "\" must be under a directory called \"" + OUTDIRNAME + "\"!");
+    window.alert("STOPPING!: Output directory must be have \"" + OUTDIRNAME + "\" somewhere in its path.");
     return;
   }
   if (!UIfile[OUTDIR].exists()) UIfile[OUTDIR].create(UIfile[OUTDIR].DIRECTORY_TYPE, 0777);
@@ -370,15 +422,59 @@ function wordDVD() {
     } catch (er) {}
   }
   
+  // Create backup directory
+  BackupDir = Components.classes["@mozilla.org/file/local;1"].createInstance(Components.interfaces.nsILocalFile);
+  BackupDir.initWithPath(UIfile[OUTDIR].path + "/" + BACKUP);
+  if (!BackupDir.exists()) BackupDir.create(BackupDir.DIRECTORY_TYPE, 0777);
+  
   // Log File
   DBLogFile = UIfile[OUTDIR].clone();
   DBLogFile.append(DBLOGFILE);
   if (DBLogFile.exists()) DBLogFile = moveToBackup(DBLogFile);
 
-  var date = new Date();
-  logmsg("Starting Word-DVD imager at " + date.toTimeString() + " " + date.toDateString());
+  logmsg("Starting Word-DVD imager at " + Date.toTimeString() + " " + Date.toDateString());
   logmsg("Word-DVD Version: " + (ExtVersion ? ExtVersion:"undreadable"));
   
+  // BACKUP XPI AND VERSION NUMBERS
+  var test = BackupDir.clone();
+  test.append("extension");
+  if (test.exists()) test.remove(true);
+  test.create(test.DIRECTORY_TYPE, 0777);
+  test.append(ExtFile.leafName);
+  ExtFile.copyTo(test.parent, null);
+  var process = Components.classes["@mozilla.org/process/util;1"]
+                      .createInstance(Components.interfaces.nsIProcess);
+  var appInfo = Components.classes["@mozilla.org/xre/app-info;1"]
+                    .getService(Components.interfaces.nsIXULAppInfo);
+  
+  var vscript = "#!/bin/sh\n";
+  vscript += "echo >> " + DBLogFile.path + "\n";
+  vscript += "echo ========= FIREFOX VERSION INFO ============== >> " + DBLogFile.path + "\n";
+  vscript += "echo firefox version " + appInfo.version + " >> " + DBLogFile.path + "\n";
+  vscript += "echo firefox extension backup: " + getPathOrRelativePath(test, UIfile[OUTDIR], UIfile[OUTDIR]) + " >> " + DBLogFile.path + "\n";
+  vscript += "echo >> " + DBLogFile.path + "\n";
+  vscript += "echo ========= MPLEX VERSION INFO ============== >> " + DBLogFile.path + "\n";
+  vscript += "echo \\$mplex -E >> " + DBLogFile.path + "\n";
+  vscript += "mplex -E" + " 2>> " + DBLogFile.path + "\n";
+  vscript += "echo >> " + DBLogFile.path + "\n";
+  vscript += "echo ========= FFMPEG VERSION INFO ============== >> " + DBLogFile.path + "\n";
+  vscript += "echo \\$ffmpeg -version >> " + DBLogFile.path + "\n";
+  vscript += "ffmpeg -version " + " >> " + DBLogFile.path + "\n";
+  vscript += "echo >> " + DBLogFile.path + "\n";
+  vscript += "echo ========= DVDAUTHOR VERSION INFO ============== >> " + DBLogFile.path + "\n";
+  vscript += "echo \\$dvdauthor >> " + DBLogFile.path + "\n";
+  vscript += "dvdauthor " + " 2>> " + DBLogFile.path + "\n";
+  var tmpscript = Components.classes["@mozilla.org/file/directory_service;1"].
+			    getService(Components.interfaces.nsIProperties).
+			    get("TmpD", Components.interfaces.nsIFile);	
+  tmpscript.append("tmpscript.sh");
+  if (tmpscript.exists()) tmpscript.remove(false);
+  write2File(tmpscript, vscript, false);
+  process.init(tmpscript);
+  var args = [];
+  process.run(true, args, args.length);
+  
+  logmsg("\nInitializing run environment");
   if (document.getElementById("delete1st").checked) logmsg("Cleaned OUTPUT directory:" + UIfile[OUTDIR].path + "...");
 
   // READ LOCALE FILE
@@ -394,8 +490,13 @@ function wordDVD() {
   // LISTING DIRECTORY
   var listdir = UIfile[OUTDIR].clone();
   listdir.append(LISTING);
-  if (listdir.exists()) listdir = moveToBackup(listdir);
-  listdir.create(listdir.DIRECTORY_TYPE, 0777);
+  if (listdir.exists()) {    
+    if (!document.getElementById("startbk").selected) {
+      listdir = moveToBackup(listdir);
+      listdir.create(listdir.DIRECTORY_TYPE, 0777);
+    }
+  }
+  else listdir.create(listdir.DIRECTORY_TYPE, 0777);
   
   // TIMING STATISTICS FILES
   StatsFile = UIfile[OUTDIR].clone();
@@ -533,11 +634,13 @@ function exportDir(extdir, outDirPath, overwrite) {
 // file object takes on post-move identity.
 function moveToBackup(aFile) {
   var orig = aFile.path;
+  var back = BackupDir.clone();
+  back.append(aFile.leafName); 
   var n = 0;
   do {
-    n++;
     var save = Components.classes["@mozilla.org/file/local;1"].createInstance(Components.interfaces.nsILocalFile);
-    save.initWithPath(aFile.path.replace(/([^\/]+)$/, n + "-$1"));
+    save.initWithPath(back.path.replace(/([^\/]+)$/, (n ? n + "-":"") + BackupPrefix + "-$1"));
+    n++;
   } while (save.exists());
   aFile.moveTo(save.parent, save.leafName);
   aFile = Components.classes["@mozilla.org/file/local;1"].createInstance(Components.interfaces.nsILocalFile);
@@ -679,8 +782,9 @@ function getPathOrRelativePath(aFile, rFile, rootFile) {
   var root = rootFile.path;
   if (path.indexOf(root) == 0 && rpath.indexOf(root) == 0) {
     path = path.replace(root, "");
+    if (!path) path = "/";
     rpath = rpath.replace(root, "");
-    if (!rpath) rpath = "./";
+    if (!rpath) rpath = ".";
     else {
       rpath = rpath.replace(/[^\/]+/g, "..").substring(1);
     }
