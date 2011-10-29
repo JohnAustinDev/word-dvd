@@ -500,9 +500,9 @@ function saveScreenImage(book, chapter, pagenumber, screentext) {
         footNotesSaved = true;
       }
       if (!renderImages) continue;
-      hasAudio1 = (hasAudio1 ? true:false);
-      hasAudio2 = (hasAudio2 ? true:false);
-      if (!imgfile || hasAudio1 != hasAudio2) imgfile = captureImage(book, basename);
+      var ha1 = (hasAudio1 ? true:false);
+      var ha2 = (hasAudio2 ? true:false);
+      if (!imgfile || ha1 != ha2) imgfile = captureImage(book, basename);
       else imgfile.copyTo(null, basename + "." + imgfile.leafName.match(/\.(.*)$/)[1]);
     }
   }
@@ -920,7 +920,6 @@ function getTestament(book) {
   var re = new RegExp("(^|;)" + book + ";", "i");
   if (OTBKS.search(re)!=-1) return "OT";
   if (NTBKS.search(re)!=-1) return "NT";
-  MainWin.logmsg("WARNING: Unknown testament for " + book);
   return "";
 }
 
