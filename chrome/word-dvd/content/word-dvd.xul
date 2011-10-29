@@ -84,7 +84,7 @@
       <vbox>
         <radiogroup orient="vertical">
           <radio id="renderall" label="Render All Books" tooltiptext="Render pages for all books." selected="true" />
-          <radio id="startbk"   label="Render From Book" tooltiptext="Render pages starting at a selected book." />
+          <radio id="startbk"   label="Continue From Book" tooltiptext="Render pages starting at a selected book. Existing listing files are not removed." />
           <radio id="singlebk"  label="Render Single Book"  tooltiptext="Render only a single book. You will be given a drop-down list to choose the book from." />
         </radiogroup>
         <checkbox id="images" label="Don't capture" checked="false" tooltiptext="Show pages in window, but do not capture or save them." />
