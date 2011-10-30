@@ -233,7 +233,7 @@ function loadedXUL() {
     ExtVersion = readFile(insrdf).match(/<em\:version>(.*?)<\/em\:version>/im)[1];
     loadedXUL2();
   }
-		
+	
   RenderNext = document.getElementById("rendernext");
   RunPause = document.getElementById("runpause");
 
@@ -255,6 +255,7 @@ function loadedXUL() {
 }
 
 function loadedXUL2() {
+  document.title = "Word-DVD-" + ExtVersion;	
   handleInput();
     
   // open render window, which itself runs startRenderer()
@@ -754,7 +755,7 @@ function writeRunScripts() {
    "audio.pl", "imgs2mpeg.pl", "navbuttons.pl", 
    "menus.pl", "mpeg2vob.pl", "lencalc.pl", 
    "timeAnalysis.pl", "createiso.pl", "audacity.pl", 
-   "ecasound.pl", "burnverify.sh", "imgs2web.pl"];
+   "transitions.pl", "burnverify.sh", "imgs2web.pl"];
   
   // MAKE OUTPUT SCRIPT DIR
   var file = Components.classes["@mozilla.org/file/local;1"].createInstance(Components.interfaces.nsILocalFile);

@@ -16,7 +16,8 @@
 #   You should have received a copy of the GNU General Public License
 #   along with Word-DVD.  If not, see <http://www.gnu.org/licenses/>.
 
-#usage ecasound.pl scriptDir inputDir outputDir audioDir book [args...]
+#usage transitions.pl scriptDir inputDir outputDir audioDir book [args...]
+$debug = 0;
 
 $prepage = 10;
 $rewind = 15;
@@ -39,7 +40,7 @@ while($a = @ARGV[$i++]) {
 }
 
 if ($MBK eq "") {
-  print "usage: ./xecasound book [chapter=??] [margin=??] [numpts=??]\n";
+  print "usage: ./xtransitions.pl book [chapter=??] [margin=??] [numpts=??]\n";
   print "\n";
   print "Press the space bar when the reading begins. Playback will jump to\n";
   print "the end of the audio file then press the spacebar when the reading\n";
@@ -76,32 +77,17 @@ if (!exists($bkorder{$MBK})) {
   exit;
 }
 
-use Audio::Ecasound qw(:simple);
 use Term::ReadKey;
 ReadMode 4;
 
-print "\nRUNNING ecasound.pl $MBK $MCH $MPG\n";
+print "\nRUNNING transitions.pl $MBK $MCH $MPG\n";
 require "$scriptdir/shared.pl";
 &readDataFiles();
 &readTransitionInformation();
 
 $quit = "false";
-eci("ao-add /dev/dsp");
 for ($MCH=$firstChapter; $quit ne "true" && $MCH <= $lastChapter{$MBK}; $MCH++) {
-  #print "\nPress <SPACE BAR> at transition\n";
-  #print "Press <Enter> to quit\n";
-  #print "Press left/right arrows for ff/rw\n\n";
-  
-  # Convert audio file to wav and play it
-  if (!-e "$outaudiodir/audiotmp") {`mkdir "$outaudiodir/audiotmp"`;}
-  $f = "$audiodir/".$haveAudio{$MBK."-".$MCH};
-  $t = "$outaudiodir/audiotmp/$MBK-$MCH.wav";
-  if (!-e $t) {
-    $com = "ffmpeg -acodec ac3 -i $f -y $t";
-    print $com;
-    `$com`;
-  }
-  eci("ai-add $t");
+  &audioPlay(0);
 
   $gotoNextChapter = "false";
   $MPG=0;
@@ -110,30 +96,31 @@ for ($MCH=$firstChapter; $quit ne "true" && $MCH <= $lastChapter{$MBK}; $MCH++) 
     &readDataFiles();
 
     if ($MPG == $lastPage{$MBK."-".$MCH}) {
-      print "\n\n";
+      print "\n\n\n";
       print "************* LAST PAGE **************\n";
       print "* PRESS SPACEBAR WHERE READING ENDS. *\n";
       print "************* LAST PAGE **************\n\n";
     }
      
-    if (eci("engine-status") ne "running") {&startEcasound($MBK, $MCH, $MPG);}
+    if (!$AudioPlaying) {&audioPlayPage($MBK, $MCH, $MPG);}
     else {&updateStatus();}
     &showPageImage($MBK, $MCH, $MPG);
     $gotoNextPage = "false";
     while ($gotoNextPage ne "true") {
-      $res = ReadKey(-1); if (ord($res) == 0) {next;}
+      $res = ReadKey(-1); if (ord($res) == 0) {&updateTime(); next;}
       $res = getKeyCode($res);     
-#print "\n\n\n\nKEY \"$res\"\n\n\n\n"; ReadMode 0; die;
+#print "\n\n\n\nKEY \"$res\"\n\n\n\n"; ReadMode 0; &DIE();
       $newEntry = "false";
             
       # quit ( Enter | q | ^c )      
-      if ($res eq "120" || $res eq "113" || $res eq "3")  {print "quit\n"; $gotoNextPage = "true"; $quit = "true";}
+      if ($res eq "120" || $res eq "113" || $res eq "3")  {print "\nquit\n"; $gotoNextPage = "true"; $quit = "true";}
       
       # save transition (space bar)
       elsif ($res eq "32")  {
+        if ($debug) {print "\nKEYBOARD=$res (Save Transition)\n";}
         $newEntry = "true";
-        if (eci("engine-status") eq "running") {eci("engine-halt");}
-        $gotoNextPage = "true";  
+        $gotoNextPage = "true";
+        &audioStop();
         if ($MPG == 0) {&saveTime("start");}
         elsif ($MPG == $lastPage{$MBK."-".$MCH}) {&saveTime("end");}
         else {
@@ -147,7 +134,7 @@ for ($MCH=$firstChapter; $quit ne "true" && $MCH <= $lastChapter{$MBK}; $MCH++) 
 
       # save transition but continue reading unbroken ( down-arrow )
       elsif ($res eq "117")  {
-        if (eci("engine-status") ne "running") {eci("engine-launch"); eci("start");}
+        if ($debug) {print "\nKEYBOARD=$res (Save transition and continue)\n";}
         $newEntry = "true";
         $gotoNextPage = "true";  
         if ($MPG == 0) {&saveTime("start");}
@@ -157,52 +144,52 @@ for ($MCH=$firstChapter; $quit ne "true" && $MCH <= $lastChapter{$MBK}; $MCH++) 
             
       # log time 0 as reading start ( s )
       elsif ($res eq "115") {
-        if (eci("engine-status") ne "running") {eci("engine-launch"); eci("start");}
+        if ($debug) {print "\nKEYBOARD=$res (Save 0s as reading start)\n";}
         $newEntry = "true";
-        if (eci("engine-status") eq "running") {eci("engine-halt");}
-        eci("ai-setpos 0"); 
+        &audioStop();
         $gotoNextPage = "true";
-        &saveTime("start");
+        &saveTime("start", 1);
       }
       
       # go to top of current page- image and audio ( up-arrow | t )
       elsif ($res eq "27.91.65" || $res eq "116") {
-        if (eci("engine-status") ne "running") {eci("engine-launch"); eci("start");}
-        print "top of page\n";
+        if ($debug) {print "\nKEYBOARD=$res (Go to start of current page)\n";}
+        print "\ntop of page\n";
+        &audioStop();
         &doTimingAdjustment();
         $tt = getCalcTime($MBK, $MCH, $MPG);
-        eci("ai-setpos $tt");
+        &audioPlay($tt);
         &showPageImage($MBK, $MCH, $MPG);
         &updateStatus("true"); 
       } 
 
       # go back to last page ( b )
       elsif ($res eq "98") {
-        if (eci("engine-status") eq "running") {eci("engine-halt");}
-        print "back one page.\n";
+        if ($debug) {print "\nKEYBOARD=$res (Go to previous page)\n";}
+        print "\nback one page.\n";
         $gotoNextPage = "true";
         $MPG = $MPG-2;
       } 
       
       # go to next page ( n )
       elsif ($res eq "110") {
-        if (eci("engine-status") eq "running") {eci("engine-halt");}
-        print "next page.\n";
+        if ($debug) {print "\nKEYBOARD=$res (Go to page next page)\n";}
+        print "\nnext page.\n";
         $gotoNextPage = "true";
       }
       
       # goto a particular page
       elsif ($res eq "103" && $gtnum ne "") {
-        if (eci("engine-status") eq "running") {eci("engine-halt");}
-        print "goto page $gtnum.\n";
+        if ($debug) {print "\nKEYBOARD=$res (Go to page $gtnum)\n";}
+        print "\ngoto page $gtnum.\n";
         $gotoNextPage = "true";
         $MPG = $gtnum-1;
       }
 
       # goto a particular chapter
       elsif ($res eq "7" && $gtnum ne "") {
-        if (eci("engine-status") eq "running") {eci("engine-halt");}
-        print "goto chapter $gtnum.\n";
+        if ($debug) {print "\nKEYBOARD=$res (Go to chapter $gtnum)\n";}
+        print "\ngoto chapter $gtnum.\n";
         $MCH = $gtnum;
         if ($MCH < 1) {$MCH = 1;}
         if ($MCH > $lastChapter{$MBK}) {$MCH = $lastChapter{$MBK};}
@@ -213,8 +200,8 @@ for ($MCH=$firstChapter; $quit ne "true" && $MCH <= $lastChapter{$MBK}; $MCH++) 
       
       # go back a chapter ( ^b )
       elsif ($res eq "2") {
-        if (eci("engine-status") eq "running") {eci("engine-halt");}
-        print "back chapter.\n";
+        if ($debug) {print "\nKEYBOARD=$res (Go to previous chapter)\n";}
+        print "\nback chapter.\n";
         $MCH--;
         if ($MCH < 1) {$MCH = 1;} 
         $gotoNextPage = "true"; 
@@ -224,8 +211,8 @@ for ($MCH=$firstChapter; $quit ne "true" && $MCH <= $lastChapter{$MBK}; $MCH++) 
       
       # go to next chapter ( ^n )
       elsif ($res eq "14") {
-        if (eci("engine-status") eq "running") {eci("engine-halt");}
-        print "next chapter.\n"; 
+        if ($debug) {print "\nKEYBOARD=$res (Go to next chapter)\n";}
+        print "\nnext chapter.\n"; 
         $MCH++; 
         if ($MCH > $lastChapter{$MBK}) {$MCH = $lastChapter{$MBK};}  
         $gotoNextPage = "true"; 
@@ -235,50 +222,59 @@ for ($MCH=$firstChapter; $quit ne "true" && $MCH <= $lastChapter{$MBK}; $MCH++) 
       
       # rewind ( left-arrow | r )
       elsif ($res eq "27.91.68" || $res eq "114") {
-        if (eci("engine-status") ne "running") {eci("engine-launch"); eci("start");}
-        print "rewind $rewind s.\n"; 
-        if (eci("ai-getpos") < $rewind) {eci("ai-setpos 0");}
-        else {eci("ai-rewind $rewind");}
+        if ($debug) {print "\nKEYBOARD=$res (Rewind $rewind seconds)\n";}
+        print "\nrewind $rewind s.\n";
+        &audioRewind($rewind);
         &updateStatus("true");
       }
       
       # forward ( right-arrow | f )
       elsif ($res eq "27.91.67" || $res eq "102") {
-        if (eci("engine-status") ne "running") {eci("engine-launch"); eci("start");}
-        print "forward $forward s.\n";
-        eci("ai-forward $forward");
+        if ($debug) {print "\nKEYBOARD=$res (Forward $forward seconds)\n";}
+        print "\nforward $forward s.\n";
+        &audioForward($forward);
         &updateStatus("true");
       }
 
       # rewind 4 s ( ctrl+left-arrow | ctrl+r )
       elsif ($res eq "27.91.49.59.53.68" || $res eq "18") {
-        if (eci("engine-status") ne "running") {eci("engine-launch"); eci("start");}
-        print "rewind 4 s.\n"; 
-        if (eci("ai-getpos") < 4) {eci("ai-setpos 0");}
-        else {eci("ai-rewind 4");}
+        if ($debug) {print "\nKEYBOARD=$res (Rewind 4 seconds)\n";}
+        print "\nrewind 4 s.\n"; 
+        &audioRewind(4);
         &updateStatus("true");
       }
       
       # forward 4 s ( ctrl+right-arrow | ctrl+f )
       elsif ($res eq "27.91.49.59.53.67" || $res eq "6") {
-        if (eci("engine-status") ne "running") {eci("engine-launch"); eci("start");}
-        print "forward 4 s.\n";
-        eci("ai-forward 4");
+        if ($debug) {print "\nKEYBOARD=$res (Forward 4 seconds)\n";}
+        print "\nforward 4 s.\n";
+        &audioForward(4);
         &updateStatus("true");
       }
             
       # pause ( p )
       elsif ($res eq "112") {
-        if (eci("engine-status") ne "running") {eci("engine-launch"); eci("start"); print "Resumed.\n";}
-        else {eci("engine-halt"); print "Paused!\n";}
+        if ($debug) {print "\nKEYBOARD=$res (Pause/Continue)\n";}
+        if (!$PauseTime) {
+          print "\nPaused!\n";
+          $PauseTime = &audioGetTime();
+          &audioStop();
+        }
+        else {
+          print "\nResumed.\n";
+          &audioPlay($PauseTime);
+          $PauseTime=0;
+        }
         &updateStatus("true");
       }
       
       # status ( z )
       elsif ($res eq "122") {
-        print eci("cop-status")."\n";
+        if ($debug) {print "\nKEYBOARD=$res (Show status)\n";}
         &updateStatus("true");
       }
+      
+      elsif ($debug) {print "\nKEYBOARD=$res (Unknown command)\n";}
       
       # collect numbers for goto command (0-9)
       if($res >= 48 && $res <= 57) {$gtnum = $gtnum.chr($res);}
@@ -286,14 +282,14 @@ for ($MCH=$firstChapter; $quit ne "true" && $MCH <= $lastChapter{$MBK}; $MCH++) 
       
     }
     $MPG++;
+    &audioStop();
     
     # new entries follow a different flow than navigation commands
     if ($newEntry eq "true") {
       if    ($MPG == 1) {$MPG = $lastPage{"$MBK-$MCH"};}
       elsif ($MPG > $lastPage{"$MBK-$MCH"}) {$MPG = 1;}
       elsif ($MPG == $lastPage{"$MBK-$MCH"}) {
-        if (eci("engine-status") eq "running") {eci("engine-halt");}
-        print "\nMove on to the next chapter? (y/n):";
+        print "\n\nMove on to the next chapter? (y/n):";
         while (!defined($res = ReadKey(-1))) {}
         getKeyCode($res); # insure key is completely read
         print "\n";
@@ -306,21 +302,19 @@ for ($MCH=$firstChapter; $quit ne "true" && $MCH <= $lastChapter{$MBK}; $MCH++) 
       if ($MPG > $lastPage{"$MBK-$MCH"}) {$MPG = $lastPage{"$MBK-$MCH"};}
     }
   }
-  if ($MPG == $lastPage{$MBK."-".$MCH}) {print "\nCHAPTER COMPLETED...\n";}
-  if (eci("engine-status") ne "not started") {eci("engine-halt");}
+  if ($MPG == $lastPage{$MBK."-".$MCH}) {print "\n\nCHAPTER COMPLETED...\n";}
 }
 $MCH--;
-if ($MPG == ($lastPage{$MBK."-".$MCH}) && $MCH == $lastChapter{$MBK}) {print "\n$MBK COMPLETED!!\n";}
-print "\nexiting...\n";
+if ($MPG == ($lastPage{$MBK."-".$MCH}) && $MCH == $lastChapter{$MBK}) {print "\n\n$MBK COMPLETED!!\n";}
+print "\n\nexiting...\n";
 
-system("pkill -9 eog");
-eci("quit");
+&sys("pkill -9 eog");
 
 # Clean and sort the pageTiming.txt file
-`mv -f $indir/pageTiming.txt $outaudiodir/pageTiming.tmp`;
+&sys("mv -f \"$indir/pageTiming.txt\" \"$outaudiodir/pageTiming.tmp\"");
 if (!-e "$indir/pageTiming.txt") {
-  open(INF, "<$outaudiodir/pageTiming.tmp") || die "Could not open $outaudiodir/pageTiming.tmp\n";
-  open(OUTF, ">$indir/pageTiming.txt") || die "Could not open $indir/pageTiming.txt\n";
+  open(INF, "<$outaudiodir/pageTiming.tmp") || &DIE("Could not open $outaudiodir/pageTiming.tmp\n");
+  open(OUTF, ">$indir/pageTiming.txt") || &DIE("Could not open $indir/pageTiming.txt\n");
   while(<INF>) {
     if    ($_ =~ /^\s*([^-#]+-[^-]+-[\dse]+)\s*=/)
     { 
@@ -362,32 +356,50 @@ if (!-e "$indir/pageTiming.txt") {
 }
 else {print "WARNING: Could not sort pageTiming.txt\n";}
 
+if (!$debug && -e "$outaudiodir/audiotmp") {&sys("rm -r -f \"$outaudiodir/audiotmp\"");}
 
 ReadMode 0;                          
 ################################################################################
 ################################################################################
 sub doTimingAdjustment() {
-  `$scriptdir/timeAnalysis.pl $scriptdir $IDR $ODR $ADR`;
-  `$scriptdir/audio.pl $scriptdir $IDR $ODR $ADR`;
+  &sys("\"$scriptdir/timeAnalysis.pl\" \"$scriptdir\" \"$IDR\" \"$ODR\" \"$ADR\"");
+  &sys("\"$scriptdir/audio.pl\" \"$scriptdir\" \"$IDR\" \"$ODR\" \"$ADR\"");
 }
 
 sub updateStatus($) {
   my $noret = shift;
-  my $cp = eci("ai-getpos");
+  my $cp = &audioGetTime();
   my $v;
   my $p = $MPG;
-  if ($p < 1) {$p = "s"; $v = &formatTime(&roundToNearestFrame($firstPageGap{$MBK."-".$MCH}), "short");}
-  elsif ($p >= $lastPage{$MBK."-".$MCH}) {$p = "e"; $v = &formatTime(&roundToNearestFrame($Chapterlength{$MBK."-".$MCH} - $firstPageGap{$MBK."-".$MCH} - $ChapterReadlength{$MBK."-".$MCH}), "short");} #;}
+  if ($p < 1) {
+    $p = "s"; 
+    $v = &formatTime(&roundToNearestFrame($firstPageGap{$MBK."-".$MCH}), "short");
+  }
+  elsif ($p >= $lastPage{$MBK."-".$MCH}) {
+    $p = "e"; 
+    $v = &formatTime(&roundToNearestFrame($Chapterlength{$MBK."-".$MCH} - $firstPageGap{$MBK."-".$MCH} - $ChapterReadlength{$MBK."-".$MCH}), "short");
+  }
   else {$v = &formatTime(&getCalcTime($MBK, $MCH, ($MPG+1)), "short");}
   if ($noret ne "true") {print "\n";}
-  print "                                       TARGET: $v\n";
-  print "                                       TIME: ".&formatTime(&roundToNearestFrame($cp), "short")."\n";
-  print "SPACEBAR==> $MBK-$MCH-$p ";
+  
+  print sprintf("%-30s%19s%s\n", "", "CALCULATED TARGET: ", $v);
+  print sprintf("%-30s%19s%s", "SPACEBAR==> $MBK-$MCH-$p", "REAL TIME: ", &formatTime(&roundToNearestFrame($cp), "short"));
 }
 
-sub saveTime($) {
+sub updateTime() {
+    my $t = time;
+    if ($LastTimeCheck && $LastTimeCheck != $t) {
+      my $cp = &audioGetTime();
+      print "\b\b\b\b\b";
+      print &formatTime(&roundToNearestFrame($cp), "short");  
+    }
+    $LastTimeCheck = $t;
+}
+
+sub saveTime($$) {
   my $type = shift;
-  my $posuf = eci("ai-getpos");  
+  my $savezero = shift;
+  my $posuf = $savezero ? 0:&audioGetTime();  
   my $pos = &formatTime(&roundToNearestFrame($posuf));
   print "= $pos\n\n\n";
   
@@ -398,7 +410,7 @@ sub saveTime($) {
   my $entry = "$en = $pos";
 
   if (exists($pageTimingEntry{$en})) {
-    if (eci("engine-status") eq "running") {eci("engine-halt");}
+    &audioStop();
     print "PAGETIMING FILE:   \"".$pageTimingEntry{$en}."\"\n";
     print "SAVE ENTRY?        \"$entry\"  ?(y/n):";
     my $res;
@@ -411,7 +423,7 @@ sub saveTime($) {
     }
   }
 
-  open(INF, ">>$indir/pageTiming.txt") || die "Could not open $indir/pageTiming.txt\n";
+  open(INF, ">>$indir/pageTiming.txt") || &DIE("Could not open $indir/pageTiming.txt\n");
   if (!defined($hasRT)) {print INF "\n"; $hasRT = "true";}     
   if (exists($transitionVerse{"$MBK-$MCH-$MPG"})) {
     my $trans = $transitionVerse{"$MBK-$MCH-$MPG"};
@@ -430,45 +442,15 @@ sub saveTime($) {
   close(INF);
 }
 
-sub startEcasound($$$) {
-  my $b = shift;
-  my $c = shift;
-  my $p = shift;
-  
-  my $pos = 0;
-  if ($p > 0 && $p < $lastPage{$b."-".$c}) {  
-    $pos = &getCalcTime($b, $c, ($p+1)) - $prepage;
-    if ($pos < 0) {$pos = 0;}
-  }
-  elsif ($p == $lastPage{$b."-".$c}) {$pos = $Chapterlength{$b."-".$c} - 10;}
-  
-  my $dt = $pos - eci("ai-getpos");
-  eci("ai-setpos $pos");
-  eci("engine-launch"); eci("start");
-  print "\n";
-  if ($dt > 5) {print sprintf("                                       SKIPPING: %i s", $dt);}
-  &updateStatus();
-  #print "Started $b-$c at $pos seconds in $p (".$lastPage{$b."-".$c}.")\n";  
-}
-
 sub showPageImage($$$) {
   my $b = shift;
   my $c = shift;
   my $p = shift;
-  system("pkill -9 eog");
+  &sys("pkill -9 eog");
   if ($p < 1) {$p = 1;}
   if ($p > $lastPage{"$b-$c"}) {$p = $lastPage{"$b-$c"};}
-  system ("eog $imagedir/$b/$b-$c-$p.jpg &");
-  $waiting = 15;
-  while ($waiting > 0) {
-    system("sleep 0.5s");
-    my $w = `wmctrl -l`;
-    if ($w =~ /\s*$b-$c-$p.jpg\s*$/) {$waiting = 0;}
-    $waiting--;
-  }
-  my $t = "$outdir/script";
-  $t =~ s/\/home\/[^\/]+/\~/;
-  system("wmctrl -a \"$t\"");
+  &sys("eog \"$imagedir/$b/$b-$c-$p.jpg\" 1> /dev/null 2> /dev/null &");
+  &waitAndRefocus(quotemeta("$b-$c-$p.jpg"));
   #print "Showing $b-$c page $p.\n";
 }
 
@@ -480,7 +462,7 @@ sub readTransitionInformation() {
   
     foreach $entry (@entries) {
       if ($entry !~ /-trans\.csv$/) {next;}
-      open (INF, "<$listdir/$entry") || die "Could not open $listdir/$entry";
+      open (INF, "<$listdir/$entry") || die &DIE("Could not open $listdir/$entry");
       my $line = 0;
       while (<INF>) {
         $line++;
@@ -561,6 +543,103 @@ sub sortAV {
   $r = $cha <=> $chb;
   if ($r != 0) {return $r;}
   return $ta cmp $tb;
+}
+
+sub audioPlay($) {
+  my $st = shift;
+  if ($AudioPlaying) {return;}
+  $tmp = "$outaudiodir/audiotmp";
+  if (!-e "$tmp") {&sys("mkdir \"$tmp\"");}
+  my $f = $audiodir."/".$haveAudio{$MBK."-".$MCH};
+  &sys("ffplay -x 200 -y 160 -stats -ss $st \"$f\" 1> \"$tmp/ffplay.txt\" 2> /dev/null &");
+  $AudioPlaying = 1;
+  &waitAndRefocus("(".quotemeta($f)."|FFplay)");
+}
+
+sub audioPlayPage($$$) {
+  my $b = shift;
+  my $c = shift;
+  my $p = shift;
+  
+  my $pos = 0;
+  if ($p > 0 && $p < $lastPage{$b."-".$c}) {  
+    $pos = &getCalcTime($b, $c, ($p+1)) - $prepage;
+    if ($pos < 0) {$pos = 0;}
+  }
+  elsif ($p == $lastPage{$b."-".$c}) {$pos = $Chapterlength{$b."-".$c} - 10;}
+  
+  my $dt = $pos - &audioGetTime();
+  &audioPlay($pos);
+  print "\n";
+  if ($dt > 5) {print sprintf("%-30s%19s%i s", "", "SKIPPING:", $dt);}
+  &updateStatus();
+  #print "Started $b-$c at $pos seconds in $p (".$lastPage{$b."-".$c}.")\n";  
+}
+
+sub audioStop() {
+  if (!$AudioPlaying) {return;}
+  &sys("pkill -9 ffplay"); 
+  $AudioPlaying = 0;
+}
+
+sub audioRewind($) {
+  my $s = shift;
+  &audioStop();
+  my $t = &audioGetTime();
+  $t = $t-$s; 
+  if ($t < 0) {$t = 0;}
+  &audioPlay($t);
+}
+
+sub audioForward($) {
+  my $s = shift;
+  &audioStop();
+  my $t = &audioGetTime();
+  my $fl = $Chapterlength{$MBK."-".$MCH};
+  $s = $t+$s;
+  if ($s > $fl) {$s = $fl-$s;}
+  &audioPlay($s);
+}
+
+sub audioGetTime() {
+  my $tmp = "$outaudiodir/audiotmp";
+  my $time = 0;
+  open(INF, "<$tmp/ffplay.txt") || &DIE("Could not read ffplay.txt\n");
+  $f = <INF>;
+  while($f =~ s/([\d\.]+) A\-V//) {$time = $1;}
+  close(INF);
+  return $time;  
+}
+
+sub waitAndRefocus($) {
+  my $wait4win = shift;
+  my $waiting = 15;
+  while ($waiting > 0) {
+    &sys("sleep 0.5s");
+    my $w = &sys("wmctrl -l");
+    if ($w =~ /^\S+\s+\S+\s+\S+\s+$wait4win\s*$/gm) {$waiting = 0;}
+    $waiting--;
+  }
+  my $t = &sys("pwd"); chomp($t);
+  $t =~ s/\/home\/[^\/]+/\~/;
+  &sys("wmctrl -a \"$t\"");
+}
+
+sub sys($) {
+  my $cmd = shift;
+  my $ret = `$cmd`;
+  if ($debug) {
+    print "$cmd\n";
+    print "$ret\n";
+  }
+  return $ret;
+}
+
+sub DIE($) {
+  my $m = shift;
+  ReadMode 0;
+  print $m;
+  die;
 }
 
 sub initBookOrder() {
