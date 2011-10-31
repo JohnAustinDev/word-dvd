@@ -42,8 +42,8 @@ Hyphen         = [bcdfghjklmnpqrstvwxyz][aeiou]
 # Suffix button[n] corresponds to the nth button on the menu, and this allows over-riding of any default button name.
 # Suffixes beginning with "bottom" or "button" and ending with "T" are menu targets which override the default target.
 # Values for terms enging in "T" must be found in the menus.txt file.
-TOC1bottomleft  = About this DVD 
-TOC1bottomleftT = more-m1
+#TOC1bottomleft  = About this DVD 
+#TOC1bottomleftT = more-m1
 TOC1topleft     = WORD-DVD
 TOC1topright    = Table of Contents
 CHPtopleft      = %BOOK%
@@ -66,13 +66,13 @@ Chaptext-5  =  Conclusion
 #-------------
 # Parameters on the left correspond to file names in the HTML directory.
 # Values on the right correspond with book names to display in the DVD.
-myBook1     = Name of First Book
-myBook2     = Name of Second Book
+book1     = First Book
+book2     = Second Book
 
 
 # BOOK ORDER:
 #-------------
 # The order of books in the TOC menu follows these values.
-myBook1     = 0
-myBook2     = 1
+book1     = 0
+book2     = 1
 

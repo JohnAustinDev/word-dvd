@@ -44,6 +44,7 @@ const CONVERSIONDONE="conversion-finished";
 // Input directory
 const DEFAULTS = "defaults";
 const HTMLDIR="html";
+const MENUSDIR="menus";
 const INAUDIODIR="audio";
 const ARTWORK="artwork";
 const STYLESHEET=DEFAULTS + "/CSS/pal.css";
@@ -264,13 +265,19 @@ function loadedXUL() {
       if (!UIfile[i]) {throw true;}
       InputTextbox[i].value = UIfile[i].path;
       if (i>INDIR) 
-	InputTextbox[i].value = InputTextbox[i].value.replace(UIfile[INDIR].path, "<Input Directory>");
+      InputTextbox[i].value = InputTextbox[i].value.replace(UIfile[INDIR].path, "<Input Directory>");
     }
     catch(er) {
       InputTextbox[i].value = "";
       document.getElementById("runpause").disabled = true;
     }
   }
+  if (!InputTextbox[INDIR].value) {
+    document.getElementById("browse-1").disabled = true;
+    document.getElementById("browse-2").disabled = true;
+  }
+  try {document.getElementById("noaudio").checked = prefs.getBoolPref("noaudio");}
+  catch(er) {}
 }
 
 function loadedXUL2() {
@@ -297,74 +304,77 @@ function handleInput(elem) {
       case INDIR:
       case AUDIO:
       case OUTDIR:
-	kFilePicker.init(window, INPUTLABELS[input], kFilePickerIID.modeGetFolder);
-	break;
+        kFilePicker.init(window, INPUTLABELS[input], kFilePickerIID.modeGetFolder);
+        break;
       default:
-	return;
+      return;
       }
       if (kFilePicker.show() != kFilePickerIID.returnCancel) {
-	  if (!kFilePicker.file) return false;
+        if (!kFilePicker.file) return false;
       }
       else return;
+      document.getElementById("browse-1").disabled = false;
+      document.getElementById("browse-2").disabled = false;
       if (input == OUTDIR) {
-	if (!kFilePicker.file.path.match(OUTFILERE)) {
-	  window.alert("Output directory must be have \"" + OUTDIRNAME + "\" somewhere in its path.");
-	  return;
-	}
+        if (!kFilePicker.file.path.match(OUTFILERE)) {
+          window.alert("Output directory must be have \"" + OUTDIRNAME + "\" somewhere in its path.");
+          return;
+        }
       }  
       UIfile[input] = kFilePicker.file;
       InputTextbox[input].value = kFilePicker.file.path;
       if (input == INDIR) setInputDirsToDefault();
       else InputTextbox[input].value = InputTextbox[input].value.replace(UIfile[INDIR].path, "<Input Directory>");
+      checkAudioDir();
       break;
-      
+
     case "noaudio":
       if (elem.checked) {
-	InputTextbox[AUDIO].value = "";
-	document.getElementById("input-1").disabled = true;
-	document.getElementById("browse-1").disabled = true;
-	document.getElementById("runvideo").disabled = true;
-	var selnow = document.getElementById("runword-dvd");
-	selnow.parentNode.selectedItem = selnow;
-	document.getElementById("skipmenus").checked = false;
-	document.getElementById("skipfootnotes").checked = false;
+        InputTextbox[AUDIO].value = "";
+        document.getElementById("input-1").disabled = true;
+        document.getElementById("browse-1").disabled = true;
+        document.getElementById("runvideo").disabled = true;
+        var selnow = document.getElementById("runword-dvd");
+        selnow.parentNode.selectedItem = selnow;
+        document.getElementById("skipmenus").checked = false;
+        document.getElementById("skipfootnotes").checked = false;
       }
       else {
-	document.getElementById("runvideo").disabled = false;
-	document.getElementById("browse-1").disabled = false;
-	try {
-	  UIfile[AUDIO] = prefs.getComplexValue("File-1", Components.interfaces.nsILocalFile);
-	  InputTextbox[AUDIO].value = UIfile[AUDIO].path.replace(UIfile[INDIR].path, "<Input Directory>");
-	}
-	catch(er) {InputTextbox[AUDIO].value = "";}
+        document.getElementById("runvideo").disabled = false;
+        document.getElementById("browse-1").disabled = false;
+        try {
+          UIfile[AUDIO] = prefs.getComplexValue("File-1", Components.interfaces.nsILocalFile);
+          InputTextbox[AUDIO].value = UIfile[AUDIO].path.replace(UIfile[INDIR].path, "<Input Directory>");
+        }
+        catch(er) {InputTextbox[AUDIO].value = "";}
       }
-      break;
-      
+    break;
+
     case "delete1st":
       if (elem.checked) {
-	document.getElementById("skiptext").checked = false;
-	document.getElementById("skiptext").disabled = true;
+        document.getElementById("skiptext").checked = false;
+        document.getElementById("skiptext").disabled = true;
       }
       else {
-	document.getElementById("skiptext").disabled = false;  
+        document.getElementById("skiptext").disabled = false;  
       }
-      break;
-      
+    break;
+
     case "runvideo":
-	document.getElementById("skipmenus").checked = true;
-	document.getElementById("skipfootnotes").checked = true;
+      document.getElementById("skipmenus").checked = true;
+      document.getElementById("skipfootnotes").checked = true;
       break;
-      
+
     case "runword-dvd":
-	document.getElementById("skipmenus").checked = false;
-	document.getElementById("skipfootnotes").checked = false;
+      document.getElementById("skipmenus").checked = false;
+      document.getElementById("skipfootnotes").checked = false;
       break;
-      
+
     case "restoreDefaults":
-	if (elem.checked)
-	  window.alert("WARNING!: This will permanently delete any changes you have made to all files in the defaults directory.");
+      if (elem.checked)
+        window.alert("WARNING!: This will permanently delete any changes you have made to all files in the defaults directory.");
       break;
-      
+
     }
   }
   
@@ -397,6 +407,21 @@ function setInputDirsToDefault() {
     UIfile[OUTDIR].append(OUTDIRNAME);
     InputTextbox[OUTDIR].value = UIfile[OUTDIR].path.replace(UIfile[INDIR].path, "<Input Directory>");
   } 
+}
+
+function checkAudioDir() {
+  // uncheck audio if the directory doesn't exist or is empty
+  var audio = UIfile[INDIR].clone();
+  audio.append(AUDIO);
+  var have = false;
+  if (audio.exists() && audio.isDirectory()) {
+    var afls = audio.directoryEntries;
+    while (afls.hasMoreElements()) {
+      var file = files.getNext().QueryInterface(Components.interfaces.nsIFile);
+      if (file.leafName.match(/\.ac3$/i)) have = true;
+    }
+  }
+  document.getElementById("noaudio").checked=!have; 
 }
 
 function enableGO() {
@@ -495,6 +520,15 @@ function wordDVD() {
   logmsg("\nInitializing run environment");
   if (document.getElementById("delete1st").checked) logmsg("Cleaned OUTPUT directory:" + UIfile[OUTDIR].path + "...");
 
+  // COPY RESOURCES AND BUILD-CODE TO INDIR
+  exportDir(RESOURCE, UIfile[INDIR].path, document.getElementById("restoreDefaults").checked);
+  exportDir(CODE, UIfile[INDIR].path, document.getElementById("restoreDefaults").checked);
+  exportDir(MENUSDIR, UIfile[INDIR].path, false);
+  exportDir(HTMLDIR, UIfile[INDIR].path, false);
+  exportFile(LOCALEFILE, UIfile[INDIR].path, false);
+  exportFile(PAGETIMING, UIfile[INDIR].path, false);
+  exportFile(MULTICHAPTIMING, UIfile[INDIR].path, false);
+  
   // READ LOCALE FILE
   LocaleFile = UIfile[INDIR].clone();
   LocaleFile.append(LOCALEFILE);
@@ -527,13 +561,6 @@ function wordDVD() {
   // TRANSITION LISTING FILE
   TransFile = UIfile[OUTDIR].clone();
   TransFile.append(LISTING);
-  
-  // COPY RESOURCES AND BUILD-CODE TO INDIR
-  exportDir(RESOURCE, UIfile[INDIR].path, document.getElementById("restoreDefaults").checked);
-  exportDir(CODE, UIfile[INDIR].path, document.getElementById("restoreDefaults").checked);
-  exportFile(LOCALEFILE, UIfile[INDIR].path, false);
-  exportFile(PAGETIMING, UIfile[INDIR].path, false);
-  exportFile(MULTICHAPTIMING, UIfile[INDIR].path, false);
 
   // AUTOGENERATE ALL RUN SCRIPTS
   writeRunScripts();

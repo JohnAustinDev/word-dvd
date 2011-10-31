@@ -34,7 +34,7 @@ ChapterEndGap     = 1   # typical dead time at the end of each chapter
 
 
 # PRECISE TRANSITION SETTINGS:
-------------------------------
+#------------------------------
 # Use the xtransition.sh tool to record exact page transitions into 
 # this file. Run it with no arguments to see usage. This tool records 
 # both absolute page transition timings, as well as text-locative 
