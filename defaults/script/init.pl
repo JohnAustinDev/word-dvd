@@ -29,7 +29,13 @@ if (-e $locale) {
   while (<LOC>) {
     $_ = decode("utf8", $_);
     utf8::upgrade($_);
-    if ($_ =~ /^\s*(.*?)\s*=\s*(.*?)\s*$/) {$localeFile{$1} = $2;}
+    if ($_ =~ /^\s*\#/) {next;}
+    elsif ($_ =~ /^\s*(.*?)\s*=\s*(.*?)\s*$/) {
+      my $k = $1;
+      my $v = $2;
+      $v =~ s/\s*\#.*$//;
+      $localeFile{$k} = $v;
+    }
   }
   close(LOC);
 }

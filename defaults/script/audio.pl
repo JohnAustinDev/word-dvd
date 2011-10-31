@@ -43,6 +43,11 @@ $MINIMUML=3;
 # PREPARE OUTPUT DIRECTORY
 if (!(-e $outaudiodir)) {`mkdir $outaudiodir`;}
 
+# LOG SETTINGS
+foreach $k (sort keys %pageTimingFile) {
+  print "pageTiming.txt: $k = ".$pageTimingFile{$k}."\n";
+}
+
 # READ multiChapterTiming.txt FILE
 if (-e "$indir/multiChapterTiming.txt") {
   open(INF, "<$indir/multiChapterTiming.txt") || die "Could not open $indir/multiChapterTiming.txt\n";
@@ -51,6 +56,7 @@ if (-e "$indir/multiChapterTiming.txt") {
     if ($_ =~ /^(\S+)\s*=\s*\S+\s+(\S+)\s*$/) {
       $c = $1;
       $t = $2;
+      $t =~ s/\s*\#.*$//;
       $multiChapTiming{$c} = &unformatTime($t, "noFrameCheck");
     }
   }

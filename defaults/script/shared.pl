@@ -153,7 +153,12 @@ sub readDataFiles() {
         $framesRND = sprintf("%i", $f);
         $correctPageChap{$order."-".$bk."-".$ch."-".$pg."-".$type} = ($framesRND/$framesPS);
       }
-      elsif ($_ =~ /^\s*([^-\s]+)\s*=\s*(.*?)\s*$/) {$pageTimingFile{$1} = $2;}
+      elsif ($_ =~ /^\s*([^-\s]+)\s*=\s*(.*?)\s*$/) {
+        my $k = $1;
+        my $v = $2;
+        $v =~ s/\s*\#.*$//;
+        $pageTimingFile{$k} = $v;
+      }
       else {die "Bad entry: $_";}
       $_ =~ /^\s*((.*?)\s*=\s*.*?)\s*$/;
       $pageTimingEntry{$2} = $1;
@@ -224,7 +229,7 @@ sub readPageInformation {
       $numtitles = $6;
       $rellen = $7;
       
-      if ($pg == 1 && $numtitles >=1 && $localeFile{"TitlesAreRead"} ne "true") {$numtitles--;}
+      if ($pg == 1 && $numtitles >=1 && $pageTimingEntry{"TitlesAreRead"} ne "true") {$numtitles--;}
   
       if (!(exists $books{$book})) {$books{$book} = 1;}
       $chapters{"$book-$ch"}++;

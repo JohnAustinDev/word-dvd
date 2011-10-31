@@ -53,6 +53,7 @@ const OSISFILE = "osis.xml";
 const PAGETIMING="pageTiming.txt";
 const LOCALEFILE="config.txt";
 const CAPTURE="import.sh";
+const MULTICHAPTIMING="multiChapterTiming.txt";
 
 /************************************************************************
  * Exception Handling
@@ -176,8 +177,26 @@ function getChaptextVariant(name, chapnum) {
 
 function getLocaleLiteral(name) {
   var re = new RegExp("^\\s*" + name + "\\s*=[\t ]*([^\\n\\r]*)[\t ]*[\\n\\r]", "m");
-  var loctext = LocaleFile.match(re);  
-  return (loctext ? loctext[1]:0);
+  var loctext = LocaleFile.match(re);
+  if (loctext) {
+    loctext = loctext[1];
+    loctext = loctext.replace(/\s*\#.*$/, "");  
+  }
+  return (loctext ? loctext:0);
+}
+
+function getLocaleLiterals() {
+  var re = new RegExp("^\\s*(.*?)\\s*=[\t ]*([^\\n\\r]*)[\t ]*[\\n\\r]", "gm");
+  var loctext = LocaleFile.match(re);
+  for (var i=0; i<loctext.length; i++) {
+    loctext[i] = loctext[i].replace(/[\n\r]/g, "");
+    loctext[i] = loctext[i].replace(/\s*\#.*$/, "");
+    if (loctext[i].match(/^\s*$/)) {
+      var el = loctext.splice(i, 1);
+      if (el) i--;
+    }
+  }
+  return loctext;
 }
 
 function escapeRE(text) {
@@ -257,6 +276,7 @@ function loadedXUL() {
 function loadedXUL2() {
   document.title = "Word-DVD-" + ExtVersion;	
   handleInput();
+  sizeToContent();
     
   // open render window, which itself runs startRenderer()
   RenderWin = window.open("chrome://word-dvd/content/render.xul", "render-win", "chrome=yes,alwaysRaised=yes");
@@ -471,7 +491,7 @@ function wordDVD() {
   process.init(tmpscript);
   var args = [];
   process.run(true, args, args.length);
-  
+
   logmsg("\nInitializing run environment");
   if (document.getElementById("delete1st").checked) logmsg("Cleaned OUTPUT directory:" + UIfile[OUTDIR].path + "...");
 
@@ -479,7 +499,11 @@ function wordDVD() {
   LocaleFile = UIfile[INDIR].clone();
   LocaleFile.append(LOCALEFILE);
   LocaleFile = readFile(LocaleFile);
+  logmsg("\nconfig.txt entries:");
+  var entries = getLocaleLiterals();
+  for (var i=0; i<entries.length; i++) {logmsg(entries[i]);}
   
+  logmsg("\nChecking/Creating directories...");  
   // IMAGE DIRECTORY
   var imgdir = UIfile[OUTDIR].clone();
   imgdir.append(IMGDIR);
@@ -507,6 +531,9 @@ function wordDVD() {
   // COPY RESOURCES AND BUILD-CODE TO INDIR
   exportDir(RESOURCE, UIfile[INDIR].path, document.getElementById("restoreDefaults").checked);
   exportDir(CODE, UIfile[INDIR].path, document.getElementById("restoreDefaults").checked);
+  exportFile(LOCALEFILE, UIfile[INDIR].path, false);
+  exportFile(PAGETIMING, UIfile[INDIR].path, false);
+  exportFile(MULTICHAPTIMING, UIfile[INDIR].path, false);
 
   // AUTOGENERATE ALL RUN SCRIPTS
   writeRunScripts();
@@ -913,6 +940,23 @@ function stop() {
 
 function CloseThis() {
   window.setTimeout("window.close();", 0);
+}
+
+function viewReadMe() {
+  var readme = "ReadMe.txt";
+  var temp = Components.classes["@mozilla.org/file/directory_service;1"].
+			    getService(Components.interfaces.nsIProperties).
+			    get("TmpD", Components.interfaces.nsIFile);
+  exportFile(readme, temp.path, true);
+  var tr = temp.path;
+  temp.append(readme + ".sh");
+  if (temp.exists()) temp.remove(false);
+  write2File(temp, "#!/bin/sh\n\gedit --new-window \"" + tr + "/" + readme + "\" &", false);
+  var process = Components.classes["@mozilla.org/process/util;1"]
+                    .createInstance(Components.interfaces.nsIProcess);                        
+  process.init(temp);
+  var args = [];
+  process.run(false, args, args.length); 
 }
 
 function unloadXUL() {
