@@ -1,0 +1,48 @@
+# TRANSITION CALCULATION SETTINGS:
+#---------------------------------
+# Transitions are calculated automatically. The accuracy of these 
+# transitions depends on many factors, such as the accuracy of the 
+# settings below, and the amout of dramatization in the reading 
+# (highly dramatized readings with multiple speakers reading at 
+# different speeds, pauses for sound effects, etc. are impossible to 
+# calculate accurately. On the other hand if it is a strict reading 
+# by a single speaker then transitions can often be calculated with 
+# amazing accuracy.
+
+# The following general settings can be made more specific 
+# by suffixing _OT, _NT, _<book>, or _<book>_<chapter>
+# General timings are overwritten by actual timings
+# if they are available.
+
+# If true, a timing pause is added for auto generated chapter titles.
+CountChapterNumbersAsTitle = false 
+
+# If titles are read aloud, set this to true.
+TitlesAreRead = true  
+
+TitleAudioGap     = 2   # typical dead time around all titles
+BookStartGap      = 4   # typical dead time at the start of a new book
+BookEndGap        = 1   # typical dead time at the end of a book
+ChapterStartGap   = 1   # typical dead time at the start of each chapter
+ChapterEndGap     = 1   # typical dead time at the end of each chapter
+
+# NOTE: The above parameters are additive. So the calculated dead 
+# time at the beginning of the first chapter of a book is 
+#   BookStartGap + ChapterStartGap
+# And assuming TitlesAreRead=true, the calulated time for a title is 
+#   TitleAudioGap + (calculated-title-read-time)
+
+
+# PRECISE TRANSITION SETTINGS:
+------------------------------
+# Use the xtransition.sh tool to record exact page transitions into 
+# this file. Run it with no arguments to see usage. This tool records 
+# both absolute page transition timings, as well as text-locative 
+# timings. Absolute page transition timings will be exact until the 
+# pages are re-rendered with the addition of artwork or a change in 
+# font-size etc. After this, these exact transitions MUST BE DELETED 
+# (or else all transitions will be very wrong!) However, NEVER DELETE 
+# THE TEXT-LOCATIVE TIMINGS because they will continue to provide 
+# excellent transition accuracy even if the layout is changed 
+# dramatically.
+

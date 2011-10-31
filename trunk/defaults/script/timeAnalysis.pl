@@ -32,7 +32,7 @@ require "$scriptdir/audio.pl";
 # Save our chapters_base.csv
 `cp "$outaudiodir/chapters.csv" "$outaudiodir/chapters_base.csv"`; 
 
-if (open (INF, "<$indir/pageTiming.txt")) {
+if (-e "$indir/pageTiming.txt") {
   # READ CHAPTER INFORMATION FROM FILE
   if (-e "$outaudiodir/chapters.csv") {&readChaptersCSV();}
   else {print "ERROR: $outaudiodir/chapters.csv is missing!\n"; die;}
@@ -68,7 +68,7 @@ if (open (INF, "<$indir/pageTiming.txt")) {
       $abstime = (1*$3);
       $cnt = (1*$4);
       
-      if ($pg == 1 && $numtitles >=1 && $localeFile{"TitlesAreRead"} ne "true") {$numtitles--;}
+      if ($pg == 1 && $numtitles >=1 && $pageTimingEntry{"TitlesAreRead"} ne "true") {$numtitles--;}
       $res = &addTitles($res, $numtitles, $bk, $ch);
            
       $tverseCalc = (&unformatTime($pagesTCalc[($pg-1)]) + ($res * $ChapterReadlength{$bk."-".$ch}));

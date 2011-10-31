@@ -59,7 +59,7 @@
     </grid>
   </groupbox>
   <spacer height="20" />
-  <hbox flex="100%">
+  <hbox>
     <groupbox>
       <caption label="Run"/>
       <vbox>
@@ -77,7 +77,7 @@
         </hbox>
       </vbox>
     </groupbox>
-    <vbox flex="50%"></vbox>
+    <vbox></vbox>
     <groupbox>
       <caption label="Render"/>
       <vbox>
@@ -89,7 +89,7 @@
         <checkbox id="images" label="Don't capture" checked="false" tooltiptext="Show pages in window, but do not capture or save them." />
       </vbox>
     </groupbox>
-    <vbox flex="50%"></vbox>
+    <vbox></vbox>
     <groupbox >
       <caption label="Skip"/>
       <vbox>
@@ -101,10 +101,12 @@
     <groupbox >
       <caption label="Misc"/>
       <vbox>
-        <checkbox id="restoreDefaults" label="Restore Default Files" checked="false" oncommand="handleInput(this);" tooltiptext="Restore the default image, code, and CSS files which were included with Word-DVD." />
+        <button id="readme" label="View ReadMe:" oncommand="viewReadMe();" tooltiptext="Read the ReadMe file." />
         <button id="installPrompt" disabled="true" label="Install directory:" oncommand="window.alert('Your installation directory is:\n' + ExtFile.path);" tooltiptext="Click to see where Word-DVD is installed." />
+        <checkbox id="restoreDefaults" label="Restore Default Files" checked="false" oncommand="handleInput(this);" tooltiptext="Restore the default image, code, and CSS files which were included with Word-DVD." />
       </vbox>
-    </groupbox>    
+    </groupbox> 
+
   </hbox>
 </vbox>
 </window>
