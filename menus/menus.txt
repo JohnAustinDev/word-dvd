@@ -1,0 +1,7 @@
+# Define your custom menus and button targets & locations here:
+#   name.images = image, hilighted image, selected image
+#   name.button = target name, x0, y0, x1, y1
+
+help-m1.images =  transparent.png, transparent.png, help-m1-SEL.png
+help-m1.button-1 = toc-m1, 50, 466, 124, 538
+

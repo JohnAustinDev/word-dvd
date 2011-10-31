@@ -61,7 +61,7 @@ files, so each book can have up to three html files associated with it
 Paragraph-start          = <br><span class="paragraph-start"></span>
 Verse-start              = <sup>verse-number</sup>
 Chapter-start            = <span name="chapter.n"></span>
-Footnote-symbol          = <span class="fnsymbol"></span>
+Footnote-symbol          = <span class="fnsymbol" id="note.n"></span>
 Pagebreak                = <span class="pagebreak"></span>
 Footnote-start           = <div class="footnote">footnote-text</div>
 Footnote-verse-reference =
@@ -123,7 +123,7 @@ left side of menu pages and on the left side of the first page of each
 chapter. To apply an image, simply place a .png file in this directory
 with the following naming convention:
 
-toc-m1 = first menu page of the DVD's root menu.
+toc-m1.png = first menu page of the DVD's root menu.
 <book>-m2.png = second page of <book>'s chapter-menu.
 <book>-3.png = the beginning of <book>'s third chapter.
 
@@ -147,11 +147,11 @@ required, not optional like the others).
 
 defaults directory
 ------------------
-This directory holds the CSS, background images, button images, and more
-needed to render the DVD. Anything in this directory can be changed as
-desired. For instance, new background images, button images, and CSS
-styling could be applied. Then during the next rendering session these
-modified files will be used.
+This directory holds the CSS, background images, button images, and 
+more, needed to render the DVD. Anything in this directory can be 
+changed as desired. For instance, new background images, button images, 
+and CSS styling could be applied. Then during the next rendering 
+session these modified files will be used.
 
 
 
@@ -160,8 +160,11 @@ REVISION HISTORY
 1.4.3
 -----
 - Added this ReadMe.
-- Added default config.txt and other input files.
+- Added default config.txt and other input files necessary to create a 
+minimal working DVD when an empty project directory is selected.
 - Updated and improved documentation of these files.
+- Improved transition capture tool: Got rid of ecasound in exchange 
+for ffplay and renamed ecasound.pl to transitions.pl
 - Bug fixes
 
 1.4.2
@@ -190,7 +193,7 @@ to page 2.
 1.4
 ---
 - Improved mpeg video quality.
-- Works with firefox 4+ which no longer unzips extensions in the
+- Works with firefox 4+ which does not unzip extensions in the
 extensions directory.
 - Works with ffmpeg 0.6.
 - Added debug options to scripts.
