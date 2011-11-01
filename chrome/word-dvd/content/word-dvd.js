@@ -22,10 +22,10 @@
 const PAL = {W:720, H:576, PW:58, PH:72};
 const NTSC = {W:720, H:480};
 const INDIR=0, AUDIO=1, OUTDIR=2;
-const INPUTLABELS=["Input Directory", "Audio Directory", "Output Directory"];
 const NUMINPUTS=3; 
 const MYGUID="{f597ab2a-3a14-11de-a792-e68e56d89593}";
 const NEWCHAPTER = "<span name=\"chapter.";
+const WAIT=500;
 // Output directory
 const OUTDIRNAME="OUTPUTS";
 const SCRIPT="script";
@@ -213,19 +213,18 @@ var UIfile = new Array(NUMINPUTS);
 var StatsFile, TransFile, ExtFile;
 var ExtVersion;
 var InputTextbox = new Array(NUMINPUTS);
-var RenderNext;
-var RunPause;
-var Paused;
+var Paused, Aborted, Running;
 var LocaleFile;
-var ButtonId;
 var RenderWin;
 var DBLogFile;
 var CssFile;
 var BackupDir;
 var OUTFILERE = new RegExp("(" + OUTDIRNAME + ")(\\/|$)");
+var Book;
+var StartingBindex;
 
 function loadedXUL() {
-  window.setTimeout("window.focus();", 500);
+  window.setTimeout("window.focus();", 0);
 
   // get extension info
   try {
@@ -253,143 +252,206 @@ function loadedXUL() {
     ExtVersion = readFile(insrdf).match(/<em\:version>(.*?)<\/em\:version>/im)[1];
     loadedXUL2();
   }
-	
-  RenderNext = document.getElementById("rendernext");
-  RunPause = document.getElementById("runpause");
 
   for (var i=0; i<NUMINPUTS; i++) {
     InputTextbox[i] = document.getElementById("input-" + i);
-    InputTextbox[i].previousSibling.value = INPUTLABELS[i] + ":";
     try {
       UIfile[i] = prefs.getComplexValue("File-" + i, Components.interfaces.nsILocalFile);
       if (!UIfile[i]) {throw true;}
       InputTextbox[i].value = UIfile[i].path;
-      if (i>INDIR) 
-      InputTextbox[i].value = InputTextbox[i].value.replace(UIfile[INDIR].path, "<Input Directory>");
     }
-    catch(er) {
-      InputTextbox[i].value = "";
-      document.getElementById("runpause").disabled = true;
-    }
+    catch(er) {InputTextbox[i].value = "";}
   }
   if (!InputTextbox[INDIR].value) {
     document.getElementById("browse-1").disabled = true;
     document.getElementById("browse-2").disabled = true;
   }
-  try {document.getElementById("noaudio").checked = prefs.getBoolPref("noaudio");}
-  catch(er) {}
+  
+  checkAudioDir();
 }
 
 function loadedXUL2() {
   document.title = "Word-DVD-" + ExtVersion;	
-  handleInput();
+  updateControlPanel();
   sizeToContent();
-    
-  // open render window, which itself runs startRenderer()
-  RenderWin = window.open("chrome://word-dvd/content/render.xul", "render-win", "chrome=yes,alwaysRaised=yes");
 }
 
-function handleInput(elem) {
-  if (elem) {
-    switch (elem.id) {
-    case "browse-0":
-    case "browse-1":
-    case "browse-2":
-      const kFilePickerContractID = "@mozilla.org/filepicker;1";
-      const kFilePickerIID = Components.interfaces.nsIFilePicker;
-      const INPUTEXT=[kFilePickerIID.filterXML, ""];
-      var kFilePicker = Components.classes[kFilePickerContractID].createInstance(kFilePickerIID);
-      var input = Number(elem.id.substr(elem.id.length-1,1));
-      switch(input) {
-      case INDIR:
-      case AUDIO:
-      case OUTDIR:
-        kFilePicker.init(window, INPUTLABELS[input], kFilePickerIID.modeGetFolder);
-        break;
-      default:
-      return;
-      }
-      if (kFilePicker.show() != kFilePickerIID.returnCancel) {
-        if (!kFilePicker.file) return false;
-      }
-      else return;
-      document.getElementById("browse-1").disabled = false;
-      document.getElementById("browse-2").disabled = false;
-      if (input == OUTDIR) {
-        if (!kFilePicker.file.path.match(OUTFILERE)) {
-          window.alert("Output directory must be have \"" + OUTDIRNAME + "\" somewhere in its path.");
-          return;
-        }
-      }  
-      UIfile[input] = kFilePicker.file;
-      InputTextbox[input].value = kFilePicker.file.path;
-      if (input == INDIR) setInputDirsToDefault();
-      else InputTextbox[input].value = InputTextbox[input].value.replace(UIfile[INDIR].path, "<Input Directory>");
-      checkAudioDir();
-      break;
+function handle(e) {
+  updateAction(e.target);
+  updateControlPanel();
+}
 
-    case "noaudio":
-      if (elem.checked) {
-        InputTextbox[AUDIO].value = "";
-        document.getElementById("input-1").disabled = true;
-        document.getElementById("browse-1").disabled = true;
-        document.getElementById("runvideo").disabled = true;
-        var selnow = document.getElementById("runword-dvd");
-        selnow.parentNode.selectedItem = selnow;
-        document.getElementById("skipmenus").checked = false;
-        document.getElementById("skipfootnotes").checked = false;
+var RenderWinTO;
+function updateAction(elem) {
+  switch (elem.id) {
+  case "browse-0":
+  case "browse-1":
+  case "browse-2":
+    const kFilePickerContractID = "@mozilla.org/filepicker;1";
+    const kFilePickerIID = Components.interfaces.nsIFilePicker;
+    const INPUTEXT=[kFilePickerIID.filterXML, ""];
+    var kFilePicker = Components.classes[kFilePickerContractID].createInstance(kFilePickerIID);
+    var input = Number(elem.id.substr(elem.id.length-1,1));
+    switch(input) {
+    case INDIR:
+    case AUDIO:
+    case OUTDIR:
+      kFilePicker.init(window, elem.previousSibling.previousSibling.value, kFilePickerIID.modeGetFolder);
+      break;
+    default:
+    return;
+    }
+    if (kFilePicker.show() != kFilePickerIID.returnCancel) {
+      if (!kFilePicker.file) return false;
+    }
+    else return;
+    document.getElementById("browse-1").disabled = false;
+    document.getElementById("browse-2").disabled = false;
+    if (input == OUTDIR) {
+      if (!kFilePicker.file.path.match(OUTFILERE)) {
+        window.alert("Output directory must be have \"" + OUTDIRNAME + "\" somewhere in its path.");
+        return;
       }
-      else {
-        document.getElementById("runvideo").disabled = false;
-        document.getElementById("browse-1").disabled = false;
-        try {
-          UIfile[AUDIO] = prefs.getComplexValue("File-1", Components.interfaces.nsILocalFile);
-          InputTextbox[AUDIO].value = UIfile[AUDIO].path.replace(UIfile[INDIR].path, "<Input Directory>");
-        }
-        catch(er) {InputTextbox[AUDIO].value = "";}
-      }
+    }  
+    UIfile[input] = kFilePicker.file;
+    InputTextbox[input].value = kFilePicker.file.path;
+    if (input == INDIR) setInputDirsToDefault();
+    checkAudioDir();
     break;
 
-    case "delete1st":
-      if (elem.checked) {
-        document.getElementById("skiptext").checked = false;
-        document.getElementById("skiptext").disabled = true;
-      }
-      else {
-        document.getElementById("skiptext").disabled = false;  
-      }
+  case "runword-dvd":
+  case "renderonly":
+  case "runvideo":
+    document.getElementById("skipmenus").checked = false;
+    document.getElementById("skipfootnotes").checked = false;
+    document.getElementById("skiptext").checked = false;
     break;
 
-    case "runvideo":
-      document.getElementById("skipmenus").checked = true;
-      document.getElementById("skipfootnotes").checked = true;
-      break;
+  case "restoreDefaults":
+    if (elem.checked)
+      window.alert("WARNING!: This will permanently delete any changes you have made to any files in the defaults directory.");
+    break;
+    
+  case "installPrompt":
+      window.alert("Your installation directory is:\n" + ExtFile.path);
+   break;
+   
+  case "readme":
+    viewReadMe();
+    break; 
 
-    case "runword-dvd":
-      document.getElementById("skipmenus").checked = false;
-      document.getElementById("skipfootnotes").checked = false;
-      break;
+  case "noaudio":
+    if (!elem.checked && checkAudioDir(true)) 
+      updateAction(document.getElementById("browse-1"));
+    break;
+    
+  case "go":
+    elem.setAttribute("hidden", "true");
+    document.getElementById("pause").removeAttribute("hidden");
+    document.getElementById("rendernext").disabled = true;
+    Paused = false;
+    Aborted = false;
+    Running = true;
+    wordDVD();
+    break;
+    
+  case "pause":
+    elem.setAttribute("hidden", "true");
+    document.getElementById("resume").removeAttribute("hidden");
+    document.getElementById("rendernext").disabled = false;
+    Paused = true;
+    // clear ContinueFunc immediately, it will be set properly when Paused is detected 
+    if (RenderWin) RenderWin.ContinueFunc = null;
+    break;
+    
+  case "resume":
+    elem.setAttribute("hidden", "true");
+    document.getElementById("pause").removeAttribute("hidden");
+    document.getElementById("rendernext").disabled = true;
+    Paused = false;
+    if (RenderWin && RenderWin.ContinueFunc) {
+      if (RenderWinTO) window.clearTimeout(RenderWinTO);
+      RenderWinTO = RenderWin.setTimeout(RenderWin.ContinueFunc, 0);
+    }
+    break;
+    
+  case "rendernext":
+    document.getElementById("resume").removeAttribute("hidden");
+    document.getElementById("pause").setAttribute("hidden", "true");
+    Paused = true;
+    if (RenderWin && RenderWin.ContinueFunc) {
+      if (RenderWinTO) window.clearTimeout(RenderWinTO);
+      RenderWinTO = RenderWin.setTimeout(RenderWin.ContinueFunc, 0);
+    }
+    break;
+  }
+}
 
-    case "restoreDefaults":
-      if (elem.checked)
-        window.alert("WARNING!: This will permanently delete any changes you have made to all files in the defaults directory.");
-      break;
-
+function updateControlPanel() {
+  // no audio checkbox
+  var noaudio = document.getElementById("noaudio");
+  if (!UIfile[AUDIO] || 
+      !UIfile[AUDIO].exists() || 
+      !UIfile[AUDIO].isDirectory()) {
+    noaudio.checked = true;
+  } 
+  if (noaudio.checked) {
+    InputTextbox[AUDIO].value = "";
+    var runvideo = document.getElementById("runvideo");    
+    if (runvideo.parentNode.selectedItem == runvideo) {
+      var rundvd = document.getElementById("runword-dvd");
+      rundvd.parentNode.selectedItem = rundvd;  
     }
   }
+  else InputTextbox[AUDIO].value = UIfile[AUDIO].path;
+  document.getElementById("browse-1").disabled = noaudio.checked;
+  document.getElementById("runvideo").disabled = noaudio.checked;
   
-  enableGO();
-  
+  // clean output directory checkbox
+  if (document.getElementById("cleanOutDir").checked) {
+    document.getElementById("skiptext").checked = false;
+    document.getElementById("skiptext").disabled = true;
+  }
+  else document.getElementById("skiptext").disabled = false;  
+
+  // run video radio
+  var runvideo = document.getElementById("runvideo");    
+  if (runvideo.parentNode.selectedItem == runvideo) {
+    document.getElementById("skipmenus").checked = true;
+    document.getElementById("skipfootnotes").checked = true;
+    document.getElementById("skipmenus").disabled = true;
+    document.getElementById("skipfootnotes").disabled = true;
+  }
+  else {
+    document.getElementById("skipmenus").disabled = false;
+    document.getElementById("skipfootnotes").disabled = false;
+  }
+
+  // show installation directory button
   document.getElementById("installPrompt").disabled = !ExtFile.exists();
+  
+  // osis to html conversion checkbox
+  var osis2html = document.getElementById("osis2html");
   if (UIfile[INDIR]) {
     var osis = UIfile[INDIR].clone();
     osis.append(OSISFILE);
-    document.getElementById("osis2html").disabled = !osis.exists();
-
-    var htmlFiles = UIfile[INDIR].clone();
-    htmlFiles.append(HTMLDIR);
-    if (!document.getElementById("osis2html").disabled && !htmlFiles.exists()) document.getElementById("osis2html").checked = true;
+    osis2html.disabled = !osis.exists();
   }
+  var htmlFiles = UIfile[INDIR].clone();
+  htmlFiles.append(HTMLDIR);
+  if (!osis2html.disabled && !htmlFiles.exists()) osis2html.checked = true;
+
+  // GO! button
+  for (var i=0; i<NUMINPUTS; i++) {
+    if (i==AUDIO && document.getElementById("noaudio").checked) continue;
+    if (!UIfile[i]) break;
+  }
+  document.getElementById("go").disabled = (i!=NUMINPUTS);
+
+  // shorten path names where possible
+  if (InputTextbox[AUDIO].value)
+    InputTextbox[AUDIO].value = UIfile[AUDIO].path.replace(UIfile[INDIR].path, "<Project Directory>");
+  InputTextbox[OUTDIR].value = UIfile[OUTDIR].path.replace(UIfile[INDIR].path, "<Project Directory>");
 }
 
 function setInputDirsToDefault() {
@@ -402,34 +464,35 @@ function setInputDirsToDefault() {
   else {
     UIfile[AUDIO] = UIfile[INDIR].clone();
     UIfile[AUDIO].append(INAUDIODIR);
-    InputTextbox[AUDIO].value = UIfile[AUDIO].path.replace(UIfile[INDIR].path, "<Input Directory>");
     UIfile[OUTDIR] = UIfile[INDIR].clone();
     UIfile[OUTDIR].append(OUTDIRNAME);
-    InputTextbox[OUTDIR].value = UIfile[OUTDIR].path.replace(UIfile[INDIR].path, "<Input Directory>");
   } 
 }
 
-function checkAudioDir() {
-  // uncheck audio if the directory doesn't exist or is empty
-  var audio = UIfile[INDIR].clone();
-  audio.append(AUDIO);
+// If audio directory is missing or empty, disable audio
+// otherwise enable
+function checkAudioDir(checkOnly) {
+  var noaudio = document.getElementById("noaudio");
+  if (!UIfile[AUDIO] || 
+      !UIfile[AUDIO].exists() || 
+      !UIfile[AUDIO].isDirectory()) {
+    if (!checkOnly) noaudio.checked = true;
+    return true;
+  }
+  
   var have = false;
-  if (audio.exists() && audio.isDirectory()) {
-    var afls = audio.directoryEntries;
-    while (afls.hasMoreElements()) {
-      var file = files.getNext().QueryInterface(Components.interfaces.nsIFile);
-      if (file.leafName.match(/\.ac3$/i)) have = true;
-    }
+  var afls = UIfile[AUDIO].directoryEntries;
+  while (afls.hasMoreElements()) {
+    var file = afls.getNext().QueryInterface(Components.interfaces.nsIFile);
+    if (file.leafName.match(/\.ac3$/i)) have = true;
+  }  
+  if (!have) {
+    if (!checkOnly) noaudio.checked = true;
+    return true; 
   }
-  document.getElementById("noaudio").checked=!have; 
-}
-
-function enableGO() {
-  for (var i=0; i<NUMINPUTS; i++) {
-    if (i==AUDIO && document.getElementById("noaudio").checked) continue;
-    if (!UIfile[i]) break;
-  }
-  document.getElementById("runpause").disabled = (i!=NUMINPUTS);
+  
+  if (!checkOnly) noaudio.checked = false;
+  return false;
 }
 
 var MessageWin;
@@ -439,30 +502,35 @@ function wordDVD() {
   for (var i=0; i<NUMINPUTS; i++) {
     if (!UIfile[i]) {
       window.alert("STOPPING!: Not all input directories are set.");
+      quit(true);
       return;
     }
   }
   if (!UIfile[INDIR].exists()) {
-    window.alert("STOPPING!: Input directory does not exist.");
+    window.alert("STOPPING!: Project directory does not exist.");
+    quit(true);
     return;
   }
-  if (!document.getElementById("noaudio").checked && !UIfile[AUDIO].exists()) {
-    window.alert("STOPPING!: Audio directory does not exist.");
+  if (!document.getElementById("noaudio").checked && checkAudioDir(true)) {
+    window.alert("STOPPING!: Audio not found. Check \"no audio\", or change the audio path.");
+    quit(true);
     return;
   }
   
   // Check output directory and clean if needed
   if (!UIfile[OUTDIR].path.match(OUTFILERE)) {
     window.alert("STOPPING!: Output directory must be have \"" + OUTDIRNAME + "\" somewhere in its path.");
+    quit(true);
     return;
   }
   if (!UIfile[OUTDIR].exists()) UIfile[OUTDIR].create(UIfile[OUTDIR].DIRECTORY_TYPE, 0777);
-  else if (document.getElementById("delete1st").checked) {
+  else if (document.getElementById("cleanOutDir").checked) {
     try {
       UIfile[OUTDIR].remove(true);
       UIfile[OUTDIR].create(UIfile[OUTDIR].DIRECTORY_TYPE, 0777);
     } catch (er) {}
   }
+  document.getElementById("cleanOutDir").checked = false;
   
   // Create backup directory
   BackupDir = Components.classes["@mozilla.org/file/local;1"].createInstance(Components.interfaces.nsILocalFile);
@@ -518,11 +586,12 @@ function wordDVD() {
   process.run(true, args, args.length);
 
   logmsg("\nInitializing run environment");
-  if (document.getElementById("delete1st").checked) logmsg("Cleaned OUTPUT directory:" + UIfile[OUTDIR].path + "...");
+  if (document.getElementById("cleanOutDir").checked) logmsg("Cleaned OUTPUT directory:" + UIfile[OUTDIR].path + "...");
 
   // COPY RESOURCES AND BUILD-CODE TO INDIR
   exportDir(RESOURCE, UIfile[INDIR].path, document.getElementById("restoreDefaults").checked);
   exportDir(CODE, UIfile[INDIR].path, document.getElementById("restoreDefaults").checked);
+  document.getElementById("restoreDefaults").checked = false;
   exportDir(MENUSDIR, UIfile[INDIR].path, false);
   exportDir(HTMLDIR, UIfile[INDIR].path, false);
   exportFile(LOCALEFILE, UIfile[INDIR].path, false);
@@ -567,7 +636,6 @@ function wordDVD() {
   
   // COPY CSS to HTML DIRECTORY AND RELOAD CAPTURE WINDOW
   CssFile = exportFile(STYLESHEET, UIfile[INDIR].path, document.getElementById("restoreDefaults").checked);
-  RenderWin.document.getElementById("render").contentDocument.defaultView.location.assign("chrome://word-dvd/content/web/menu.html");
   
   // START OSIS CONVERTER SCRIPT
   if (document.getElementById("osis2html").checked) {
@@ -608,14 +676,16 @@ function readHtmlFiles() {
   htmlFiles.append(HTMLDIR);
   if (!htmlFiles.exists() || !htmlFiles.isDirectory()) {
     window.alert("Stopping!: HTML directory not found \"" + htmlFiles.path + "\"\n");
+    quit(true);
     return;
   }
   htmlFiles = htmlFiles.directoryEntries;
   if (!htmlFiles) {
     window.alert("Stopping!: No HTML files not found in \"" + UIfile[INDIR].path + "/" + HTMLDIR + "\"\n");
+    quit(true);
     return;  
   }
-  RenderWin.Book = [];
+  Book = [];
   while (htmlFiles.hasMoreElements()) {
     var file = htmlFiles.getNext().QueryInterface(Components.interfaces.nsIFile);
     var fileName = file.leafName.match(/^([^\.]+)\.(.*)$/);
@@ -625,24 +695,27 @@ function readHtmlFiles() {
       logmsg("ERROR: Empty HTML file, or could not read \"" + file.path + "\"");
       continue;
     }
-    RenderWin.Book.push(null);
-    RenderWin.Book[RenderWin.Book.length-1] = new Object();
-    RenderWin.Book[RenderWin.Book.length-1].shortName = fileName[1];
+    Book.push(null);
+    Book[Book.length-1] = new Object();
+    Book[Book.length-1].shortName = fileName[1];
     var re = new RegExp("(" + NEWCHAPTER + ")", "gim");
     data = data.match(re);
     if (!data) {
       logmsg("ERROR: HTML file has no chapters \"" + file.path + "\"");
       continue;
     }
-    RenderWin.Book[RenderWin.Book.length-1].maxChapter = data.length;
+    Book[Book.length-1].maxChapter = data.length;
   }
-  RenderWin.Book = RenderWin.Book.sort(booksort);
+  Book = Book.sort(booksort);
 
-  if (document.getElementById("singlebk").selected) prompForSingleBook();
-  if (document.getElementById("startbk").selected) prompForStartBook();
+  StartingBindex = 0;
+  if (document.getElementById("singlebk").selected) 
+    if (!prompForSingleBook()) {quit(); return;}
+  if (document.getElementById("startbk").selected) 
+  if (!prompForStartBook()) {quit(); return;}
   
+  RenderWin = window.open("chrome://word-dvd/content/render.xul", "render-win", "chrome=yes,alwaysRaised=yes");
   RenderWin.focus();
-  window.setTimeout("RenderWin.startMenuGeneration();", 2000);
 }
 
 // extdir the partial path of a directory within the extension
@@ -779,14 +852,15 @@ function prompForSingleBook() {
                         .getService(Components.interfaces.nsIPromptService);
   var selected = {};
   var items = [];
-  for (var i=0; i<RenderWin.Book.length; i++) {items.push(RenderWin.Book[i].shortName);}
-  var result = prompts.select(null, "Select Book", "Create a DVD for which book?", items.length, items, selected);
-  if (!result) {quit(); return;}
-  for (var i=0; i<RenderWin.Book.length; i++) {
-    if (RenderWin.Book[i].shortName == items[selected.value]) continue;
-    RenderWin.Book.splice(i, 1);
+  for (var i=0; i<Book.length; i++) {items.push(Book[i].shortName);}
+  var result = prompts.select(null, "Select Book", "Render which book?", items.length, items, selected);
+  if (!result) {return false;}
+  for (var i=0; i<Book.length; i++) {
+    if (Book[i].shortName == items[selected.value]) continue;
+    Book.splice(i, 1);
     i--;
   }
+  return true;
 }
 
 function prompForStartBook() {
@@ -794,14 +868,15 @@ function prompForStartBook() {
                         .getService(Components.interfaces.nsIPromptService);
   var selected = {};
   var items = [];
-  for (var i=0; i<RenderWin.Book.length; i++) {items.push(RenderWin.Book[i].shortName);}
+  for (var i=0; i<Book.length; i++) {items.push(Book[i].shortName);}
   var result = prompts.select(null, "Select Book", "Which book do you want to start from?", items.length, items, selected);
-  if (!result) {quit(); return;}
-  for (var i=0; i<RenderWin.Book.length; i++) {
-    if (RenderWin.Book[i].shortName != items[selected.value]) continue;
-    RenderWin.StartingBindex = i;
+  if (!result) {return false;}
+  for (var i=0; i<Book.length; i++) {
+    if (Book[i].shortName != items[selected.value]) continue;
+    StartingBindex = i;
     break;
   }
+  return true;
 }
 
 function writeRunScripts() {
@@ -885,37 +960,18 @@ function getTempRunScript(script) {
   return temp;
 }
 
-function pause() {
-  RenderNext.disabled = false;
-  RunPause.label = "Continue";
-  RunPause.removeAttribute("oncommand");
-  RunPause.setAttribute("oncommand", "resume();");
-  Paused = true;
-}
-
-function resume() {
-  RenderNext.disabled = true;
-  RunPause.label = "Pause";
-  RunPause.removeAttribute("oncommand");
-  RunPause.setAttribute("oncommand", "pause();");
-  Paused = false;
-  if (!RenderWin) return;
-  RenderWin.setTimeout(RenderWin.ContinueFunc, 0);
-}
-
-function rendernext() {
-  Paused = true;
-  RenderWin.renderNewScreen();
-}
-
-function quit() {
+function quit(quiet) {
   var endDate = new Date();
-  logmsg("Quitting Word-DVD imager at " + endDate.toTimeString() + " " + endDate.toDateString());  
-  window.alert("Quitting Word-DVD.");
-  CloseThis(); 
+  Aborted = true;
+  Running = false;
+  if (RenderWin) RenderWin.close();
+  if (!quiet) logmsg("Quitting Word-DVD imager at " + endDate.toTimeString() + " " + endDate.toDateString());  
+  if (!quiet) window.alert("Quitting Word-DVD renderer.");
+  resetGo();
 }
 
 function stop() {
+  Running = false;
   var endDate = new Date();
   var unUtilizedAudio = "";
   if (RenderWin) {
@@ -957,16 +1013,19 @@ function stop() {
     process.run(false, args, args.length);
     logmsg("Launched " + runscript(VIDEOFILES));  
   }
-  
+ 
   if (hasErrors) window.alert("Image rendering has completed, but WITH ERRORS!");
   else window.alert("Image rendering has completed without errors.");
-  CloseThis();
-  //RenderNext.disabled = true;
-  //RunPause.disabled = true;
+  resetGo(); 
 }
 
-function CloseThis() {
-  window.setTimeout("window.close();", 0);
+function resetGo() {
+  document.getElementById("go").removeAttribute("hidden");
+  document.getElementById("rendernext").removeAttribute("hidden");
+  document.getElementById("rendernext").disabled = true;
+  document.getElementById("pause").setAttribute("hidden", "true");
+  document.getElementById("resume").setAttribute("hidden", "true");
+  updateControlPanel();
 }
 
 function viewReadMe() {
@@ -987,6 +1046,7 @@ function viewReadMe() {
 }
 
 function unloadXUL() {
+  Running = false;
   var tmp = UIfile[OUTDIR].clone();
   tmp.append(LISTING);
   tmp.append("tmp");
@@ -997,6 +1057,5 @@ function unloadXUL() {
     prefs.setComplexValue("File-" + i, Components.interfaces.nsILocalFile, UIfile[i]);
   }
   
-  prefs.setBoolPref("noaudio", document.getElementById("noaudio").checked);
   if (RenderWin) RenderWin.close();
 }

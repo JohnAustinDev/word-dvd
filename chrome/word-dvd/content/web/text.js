@@ -1,13 +1,15 @@
 // JavaScript Document
 const SPACE = " ";
-var MainWin, RenderWin;
+var MainWin = Components.classes["@mozilla.org/embedcomp/window-watcher;1"].getService(Components.interfaces.nsIWindowWatcher).getWindowByName("word-dvd", window);
+var RenderWin = window.frameElement.ownerDocument.defaultView;
 var PageElem1, PageElem2,Body;
 var DebugChapter=0;
 var DebugPage=0;
+var InitComplete;
+var RenderDone;
 
 var CSSHeading1Color, CSSHeading2Color;
 
-MainWin = Components.classes["@mozilla.org/embedcomp/window-watcher;1"].getService(Components.interfaces.nsIWindowWatcher).getWindowByName("word-dvd", window);
 if (MainWin.CssFile) {
 	var csslink=document.createElement("link");
 	csslink.setAttribute("rel", "stylesheet");
@@ -20,14 +22,14 @@ function init() {
   PageElem1 = document.getElementById("text-page1");
   PageElem2 = document.getElementById("text-page2");
   Body = document.getElementById("body");
-  RenderWin = window.frameElement.ownerDocument.defaultView;
   if (!MainWin.document.getElementById("runvideo").selected) 
     document.getElementById("text-controls").setAttribute("src", "file://" + MainWin.UIfile[MainWin.INDIR].path + "/" + MainWin.RESOURCE + "/control-buttons.png");
+  window.setTimeout("InitComplete=true;", 0);
 }
 
 function fitScreen(book, chapter, aPage, skipPage1, skipPage2) {
 MainWin.jsdump("Chapter=" + chapter + ", Pagenumber=" + aPage.pagenumber);
-  RenderWin.DoneDrawing = false;
+  RenderDone = false;
   DisplayBook = book;
   DisplayChapter = chapter;
   
@@ -73,12 +75,8 @@ MainWin.jsdump("Chapter=" + chapter + ", Pagenumber=" + aPage.pagenumber);
   }
 //MainWin.jsdump("PageElem1:" + PageElem1.innerHTML + "\nPageElem2:" + PageElem2.innerHTML);
 
-  window.setTimeout("doneDrawing()", 200);
+  window.setTimeout("RenderDone = true;", MainWin.WAIT);
   return true;
-}
-
-function doneDrawing() {
-  RenderWin.DoneDrawing = true;
 }
 
 function fitPage(elem, book, chapter, page, sep, newChapter) {

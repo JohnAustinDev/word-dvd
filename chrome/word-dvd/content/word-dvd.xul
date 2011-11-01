@@ -28,7 +28,7 @@
     persist = "screenX screenY"
     xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
 <script type="application/x-javascript" src="chrome://word-dvd/content/word-dvd.js" />
-<vbox id="body">
+<vbox id="body" oncommand="handle(event);">
   <groupbox>
     <caption label="Setup"/>
     <grid>
@@ -40,20 +40,20 @@
       </columns>
       <rows>
         <row align="center">
-          <label tooltiptext="Directory where OSIS file, config file, etc. are located." />
+          <label value="Project Directory" tooltiptext="Word-DVD project directory." />
           <textbox id="input-0" width="400" readonly="true" />
-          <button id="browse-0" label="browse" oncommand="handleInput(this);" /> 
+          <button id="browse-0" label="browse" /> 
         </row>
         <row align="center">
-          <label tooltiptext="Directory where audio files (with names having the form: lang-book-ch.ac3) are located." />
+          <label value="Audio Directory" tooltiptext="Directory where AC3 audio files are located." />
           <textbox id="input-1" width="400" readonly="true" disabled="true" />
-          <button id="browse-1" label="change" oncommand="handleInput(this);" />
-          <checkbox id="noaudio" label="no audio" oncommand="handleInput(this);" tooltiptext="Check this if you don't want audio to be included." />
+          <button id="browse-1" label="change" />
+          <checkbox id="noaudio" label="no audio" tooltiptext="Check this if you don't want audio to be included, or there is no audio." />
         </row>
         <row align="center">
-          <label tooltiptext="Directory where DVD output files will be put." />
+          <label value="Output Directory" tooltiptext="Directory where output files will be put." />
           <textbox id="input-2" width="400" readonly="true" disabled="true" />
-          <button id="browse-2" label="change" oncommand="handleInput(this);" />
+          <button id="browse-2" label="change" />
         </row>
       </rows>
     </grid>
@@ -63,17 +63,19 @@
     <groupbox>
       <caption label="Run"/>
       <vbox>
-        <checkbox id="delete1st" label="Clean Output Dir" checked="false" oncommand="handleInput(this);" tooltiptext="Wipe output directory and start from scratch." />
-        <checkbox id="osis2html" label="Convert OSIS to HTML" checked="false" disabled="false" oncommand="handleInput(this);" tooltiptext="Run the OSIS to HTML converter to generate new HTML. This command is disabled unless there is an osis file named 'osis.xml' located in the Input Directory listed above." />
+        <checkbox id="cleanOutDir" label="Clean Output Dir"     tooltiptext="Wipe output directory and start from scratch." />
+        <checkbox id="osis2html"   label="Convert OSIS to HTML" tooltiptext="Run the OSIS to HTML converter to generate new HTML. This command is disabled unless there is an 'osis.xml' file located in the Project Directory above." />
         <radiogroup orient="vertical">
-          <radio label="Render images only" tooltiptext="Render images, and then stop." />
-          <radio id="runword-dvd" label="Create DVD" oncommand="handleInput(this);" selected="true" tooltiptext="Create final DVD files." />
-          <radio id="runvideo" label="Create Video Files" oncommand="handleInput(this);" tooltiptext="Create separate video files for internet etc. These require audio, so 'no audio' must not be checked above." />
+          <radio id="renderonly"   label="Render images only"   tooltiptext="Render images, but don't create video/DVD files." />
+          <radio id="runword-dvd"  label="Create DVD"           tooltiptext="Create final DVD files." selected="true" />
+          <radio id="runvideo"     label="Create Video Files"   tooltiptext="Create separate video files for internet etc. Requires audio, so 'no audio' be must un-checked." />
         </radiogroup>
         <spacer height="20" />
         <hbox>
-          <button id="runpause" label="Go!" oncommand="ButtonId=this.id; wordDVD();" />
-          <button id="rendernext" disabled="true" label="Render Next" oncommand="ButtonId=this.id; wordDVD();" tooltiptext="Render a single page and pause." />
+          <button id="go" label="Go!" />
+          <button id="pause" label="Pause" hidden="true" />
+          <button id="resume" label="Resume" hidden="true" />
+          <button id="rendernext" label="Render Next" tooltiptext="Render a single page and pause." disabled="true" />
         </hbox>
       </vbox>
     </groupbox>
@@ -82,28 +84,28 @@
       <caption label="Render"/>
       <vbox>
         <radiogroup orient="vertical">
-          <radio id="renderall" label="Render All Books" tooltiptext="Render pages for all books." selected="true" />
+          <radio id="renderall" label="Render All Books"   tooltiptext="Render pages for all books." selected="true" />
           <radio id="startbk"   label="Continue From Book" tooltiptext="Render pages starting at a selected book. Existing listing files are not removed." />
-          <radio id="singlebk"  label="Render Single Book"  tooltiptext="Render only a single book. You will be given a drop-down list to choose the book from." />
+          <radio id="singlebk"  label="Render Single Book" tooltiptext="Render only a single book." />
         </radiogroup>
-        <checkbox id="images" label="Don't capture" checked="false" tooltiptext="Show pages in window, but do not capture or save them." />
+        <checkbox id="images"   label="Don't capture"      tooltiptext="Show pages in render-window, but do not capture or save them." />
       </vbox>
     </groupbox>
     <vbox></vbox>
     <groupbox >
       <caption label="Skip"/>
       <vbox>
-        <checkbox id="skipmenus" label="Menu Generation" checked="false" tooltiptext="Don't render menus." />
-        <checkbox id="skiptext" label="Text Generation" checked="false" tooltiptext="Don't render text pages." />
-        <checkbox id="skipfootnotes" label="Footnote Generation" checked="false" tooltiptext="Don't render footnotes pages." />
+        <checkbox id="skipmenus"     label="Menu Generation"     tooltiptext="Don't render menus." />
+        <checkbox id="skiptext"      label="Text Generation"     tooltiptext="Don't render text pages." />
+        <checkbox id="skipfootnotes" label="Footnote Generation" tooltiptext="Don't render footnotes pages." />
       </vbox>
     </groupbox>
     <groupbox >
       <caption label="Misc"/>
       <vbox>
-        <button id="readme" label="View ReadMe:" oncommand="viewReadMe();" tooltiptext="Read the ReadMe file." />
-        <button id="installPrompt" disabled="true" label="Install directory:" oncommand="window.alert('Your installation directory is:\n' + ExtFile.path);" tooltiptext="Click to see where Word-DVD is installed." />
-        <checkbox id="restoreDefaults" label="Restore Default Files" checked="false" oncommand="handleInput(this);" tooltiptext="Restore the default image, code, and CSS files which were included with Word-DVD." />
+        <button id="readme"            label="View ReadMe:"          tooltiptext="Read the ReadMe file." />
+        <button id="installPrompt"     label="Install directory:"    tooltiptext="Click to see where Word-DVD is installed." />
+        <checkbox id="restoreDefaults" label="Restore Default Files" tooltiptext="Restore the default image, code, and CSS files which were included with Word-DVD." />
       </vbox>
     </groupbox> 
 
