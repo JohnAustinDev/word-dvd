@@ -34,15 +34,21 @@ var RenderFrame, MainWin;
 var ILastPage;
 var ContinueFunc;
 var MenusFile;
+var StartingBindex;
 var Book, Bindex, Chapter, Page;
 
 function loadedRender() {
   MainWin = window.opener;
+  Book = MainWin.Book;
+  StartingBindex = MainWin.StartingBindex;
   RenderFrame = document.getElementById("render");
   
   RenderFrame.style.width = MainWin.PAL.W + "px";
   RenderFrame.style.height = String(MainWin.PAL.H + 16) + "px";
-  window.setTimeout("window.resizeTo(RenderFrame.boxObject.width, document.getElementById('body').boxObject.height);", 0);
+  window.setTimeout("postLoad1();", 0);
+} function postLoad1() {
+  window.resizeTo(RenderFrame.boxObject.width, document.getElementById("body").boxObject.height);
+  window.setTimeout("startMenuGeneration();", 0);
 }
 
 function startMenuGeneration() {
@@ -71,12 +77,11 @@ function startMenuGeneration() {
     }
     MenuEntryIndex = 0;
     MenuNumber = 0;
+    Bindex = 0;
     MenuType="TOC";
     Basename = "toc";
     MainWin.logmsg("Rendering TOC Menu(s)...");
     window.setTimeout("renderMenuSection();", 0);
-      
-    Bindex = 0;
   }
   else {
     MainWin.logmsg("Skipped menu generation.");
@@ -85,28 +90,43 @@ function startMenuGeneration() {
 }
 
 function startTextGeneration() {
-  MainWin.document.getElementById("rendernext").disabled = false;
+  // switch from menu to text background
+  RenderFrame.contentDocument.defaultView.InitComplete = false;
   RenderFrame.contentDocument.defaultView.location.assign("chrome://word-dvd/content/web/text.html");
+  FrameInitInterval = window.setInterval("checkFrameInitComplete();", 100);
+  FrameInitFunction = startTextGeneration2;
+  
+} function startTextGeneration2() {
   if (!MainWin.document.getElementById("skiptext").checked) {
     readPageTiming();
     MainWin.logmsg("Generating Text Pages...");
-    window.setTimeout("renderAllPages();", 2000);
+    window.setTimeout("renderAllPages();", 0);
   }
   else {
     MainWin.logmsg("Skipped Text generation.");
-    window.setTimeout("startFootnoteGeneration();", 2000);  
+    window.setTimeout("startFootnoteGeneration();", 0);  
   }
 }
 
 function startFootnoteGeneration() {
   if (!MainWin.document.getElementById("skipfootnotes").checked) {
     MainWin.logmsg("Generating Footnote Pages...");
-    window.setTimeout("startFootnotes();", 2000);
+    window.setTimeout("startFootnotes();", 0);
   }
   else {
     MainWin.logmsg("Skipped Footnote generation.");
     MainWin.stop();
   }
+}
+
+function startFootnotes() {
+  initFootnotes();
+  if (PageWithFootnotes[FootnoteIndex]) {
+    if (MainWin.Aborted) return;
+    else if (!MainWin.Paused) window.setTimeout("renderNewFNScreen();", 1);
+    else ContinueFunc = "renderNewFNScreen();";
+  }
+  else MainWin.stop();
 }
 
 var VerseTiming = {};
@@ -134,36 +154,6 @@ function readPageTiming() {
 }
 
 var MenuEntries, MenuEntryIndex, MenuNumber, MenuType, Basename;
-
-function renderChapterMenus() {
-  if (Bindex < Book.length) {
-    var intro = getPassage(Book[Bindex].shortName, true);
-    if (Book[Bindex].maxChapter>1 || intro) {
-      MenuEntries = [];
-      for (var c=0; c<=Book[Bindex].maxChapter; c++) {
-        if (c==0 && !intro) continue;
-        MenuEntries.push(new Object());
-        if (c>0) MenuEntries[MenuEntries.length-1].label = MainWin.getLocaleString("Chaptext", c, Book[Bindex].shortName);
-        else MenuEntries[MenuEntries.length-1].label = MainWin.getLocaleString("IntroLink");
-        MenuEntries[MenuEntries.length-1].target = Book[Bindex].shortName + "-" + c;
-        MenuEntries[MenuEntries.length-1].className = "";
-      }
-      MenuEntryIndex = 0;
-      MenuNumber = 0;
-      MenuType = "CHP";
-      Basename = Book[Bindex].shortName;
-      MainWin.logmsg("Rendering Chapter Menu(s):" + Basename + "...");
-      window.setTimeout("renderMenuSection();", 0);
-      Bindex++;
-    }
-    else {
-      Bindex++;
-      window.setTimeout("renderMenuSection();", 0);
-    }
-  }
-  else window.setTimeout("startTextGeneration();", 2000);
-}
-
 function renderMenuSection() {
   if (MenuEntryIndex<MenuEntries.length) {
     MenuNumber++;
@@ -205,12 +195,33 @@ function renderMenuSection() {
   else window.setTimeout("renderChapterMenus();", 0);
 }
 
-function getSubFilePath(parent, subpath) {
-  var infile = parent.clone();
-  var pth = subpath.split("/");
-  for (var i=0; i<pth.length; i++) {infile.append(pth[i]);}
-  if (infile.exists()) return infile.path;
-  else return "";
+function renderChapterMenus() {
+  if (Bindex < Book.length) {
+    var intro = getPassage(Book[Bindex].shortName, true);
+    if (Book[Bindex].maxChapter>1 || intro) {
+      MenuEntries = [];
+      for (var c=0; c<=Book[Bindex].maxChapter; c++) {
+        if (c==0 && !intro) continue;
+        MenuEntries.push(new Object());
+        if (c>0) MenuEntries[MenuEntries.length-1].label = MainWin.getLocaleString("Chaptext", c, Book[Bindex].shortName);
+        else MenuEntries[MenuEntries.length-1].label = MainWin.getLocaleString("IntroLink");
+        MenuEntries[MenuEntries.length-1].target = Book[Bindex].shortName + "-" + c;
+        MenuEntries[MenuEntries.length-1].className = "";
+      }
+      MenuEntryIndex = 0;
+      MenuNumber = 0;
+      MenuType = "CHP";
+      Basename = Book[Bindex].shortName;
+      MainWin.logmsg("Rendering Chapter Menu(s):" + Basename + "...");
+      window.setTimeout("renderMenuSection();", 0);
+      Bindex++;
+    }
+    else {
+      Bindex++;
+      window.setTimeout("renderMenuSection();", 0);
+    }
+  }
+  else window.setTimeout("startTextGeneration();", 0);
 }
 
 var MenuHeaders = {};
@@ -277,7 +288,12 @@ function renderMenu(menubase, menunumber, listArrayL, listArrayR, isFirstMenu, i
   
   MainWin.write2File(MenusFile, formatMenuString(menuname, 8, false, targets[BR], btype), true); 
 
-  window.setTimeout("captureImage('', '" + menuname + "', '" + returnFun + "');", 500);
+  mdoc.defaultView.RenderDone = false;
+  window.setTimeout("RenderFrame.contentDocument.defaultView.setTimeout('RenderDone = true;', " + MainWin.WAIT+ ");", 0);
+  
+  if (MainWin.Aborted) return;
+  else if (!MainWin.Paused) waitRenderWinThenDo("captureImage('', '" + menuname + "', '" + returnFun + "');");
+  else ContinueFunc = "captureImage('', '" + menuname + "', '" + returnFun + "');";
 }
 
 function writeButtonList(listArray, menuname, isLeft, doc) {
@@ -344,30 +360,14 @@ function applyHeader(text, elem, cache) {
   //elem.innerHTML = text;
 }
 
-var StartingBindex = 0;
 function renderAllPages() {
-  MainWin.RenderNext.removeAttribute("oncommand");
-  MainWin.RenderNext.setAttribute("oncommand", "rendernext()");
-  if (MainWin.ButtonId == "rendernext") {
-    MainWin.RunPause.label = "Continue";
-    MainWin.RunPause.removeAttribute("oncommand");
-    MainWin.RunPause.setAttribute("oncommand", "resume();");
-    MainWin.Paused = true;
-  }
-  else {
-    MainWin.RunPause.label = "Pause";
-    MainWin.RunPause.removeAttribute("oncommand");
-    MainWin.RunPause.setAttribute("oncommand", "pause();");
-    MainWin.RenderNext.disabled = true;
-    MainWin.Paused = false;
-  }
-
   MainWin.jsdump("Fitting pages...");
   // Open a window to render to
-  ContinueFunc = "renderNewScreen();";
   Bindex = StartingBindex;
   initBookGlobals();
-  if (!MainWin.Paused) renderNewScreen();
+  if (MainWin.Aborted) return;
+  else if (!MainWin.Paused) renderNewScreen();
+  else ContinueFunc = "renderNewScreen();";
 }
 
 function initBookGlobals(skipIntroduction) {
@@ -386,11 +386,10 @@ function initBookGlobals(skipIntroduction) {
   MainWin.logmsg("Rendering Pages for Book:" + Book[Bindex].shortName + "...");
 }
 
-var AfterDrawCompleteFunc;
-var DoneDrawing;
 function renderNewScreen() {
 //MainWin.jsdump("Starting fit:" + Book[Bindex].shortName + " " + Chapter + ", s=" + Page.beg + ", e=" + Page.end);
-  
+
+  ContinueFunc = null;
   var mdoc = RenderFrame.contentDocument;
   mdoc.getElementById("text-image-left").style.visibility = "hidden";
   mdoc.getElementById("text-image-right").style.visibility = "hidden";
@@ -407,20 +406,11 @@ function renderNewScreen() {
   var skipPage2 = (tstyle.visibility == "hidden"); // this allows single column display by setting text-page2 visibility=hidden
   
   RenderFrame.contentDocument.defaultView.fitScreen(Book[Bindex].shortName, Chapter, Page, skipPage1, skipPage2);
-//window.alert("STOPPING");
-//window.close(); 
-  AfterDrawCompleteFunc = screenDrawComplete;
-  window.setTimeout("afterDrawComplete();", 200);
+  
+  waitRenderWinThenDo("screenDrawComplete()");
+  
 //MainWin.jsdump("Finished fit left:" + RenderFrame.contentDocument.defaultView.Page1.innerHTML);
 //MainWin.jsdump("Finished fit right:" + RenderFrame.contentDocument.defaultView.Page2.innerHTML);
-}
-
-function afterDrawComplete() {
-  if (DoneDrawing) window.setTimeout(AfterDrawCompleteFunc, 200);
-  else {
-    //window.alert("Waiting");
-    window.setTimeout("afterDrawComplete()", 200);
-  }
 }
 
 function screenDrawComplete() {
@@ -447,7 +437,9 @@ function screenDrawComplete() {
   }
   else {Page.pagenumber++;}
   
-  if (!MainWin.Paused) renderNewScreen();
+  if (MainWin.Aborted) return;
+  else if (!MainWin.Paused) renderNewScreen();
+  else ContinueFunc = "renderNewScreen();";
 }
 
 function getPassage(book, getIntro, getFootnotes) {
@@ -546,6 +538,7 @@ function hasAudio(book, chapter) {
 }
 
 function captureImage(subfolder, imageName, returnFun) {
+  ContinueFunc = null;
   var capture = Components.classes["@mozilla.org/file/local;1"].createInstance(Components.interfaces.nsILocalFile);
   capture.initWithPath(MainWin.UIfile[MainWin.INDIR].path + "/" + MainWin.CODE + "/" + MainWin.CAPTURE);
   
@@ -787,12 +780,6 @@ function writeFootnotesToFile(book) {
   PageWithFootnotes = [];
 }
 
-function startFootnotes() {
-  initFootnotes();
-  if (!MainWin.Paused && PageWithFootnotes[FootnoteIndex]) window.setTimeout("renderNewFNScreen();", 1);
-  else MainWin.stop();
-}
-
 function initFootnotes() {
   PageWithFootnotes = [];
   for (var b=0; b<Book.length; b++) {
@@ -840,6 +827,7 @@ var LastBindex;
 // (Page.complete), then another note is added to the passage until
 // the passage no longer fits. The second to last try is saved. 
 function renderNewFNScreen() {
+  ContinueFunc = null;
   Bindex = getBindexFromBook(PageWithFootnotes[FootnoteIndex].shortName);
   Chapter = PageWithFootnotes[FootnoteIndex].chapter;
   if (LastBindex != Bindex) {
@@ -872,7 +860,7 @@ function renderNewFNScreen() {
   // couldn't fit this last page, so start new page with it...
   if (!ContinuePage && !Page.complete) {
     IsFirstFN = true;
-    renderNewFNScreen();
+    waitRenderWinThenDo("renderNewFNScreen();");
     return;
   }
   
@@ -888,8 +876,7 @@ function renderNewFNScreen() {
   }
   
   // continuing page but not complete = do nothing
-  AfterDrawCompleteFunc = saveFNImage;
-  window.setTimeout("afterDrawComplete();", 0);
+  waitRenderWinThenDo("saveFNImage()");
 }
 
 function saveFNImage() {
@@ -903,7 +890,9 @@ function saveFNImage() {
   else FootnoteIndex++;
 
   if (FootnoteIndex < PageWithFootnotes.length) {
-    if (!MainWin.Paused) renderNewFNScreen();
+    if (MainWin.Aborted) return;
+    else if (!MainWin.Paused) renderNewFNScreen();
+    else ContinueFunc = "renderNewFNScreen();";
   }
   else MainWin.stop();
 }
@@ -923,6 +912,32 @@ function getTestament(book) {
   return "";
 }
 
+function getSubFilePath(parent, subpath) {
+  var infile = parent.clone();
+  var pth = subpath.split("/");
+  for (var i=0; i<pth.length; i++) {infile.append(pth[i]);}
+  if (infile.exists()) return infile.path;
+  else return "";
+}
+
+var FrameInitInterval;
+var FrameInitFunction;
+function checkFrameInitComplete() {
+  if (RenderFrame.contentDocument.defaultView.InitComplete) {
+    window.clearTimeout(FrameInitInterval);
+    FrameInitFunction();
+  }
+}
+
+var DrawInterval;
+function waitRenderWinThenDo(funcString) {
+  DrawInterval = window.setInterval("if (RenderFrame.contentDocument.defaultView.RenderDone) {window.clearInterval(DrawInterval); " + funcString + ";}", 50);
+}
+
 function unloadedRender() {
-  if (MainWin && MainWin.CloseThis) MainWin.CloseThis();
+  if (MainWin) {
+    if (MainWin.Running) 
+      MainWin.quit();
+    else MainWin.resetGo();
+  }
 }

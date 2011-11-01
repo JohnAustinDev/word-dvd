@@ -30,6 +30,6 @@
     xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
 <script type="application/x-javascript" src="chrome://word-dvd/content/render.js" />
 <vbox id="body">
-  <iframe id="render" src="" />
+  <iframe id="render" src="chrome://word-dvd/content/web/menu.html" />
 </vbox>
 </window>
