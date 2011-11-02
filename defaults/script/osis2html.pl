@@ -23,7 +23,7 @@
 use Encode;
 
 $scriptdir = @ARGV[0];
-require "$scriptdir/init.pl" || die "Can't require init.pl";
+if (!require "$scriptdir/init.pl") {&finish("Can't require init.pl");}
 
 $infile = "$indir/osis.xml";
 
@@ -35,9 +35,15 @@ $PARAGRAPH = "<br>$INDENT";
 $NEWCHAPTER = "<span name=\"chapter.";
 $TITLES = "title-1|title-2|book-title|chapter-title|text-header|menu-header"; 
 
+&progress(0);
 open (LOGF, ">>$outdir/logfile.txt");
 $log = "Starting osis2html.pl\n"; &Log;
-open (INF, "<$infile") || finish("Could not open infile $infile.\n");
+$Percent = 0;
+open (INF, "<$infile") || &finish("Could not open infile $infile.\n");
+while (<INF>) {$TotalLines++;}
+close(INF);
+open (INF, "<$infile");
+
 $notenum=1;
 $line=0;
 $inMajorQuote = 0;
@@ -47,13 +53,15 @@ while(<INF>) {
   $line++;
   $_ = decode("utf8", $_);
   utf8::upgrade($_);
+  my $Percent = (100*($line/$TotalLines))*0.9;
+  if (($Percent%5) == 0) {&progress($Percent);}
   
   # Preverse Titles
   $preVerseTitle = $preVerseTitle . title2HTML(\$_, "preverse", "(<title [^>]*subType=\"x-preverse\"[^>]*>)(.*?)<\/title>");
   
   # Process input line...
   if ($_ =~ /<chapter osisID=\"([^\"]+)\">/) {$inintro = "false"; $inMajorQuote = 0; next;}
-  elsif ($_ =~ /<div type=\"book\" osisID=\"([^\"]+)\">/) {$inintro = "true"; $introbook = "$1"; next;}
+  elsif ($_ =~ /<div type=\"book\" osisID=\"([^\"]+)\">/) {$inintro = "true"; $introbook = "$1"; $totalbooks++; next;}
   # Verses
   elsif ($_ =~ /<verse[^>]* osisID="(([^\.]+)\.(\d+)\.[^\"]+)"[^>]*>(.*?)(<verse[^\/]*\/>|<\/verse)/) {
     $id = $1;
@@ -122,7 +130,8 @@ foreach $key (keys %alltext) {
 }
 
 # Prepare output directory
-if (!(-e $htmldir)) {`mkdir $htmldir`;}
+if (-e $htmldir) {`rm -r -f "$htmldir"`;}
+`mkdir "$htmldir"`;
 
 # Write the html files...
 $htmlheader = "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\"><html><head><meta http-equiv=\"content-type\" content=\"text/html; charset=utf-8\">";
@@ -136,8 +145,12 @@ $htmlheader .= "<div id=\"text-header-left\" class=\"text-header\" style=\"max-w
 $htmlfooter = "</div></div></body>";
 $htmlfooter = $htmlfooter."</html>";
 
+$numbooks = 0;
 foreach $bk (sort keys %book) {
-  open (OUTF, ">$htmldir/$bk.html") || finish("Could not open outfile $htmldir/$bk.html\n");
+  $numbooks++;
+  $Percent = 90 + (10*($numbooks/$totalbooks));
+  if (($Percent%2) == 0) {&progress($Percent);}
+  open (OUTF, ">$htmldir/$bk.html") || &finish("Could not open outfile $htmldir/$bk.html\n");
   $booklocal = decode("utf8", $bk);
   utf8::upgrade($booklocal);
   $booklocal = $localeFile{$booklocal};
@@ -199,7 +212,7 @@ foreach $bk (sort keys %book) {
   
   # Save introduction to separate file
   if ($introduction ne "") {
-    open (OUTF, ">$htmldir/$bk.intr.html") || finish("Could not open outfile $htmldir/$bk.intr.html\n");
+    open (OUTF, ">$htmldir/$bk.intr.html") || &finish("Could not open outfile $htmldir/$bk.intr.html\n");
     &Write($hdr);
     &Write($introduction, "true");
     &Write($htmlfooter);
@@ -209,7 +222,7 @@ foreach $bk (sort keys %book) {
 
 # Write the footnote files...
 foreach $bk (sort keys %book) {
-  open (OUTF, ">$htmldir/$bk.fn.html") || finish("Could not open outfile $htmldir/$bk.fn.html\n");
+  open (OUTF, ">$htmldir/$bk.fn.html") || &finish("Could not open outfile $htmldir/$bk.fn.html\n");
   my $bkl = decode("utf8", $bk);
   utf8::upgrade($bkl);
   $bkl = $localeFile{$bkl};
@@ -501,11 +514,19 @@ sub removeTags(\$) {
 sub finish($) {
   $log = shift;
   &Log;
+  if (-e "$outdir/osis2html-progress") {`rm "$outdir/osis2html-progress"`;}
   # drop a file to tell firefox we're done
   open(OUTF, ">$outdir/conversion-finished");
   print OUTF "conversion-finished";
   close(OUTF);
   exit;
+}
+
+sub progress($) {
+  my $p = shift;
+  open(OUTF, ">$outdir/osis2html-progress");
+  print OUTF "$p";
+  close(OUTF);  
 }
 
 sub Write($$) {

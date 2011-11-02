@@ -41,6 +41,7 @@ const MENUSFILE="MENU_BUTTONS.csv";
 const AUDIOICON="audio-icon.png";
 const IMAGEEXT="jpg";
 const CONVERSIONDONE="conversion-finished";
+const OSISPROGRESS="osis2html-progress";
 // Input directory
 const DEFAULTS = "defaults";
 const HTMLDIR="html";
@@ -677,6 +678,14 @@ function checkOSISConverion() {
     MessageWin.close();
     cf.remove(false);
     readHtmlFiles();
+  }
+  else {
+    var pf = UIfile[OUTDIR].clone();
+    pf.append(OSISPROGRESS);
+    if (pf.exists() && MessageWin) {
+      var percent = readFile(pf);
+      if (percent && percent > 3) MessageWin.setProgress(percent);
+    }
   }
 }
 
