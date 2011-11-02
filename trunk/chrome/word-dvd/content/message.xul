@@ -6,11 +6,18 @@
     onload="sizeToContent()"
     xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
 
+  <script>
+  function setProgress(p) {
+    document.getElementById("progress").value = p;
+  }
+  </script>
   <hbox pack="center">
     <vbox pack="center" style="margin:25px 40px 40px 40px;">
       <label style="font-size:20px;">Please Wait:</label>
       <label>Conversion from OSIS to HTML could take a few minutes.</label>
       <label>This window will close when conversion has finished.</label>
+      <spacer height="20" />
+      <progressmeter id="progress" mode="determined" value="3"/>
     </vbox>
   </hbox>
 </window>

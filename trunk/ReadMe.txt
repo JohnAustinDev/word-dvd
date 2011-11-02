@@ -163,6 +163,7 @@ REVISION HISTORY
 - Control window no longer closes after each render session.
 - Improved page rendering speed (using asynchronous page generation rather 
 than synchronous).
+- Added progress meter for osis2html conversion
 
 1.4.3
 -----
