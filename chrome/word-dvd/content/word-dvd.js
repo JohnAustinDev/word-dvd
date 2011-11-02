@@ -252,7 +252,9 @@ function loadedXUL() {
     ExtVersion = readFile(insrdf).match(/<em\:version>(.*?)<\/em\:version>/im)[1];
     loadedXUL2();
   }
+}function loadedXUL2() {
 
+  document.title = "Word-DVD-" + ExtVersion;
   for (var i=0; i<NUMINPUTS; i++) {
     InputTextbox[i] = document.getElementById("input-" + i);
     try {
@@ -266,12 +268,7 @@ function loadedXUL() {
     document.getElementById("browse-1").disabled = true;
     document.getElementById("browse-2").disabled = true;
   }
-  
-  checkAudioDir();
-}
-
-function loadedXUL2() {
-  document.title = "Word-DVD-" + ExtVersion;	
+  checkAudioDir();	
   updateControlPanel();
   sizeToContent();
 }
@@ -398,10 +395,8 @@ function updateControlPanel() {
   if (noaudio.checked) {
     InputTextbox[AUDIO].value = "";
     var runvideo = document.getElementById("runvideo");    
-    if (runvideo.parentNode.selectedItem == runvideo) {
-      var rundvd = document.getElementById("runword-dvd");
-      rundvd.parentNode.selectedItem = rundvd;  
-    }
+    if (runvideo.selected) 
+      runvideo.parentNode.selectedItem = document.getElementById("runword-dvd");  
   }
   else InputTextbox[AUDIO].value = UIfile[AUDIO].path;
   document.getElementById("browse-1").disabled = noaudio.checked;
@@ -436,10 +431,21 @@ function updateControlPanel() {
     var osis = UIfile[INDIR].clone();
     osis.append(OSISFILE);
     osis2html.disabled = !osis.exists();
+    
+    var htmlFiles = UIfile[INDIR].clone();
+    htmlFiles.append(HTMLDIR);
+    if (!osis2html.disabled && !htmlFiles.exists()) osis2html.checked = true;
   }
-  var htmlFiles = UIfile[INDIR].clone();
-  htmlFiles.append(HTMLDIR);
-  if (!osis2html.disabled && !htmlFiles.exists()) osis2html.checked = true;
+  
+  // Render Nothing (can't "render only" and "render nothing"!)
+  if (document.getElementById("rendernothing").selected) {
+    document.getElementById("renderonly").disabled = true;
+    var renderonly = document.getElementById("renderonly");
+    if (renderonly.selected) {
+      renderonly.parentNode.selectedItem = document.getElementById("runword-dvd");  
+    }
+  }
+  else document.getElementById("renderonly").disabled = false;
 
   // GO! button
   for (var i=0; i<NUMINPUTS; i++) {
@@ -449,9 +455,11 @@ function updateControlPanel() {
   document.getElementById("go").disabled = (i!=NUMINPUTS);
 
   // shorten path names where possible
-  if (InputTextbox[AUDIO].value)
-    InputTextbox[AUDIO].value = UIfile[AUDIO].path.replace(UIfile[INDIR].path, "<Project Directory>");
-  InputTextbox[OUTDIR].value = UIfile[OUTDIR].path.replace(UIfile[INDIR].path, "<Project Directory>");
+  if (UIfile[INDIR]) {
+    if (InputTextbox[AUDIO].value)
+      InputTextbox[AUDIO].value = UIfile[AUDIO].path.replace(UIfile[INDIR].path, "<Project Directory>");
+    InputTextbox[OUTDIR].value = UIfile[OUTDIR].path.replace(UIfile[INDIR].path, "<Project Directory>");
+  }
 }
 
 function setInputDirsToDefault() {
@@ -498,6 +506,7 @@ function checkAudioDir(checkOnly) {
 var MessageWin;
 var Osis2HtmlInterval;
 function wordDVD() {
+  if (document.getElementById("rendernothing").selected) {stop(); return;}
   jsdump("Checking Inputs...");
   for (var i=0; i<NUMINPUTS; i++) {
     if (!UIfile[i]) {
@@ -651,11 +660,12 @@ function wordDVD() {
     var args = [];
     process.run(false, args, args.length);
     Osis2HtmlInterval = window.setInterval("checkOSISConverion();", 500);
-    return;
+    document.getElementById("osis2html").checked = false;
   }
-  
-  logmsg("Skipped HTML generation.");
-  readHtmlFiles();
+  else {
+    logmsg("Skipped HTML generation.");
+    readHtmlFiles();
+  }
 }  
 
 function checkOSISConverion() {
@@ -991,8 +1001,8 @@ function stop() {
   if (DBLogFile) {
     var logf = readFile(DBLogFile);
     if (logf) hasErrors = (logf.search(/ERR/i)!=-1);
+    logmsg("Finishing Word-DVD imager at " + endDate.toTimeString() + " " + endDate.toDateString());
   }
-  logmsg("Finishing Word-DVD imager at " + endDate.toTimeString() + " " + endDate.toDateString());
   
   if (document.getElementById("runword-dvd").selected) {
     var process = Components.classes["@mozilla.org/process/util;1"]
@@ -1014,8 +1024,10 @@ function stop() {
     logmsg("Launched " + runscript(VIDEOFILES));  
   }
  
-  if (hasErrors) window.alert("Image rendering has completed, but WITH ERRORS!");
-  else window.alert("Image rendering has completed without errors.");
+  if (!document.getElementById("rendernothing").selected) {
+    if (hasErrors) window.alert("Image rendering has completed, but WITH ERRORS!");
+    else window.alert("Image rendering has completed without errors.");
+  }
   resetGo(); 
 }
 

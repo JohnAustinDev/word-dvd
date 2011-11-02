@@ -45,13 +45,17 @@ function loadedRender() {
   
   RenderFrame.style.width = MainWin.PAL.W + "px";
   RenderFrame.style.height = String(MainWin.PAL.H + 16) + "px";
-  window.setTimeout("postLoad1();", 0);
+  window.setTimeout("postLoad1();", 1);
 } function postLoad1() {
+  initWaitRenderDone();
+  
   window.resizeTo(RenderFrame.boxObject.width, document.getElementById("body").boxObject.height);
-  window.setTimeout("startMenuGeneration();", 0);
+
+  waitRenderDoneThenDo("startMenuGeneration();");
 }
 
 function startMenuGeneration() {
+  window.onchange="";
   if (!MainWin.document.getElementById("skipmenus").checked) {
     MainWin.logmsg("Generating Menus...");
   
@@ -90,11 +94,13 @@ function startMenuGeneration() {
 }
 
 function startTextGeneration() {
+MainWin.logmsg("startTextGeneration");
   // switch from menu to text background
-  RenderFrame.contentDocument.defaultView.InitComplete = false;
+  initWaitRenderDone(true);
+  
   RenderFrame.contentDocument.defaultView.location.assign("chrome://word-dvd/content/web/text.html");
-  FrameInitInterval = window.setInterval("checkFrameInitComplete();", 100);
-  FrameInitFunction = startTextGeneration2;
+  
+  waitRenderDoneThenDo("startTextGeneration2();");
   
 } function startTextGeneration2() {
   if (!MainWin.document.getElementById("skiptext").checked) {
@@ -288,11 +294,10 @@ function renderMenu(menubase, menunumber, listArrayL, listArrayR, isFirstMenu, i
   
   MainWin.write2File(MenusFile, formatMenuString(menuname, 8, false, targets[BR], btype), true); 
 
-  mdoc.defaultView.RenderDone = false;
-  window.setTimeout("RenderFrame.contentDocument.defaultView.setTimeout('RenderDone = true;', " + MainWin.WAIT+ ");", 0);
-  
+  initWaitRenderDone();
+
   if (MainWin.Aborted) return;
-  else if (!MainWin.Paused) waitRenderWinThenDo("captureImage('', '" + menuname + "', '" + returnFun + "');");
+  else if (!MainWin.Paused) waitRenderDoneThenDo("captureImage('', '" + menuname + "', '" + returnFun + "');");
   else ContinueFunc = "captureImage('', '" + menuname + "', '" + returnFun + "');";
 }
 
@@ -405,9 +410,11 @@ function renderNewScreen() {
   var tstyle = mdoc.defaultView.getComputedStyle(mdoc.getElementById("text-page2"), null);
   var skipPage2 = (tstyle.visibility == "hidden"); // this allows single column display by setting text-page2 visibility=hidden
   
-  RenderFrame.contentDocument.defaultView.fitScreen(Book[Bindex].shortName, Chapter, Page, skipPage1, skipPage2);
+  initWaitRenderDone(true);
   
-  waitRenderWinThenDo("screenDrawComplete()");
+  RenderFrame.contentDocument.defaultView.fitScreen(Book[Bindex].shortName, Chapter, Page, skipPage1, skipPage2);
+    
+  waitRenderDoneThenDo("screenDrawComplete()");
   
 //MainWin.jsdump("Finished fit left:" + RenderFrame.contentDocument.defaultView.Page1.innerHTML);
 //MainWin.jsdump("Finished fit right:" + RenderFrame.contentDocument.defaultView.Page2.innerHTML);
@@ -853,6 +860,8 @@ function renderNewFNScreen() {
     Page.bottomSplitTag = "";
     Page.passage += PageWithFootnotes[FootnoteIndex].html;
   }
+  
+  initWaitRenderDone(true);
 
   var tstart = Page.end;
   RenderFrame.contentDocument.defaultView.fitScreen(Book[Bindex].shortName, Chapter, Page, false, false);
@@ -860,7 +869,7 @@ function renderNewFNScreen() {
   // couldn't fit this last page, so start new page with it...
   if (!ContinuePage && !Page.complete) {
     IsFirstFN = true;
-    waitRenderWinThenDo("renderNewFNScreen();");
+    waitRenderDoneThenDo("renderNewFNScreen();");
     return;
   }
   
@@ -876,7 +885,7 @@ function renderNewFNScreen() {
   }
   
   // continuing page but not complete = do nothing
-  waitRenderWinThenDo("saveFNImage()");
+  waitRenderDoneThenDo("saveFNImage()");
 }
 
 function saveFNImage() {
@@ -920,18 +929,33 @@ function getSubFilePath(parent, subpath) {
   else return "";
 }
 
-var FrameInitInterval;
-var FrameInitFunction;
-function checkFrameInitComplete() {
-  if (RenderFrame.contentDocument.defaultView.InitComplete) {
-    window.clearTimeout(FrameInitInterval);
-    FrameInitFunction();
+// call initWaitRenderDone, then redraw window, then call waitRenderDoneThenDo
+var UseRenderDoneFallback = false;
+var PaintCount;
+var PaintCheckInterval;  // works with firefox 4+
+var DrawInterval;
+var RenderDoneTO;
+function initWaitRenderDone(skipFallback) {
+  // prepare for waitRenderDoneThenDo
+  RenderFrame.contentDocument.defaultView.RenderDone = false;
+  try {
+    if (UseRenderDoneFallback || window.mozPaintCount===undefined) throw true;
+    PaintCount = window.mozPaintCount;
+    if (PaintCheckInterval) clearInterval(PaintCheckInterval);
+    PaintCheckInterval = window.setInterval("if (window.mozPaintCount > PaintCount) {window.clearInterval(PaintCheckInterval); RenderFrame.contentDocument.defaultView.RenderDone = true;}", 10);
+  }
+  catch (er) {
+    // skip the firefox 3- fallback method if RenderDone is handled somewhere else
+    if (!skipFallback) {
+      if (RenderDoneTO) window.clearTimeout(RenderDoneTO);
+      RenderDoneTO = window.setTimeout("RenderFrame.contentDocument.defaultView.setTimeout(\"window.setTimeout('RenderDone = true;', MainWin.WAIT);\", 1);", 1);
+    }
   }
 }
 
-var DrawInterval;
-function waitRenderWinThenDo(funcString) {
-  DrawInterval = window.setInterval("if (RenderFrame.contentDocument.defaultView.RenderDone) {window.clearInterval(DrawInterval); " + funcString + ";}", 50);
+function waitRenderDoneThenDo(funcString) {
+  if (DrawInterval) window.clearInterval(DrawInterval);
+  DrawInterval = window.setInterval("if (RenderFrame.contentDocument.defaultView.RenderDone) {window.clearInterval(DrawInterval); " + funcString + ";}", 10);
 }
 
 function unloadedRender() {
