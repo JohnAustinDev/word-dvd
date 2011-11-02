@@ -157,6 +157,13 @@ session these modified files will be used.
 
 REVISION HISTORY
 
+1.4.4
+-----
+- Improved UI behaviour and interaction. 
+- Control window no longer closes after each render session.
+- Improved page rendering speed (using asynchronous page generation rather 
+than synchronous).
+
 1.4.3
 -----
 - Added this ReadMe.

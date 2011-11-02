@@ -5,7 +5,6 @@ var RenderWin = window.frameElement.ownerDocument.defaultView;
 var PageElem1, PageElem2,Body;
 var DebugChapter=0;
 var DebugPage=0;
-var InitComplete;
 var RenderDone;
 
 var CSSHeading1Color, CSSHeading2Color;
@@ -24,12 +23,17 @@ function init() {
   Body = document.getElementById("body");
   if (!MainWin.document.getElementById("runvideo").selected) 
     document.getElementById("text-controls").setAttribute("src", "file://" + MainWin.UIfile[MainWin.INDIR].path + "/" + MainWin.RESOURCE + "/control-buttons.png");
-  window.setTimeout("InitComplete=true;", 0);
+  
+  // firefox 3- needs a fallback waitRender method (simple delay) so test and do if needed
+  try {
+    if ((RenderWin && RenderWin.UseRenderDoneFallback) || window.mozPaintCount===undefined) throw true;
+    var test = RenderWin.mozPaintCount;
+  }
+  catch (er) {window.setTimeout("window.setTimeout('RenderDone = true;',0);", MainWin.WAIT);}
 }
 
 function fitScreen(book, chapter, aPage, skipPage1, skipPage2) {
 MainWin.jsdump("Chapter=" + chapter + ", Pagenumber=" + aPage.pagenumber);
-  RenderDone = false;
   DisplayBook = book;
   DisplayChapter = chapter;
   
@@ -75,7 +79,12 @@ MainWin.jsdump("Chapter=" + chapter + ", Pagenumber=" + aPage.pagenumber);
   }
 //MainWin.jsdump("PageElem1:" + PageElem1.innerHTML + "\nPageElem2:" + PageElem2.innerHTML);
 
-  window.setTimeout("RenderDone = true;", MainWin.WAIT);
+  // firefox 3- needs a fallback waitRender method (simple delay) so test and do if needed
+  try {
+    if ((RenderWin && RenderWin.UseRenderDoneFallback) || window.mozPaintCount===undefined) throw true;
+    var test = RenderWin.mozPaintCount;
+  }
+  catch (er) {window.setTimeout("window.setTimeout('RenderDone = true;',0);", MainWin.WAIT);}
   return true;
 }
 
