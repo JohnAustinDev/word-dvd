@@ -308,21 +308,28 @@ if ($FOOTNOTES_IN_OWN_VTS ne "true") {
   $LASTVTS = $MAXVTS;
 }
 else {
-  $step = int($MAXVTS/($MAXFNVTS+1));
-  for ($vts=1; $vts<=$MAXFNVTS; $vts++) {
-    $ABSfnVTS{$vts} = $vts*($step+$vts);
-    $RELfnVTS{$vts*($step+$vts)} = $vts;
-  }
-  $textvts = 1;
+  $step = int($MAXVTS/($MAXFNVTS));
+  $tstep = int($step/2);
+  if ( $tstep > $step-($MAXVTS%$MAXFNVTS) ) {$tstep = $step;}
+  $nrvts = 1;
+  $nfvts = 1;
   for ($vts=1; $vts<=($MAXVTS + $MAXFNVTS); $vts++) {
-    if (!exists($RELfnVTS{$vts})) {
-      $ABStextVTS{$textvts} = $vts;
-      $RELtextVTS{$vts} = $textvts;
-      $textvts++;
+    if ($tstep) {
+      $ABStextVTS{$nrvts} = $vts;
+      $RELtextVTS{$vts} = $nrvts;
+      $nrvts++;
+      $tstep--;    
+    }
+    else {
+      $ABSfnVTS{$nfvts} = $vts;
+      $RELfnVTS{$vts} = $nfvts;
+      $nfvts++;
+      $tstep = $step;   
     }
   }
-  if ($textvts-1 != $MAXVTS) {print "ERROR: Footnote VTS mapping problem.\n"; die;}
-  $LASTVTS = ($MAXVTS + $MAXFNVTS);
+  if ($nrvts-1 != $MAXVTS) {print "ERROR: Text VTS mapping problem.\n"; die;}
+  if ($nfvts-1 != $MAXFNVTS) {print "ERROR: Footnote VTS mapping problem.\n"; die;}
+  $LASTVTS = ($MAXVTS + $MAXFNVTS);    
 }
 
 $stit=1;
