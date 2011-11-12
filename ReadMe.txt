@@ -164,6 +164,8 @@ REVISION HISTORY
 - Improved page rendering speed (using asynchronous page generation rather 
 than synchronous).
 - Added progress meter for osis2html conversion
+- Fixed a bug where FootnotesInOwnVTS=true would fail in certain configurations.
+- Fixed a problem where dvdauthor would stop with:  "ERR:  Can only have 128 commands for pre, post, and cell commands."
 
 1.4.3
 -----

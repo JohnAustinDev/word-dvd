@@ -412,39 +412,40 @@ else {
   #build TOC menus
   foreach $menu (sort {$allMenus{$a} <=> $allMenus{$b}} keys %allMenus) {
     if ($menu !~ /^toc-m(\d+)/) {next;}
+    
     if ($menu eq "toc-m1") {
       PGCstartTag("\t\t\t<pgc entry=\"title\" pause=\"inf\" >", "BEGIN MAIN VMGM TITLE MENU $menu");
       $numVMGMmenus++;
       $menuVMGM{$tocmenu} = $numVMGMmenus;
-      $fm = "";
+      print XML "\t\t\t\t<pre>\n\t\t\t\t\t{\n";
       if ($FOOTNOTES_IN_OWN_VTS eq "true") {
-        $fm = $fm."\t\t\t\t\t\tif ( ".$gTYPE." eq 1 ) {\n";
+        print XML "\t\t\t\t\t\tif ( ".$gTYPE." eq 1 ) {\n";
         $fmcalc = "\t\t\t\t\t\t\t".$gTMP1." = ".$cMaxProgram."*".$gJSTI."+".$gJCHP.";\n";
         for ($fnvts=$MAXFNVTS; $fnvts>1; $fnvts--) {
-          $fm = $fm.$fmcalc."\t\t\t\t\t\t\tif ( ".$gTMP1." ge ".($cMaxProgram*($STITLE{$ABStextVTS{$FirstVTSinFNVTS{$fnvts}}}+$FirstTITLEinFNVTS{$fnvts}-1)+$FirstPROGRAMinFNVTS{$fnvts})." ) jump titleset ".$ABSfnVTS{$fnvts}." menu entry root;\n";
+          print XML $fmcalc."\t\t\t\t\t\t\tif ( ".$gTMP1." ge ".($cMaxProgram*($STITLE{$ABStextVTS{$FirstVTSinFNVTS{$fnvts}}}+$FirstTITLEinFNVTS{$fnvts}-1)+$FirstPROGRAMinFNVTS{$fnvts})." ) jump titleset ".$ABSfnVTS{$fnvts}." menu entry root;\n";
           $fmcalc = "";
         }
-        $fm = $fm."\t\t\t\t\t\t\tjump titleset ".$ABSfnVTS{$fnvts}." menu entry root;\n";
-        $fm = $fm."\t\t\t\t\t\t}\n";
+        print XML "\t\t\t\t\t\t\tjump titleset ".$ABSfnVTS{$fnvts}." menu entry root;\n";
+        print XML "\t\t\t\t\t\t}\n";
       }
-      $fm = $fm."\t\t\t\t\t\tif ( ".$gTYPE." le 3 ) jump menu ".$VMGMforwardnum.";\n"; 
-      $fm = $fm."\t\t\t\t\t\tif ( ".$gTYPE." eq 4 ) {\n";
-      $fm = $fm.&menuSelector($menuVMGM{$tocmenu}, "^toc-m(\\d+)", "^(.+)-", "", "\t\t\t\t\t\t\t");
-      $fm = $fm."\t\t\t\t\t\t}\n";
+      print XML "\t\t\t\t\t\tif ( ".$gTYPE." le 3 ) jump menu ".$VMGMforwardnum.";\n"; 
+      print XML "\t\t\t\t\t\tif ( ".$gTYPE." eq 4 ) {\n";
+      print XML &menuSelector(($menuVMGM{$tocmenu}+1), "^toc-m(\\d+)", "^(.+)-", "", "\t\t\t\t\t\t\t");
+      print XML "\t\t\t\t\t\t}\n";
       if (exists $nextbuttonnum{$menu}) {$hbutton=$nextbuttonnum{$menu};}
       else {$hbutton=1024;}
-      $fm = $fm."\t\t\t\t\t\telse ".$gHILB."=".$hbutton.";\n";
+      print XML "\t\t\t\t\t\telse ".$gHILB."=".$hbutton.";\n";
+      print XML "\t\t\t\t\t\tjump menu ".($numVMGMmenus+1).";\n";
+      print XML "\t\t\t\t\t}\n\t\t\t\t</pre>\n";
+      print XML "\t\t\t</pgc>\n";      
     }
-    else {
-      PGCstartTag("\t\t\t<pgc>", "TOC menu $menu");
-      $numVMGMmenus++;
-      $fm = "";
-    }
+
+    PGCstartTag("\t\t\t<pgc>", "TOC menu $menu");
+    $numVMGMmenus++;
     print XML "\t\t\t\t<pre>\n\t\t\t\t\t{\n";
-    print XML $fm;
     print XML "\t\t\t\t\t\ts8=".$gHILB."; ".$gTYPE."=".$defType."; ".$gMTNM."=".$numVMGMmenus."; ".$gMRNM."=0; ".$gMRHI."=1024;".&resetdest()."\n";
     print XML "\t\t\t\t\t}\n\t\t\t\t</pre>\n";
-    &writeMenuButtonsVMGM($menu, $menuVMGM{$tocmenu});    
+    &writeMenuButtonsVMGM($menu, ($menuVMGM{$tocmenu}+1));    
     print XML "\t\t\t\t<vob file=\"$outdir/video/fin-$menu.mpg\" pause=\"inf\" />\n";
     print XML "\t\t\t</pgc>\n";
   }
