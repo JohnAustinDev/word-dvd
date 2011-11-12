@@ -49,12 +49,14 @@ $line=0;
 $inMajorQuote = 0;
 $lastbkch = "none";
 $alltext{$lastbkch} = "";
+my $Percent = 5;
+my $ThisPercent = 0;
 while(<INF>) {
   $line++;
   $_ = decode("utf8", $_);
   utf8::upgrade($_);
-  my $Percent = (100*($line/$TotalLines))*0.9;
-  if (($Percent%5) == 0) {&progress($Percent);}
+  $ThisPercent = int((100*($line/$TotalLines))*0.8);
+  if ($ThisPercent >= $Percent) {&progress($ThisPercent); $Percent += 5;}
   
   # Preverse Titles
   $preVerseTitle = $preVerseTitle . title2HTML(\$_, "preverse", "(<title [^>]*subType=\"x-preverse\"[^>]*>)(.*?)<\/title>");
@@ -145,11 +147,12 @@ $htmlheader .= "<div id=\"text-header-left\" class=\"text-header\" style=\"max-w
 $htmlfooter = "</div></div></body>";
 $htmlfooter = $htmlfooter."</html>";
 
+$Percent = 80;
 $numbooks = 0;
 foreach $bk (sort keys %book) {
   $numbooks++;
-  $Percent = 90 + (10*($numbooks/$totalbooks));
-  if (($Percent%2) == 0) {&progress($Percent);}
+  $ThisPercent = 80 + int(20*($numbooks/$totalbooks));
+  if ($ThisPercent >= $Percent) {&progress($ThisPercent); $Percent += 5;}
   open (OUTF, ">$htmldir/$bk.html") || &finish("Could not open outfile $htmldir/$bk.html\n");
   $booklocal = decode("utf8", $bk);
   utf8::upgrade($booklocal);
@@ -218,10 +221,8 @@ foreach $bk (sort keys %book) {
     &Write($htmlfooter);
     close (OUTF);
   }
-}
-
-# Write the footnote files...
-foreach $bk (sort keys %book) {
+  
+  # Write the footnote files...
   open (OUTF, ">$htmldir/$bk.fn.html") || &finish("Could not open outfile $htmldir/$bk.fn.html\n");
   my $bkl = decode("utf8", $bk);
   utf8::upgrade($bkl);
@@ -234,7 +235,9 @@ foreach $bk (sort keys %book) {
   }
   &Write($htmlfooter);
   close (OUTF);
+  
 }
+&progress(100);
 
 # Log all tags in the output file
 foreach $tag (sort keys %tags) {$log = "$log$tag\n";}
@@ -526,7 +529,11 @@ sub progress($) {
   my $p = shift;
   open(OUTF, ">$outdir/osis2html-progress");
   print OUTF "$p";
-  close(OUTF);  
+  close(OUTF); 
+  
+  my $ofh = select LOGF;
+  $| = 1;
+  select $ofh;
 }
 
 sub Write($$) {
