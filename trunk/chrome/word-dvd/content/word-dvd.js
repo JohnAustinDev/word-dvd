@@ -25,7 +25,7 @@ const INDIR=0, AUDIO=1, OUTDIR=2;
 const NUMINPUTS=3; 
 const MYGUID="{f597ab2a-3a14-11de-a792-e68e56d89593}";
 const NEWCHAPTER = "<span name=\"chapter.";
-const NEWVERSE = "<sup>[\\d\\s-]+<\/sup>";
+const NEWVERSERE = "<sup>[\\d\\s-]+<\/sup>";
 const WAIT=500;
 // Output directory
 const OUTDIRNAME="OUTPUTS";
@@ -730,7 +730,7 @@ function readHtmlFiles() {
     
     // save maxVerse for each chapter now
     re = new RegExp("(" + NEWCHAPTER + ")", "im");
-    var re2 = new RegExp("(" + NEWVERSE + ")", "gim");
+    var re2 = new RegExp("(" + NEWVERSERE + ")", "gim");
     var chstart = data.search(re);
     var more = true;
     var chn = 0;

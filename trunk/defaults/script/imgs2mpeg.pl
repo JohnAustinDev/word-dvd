@@ -110,8 +110,8 @@ foreach $book (sort {$books{$a}<=>$books{$b}} keys %books) {
           if ($pg == $lastPage{$book."-".$ch}) {$seqend = "-E 1";}
           $startPTS = ($seekto+$gap);
           $gap = ($gap+0.040); #this gap insures there is at least 1 frame between last audio and first video packets even after rounding (for dvdauthor)
-          `mplex -v $Verbosity -V $seqend -T $startPTS -f 8 $videodir/videotmp/$book-$ch-$pg.m2v $videodir/videotmp/$book-$ch-$pg.m2a -o $videodir/$book/$book-$ch-$pg.mpg`;
-          #$nextPTS = &readPTS("$videodir/$book/$book-$ch-$pg.mpg") + 0.04;
+          `mplex -v $Verbosity -V $seqend -T $nextPTS -f 8 $videodir/videotmp/$book-$ch-$pg.m2v $videodir/videotmp/$book-$ch-$pg.m2a -o $videodir/$book/$book-$ch-$pg.mpg`;
+          $nextPTS = &readPTS("$videodir/$book/$book-$ch-$pg.mpg") + 0.04;
         }
         else {
           `mplex -v $Verbosity -V -f 8 $videodir/videotmp/$book-$ch-$pg.m2v $videodir/videotmp/$book-$ch-$pg.m2a -o $videodir/$book/$book-$ch-$pg.mpg`;
