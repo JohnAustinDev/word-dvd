@@ -26,7 +26,6 @@ const NOTESTART = "<div class=\"footnote\">";
 const NOTEREF  = "<span class=\"verseref\"";
 const NOTESYMBOL = "<span class=\"fnsymbol\"";
 const PAGEBREAK = "<span class=\"pagebreak\"></span>";
-const NEWVERSE = "<sup>[\\d\\s-]+<\/sup>";
 const SPLITABLEDIVS = "majorquote|list1|list2|list3|footnote|canonical|x-list-1|x-list-2|x-enumlist-1|x-enumlist-2|x-enumlist-3";
 const TITLES = "title-1|title-2|book-title|chapter-title|text-header|menu-header";
 
@@ -36,6 +35,7 @@ var ContinueFunc;
 var MenusFile;
 var StartingBindex;
 var Book, Bindex, Chapter, Page;
+var AudioFileRE = new RegExp(/^([^-]+)-([^-]+)-(\d+)(-(\d+)|:(\d+)-(\d+))?\.ac3$/);
 
 function loadedRender() {
   MainWin = window.opener;
@@ -203,16 +203,33 @@ function renderMenuSection() {
 
 function renderChapterMenus() {
   if (Bindex < Book.length) {
+    var nsubchs = 0;
     var intro = getPassage(Book[Bindex].shortName, true);
     if (Book[Bindex].maxChapter>1 || intro) {
       MenuEntries = [];
       for (var c=0; c<=Book[Bindex].maxChapter; c++) {
         if (c==0 && !intro) continue;
+        
         MenuEntries.push(new Object());
         if (c>0) MenuEntries[MenuEntries.length-1].label = MainWin.getLocaleString("Chaptext", c, Book[Bindex].shortName);
         else MenuEntries[MenuEntries.length-1].label = MainWin.getLocaleString("IntroLink");
-        MenuEntries[MenuEntries.length-1].target = Book[Bindex].shortName + "-" + c;
-        MenuEntries[MenuEntries.length-1].className = "";
+        MenuEntries[MenuEntries.length-1].target = Book[Bindex].shortName + "-" + Number(c + nsubchs);
+        MenuEntries[MenuEntries.length-1].className = (hasAudio(Book[Bindex].shortName, c) ? "hasAudio":"");
+ 
+        // subchapters are shown as follows:
+        // - normal chapter item is first (allready done above)
+        // - followed by any other audio subchapters (using the subchapter UI)        
+        if (c > 0 && hasAudio(Book[Bindex].shortName + "-" + c + "-1")) {
+          var scs = getSubChapters(Book[Bindex], c);
+          for (var sc=2; sc<scs.length; sc++) {
+            nsubchs++;
+            if (!scs[sc].hasAudio) continue;
+            MenuEntries.push(new Object());
+            MenuEntries[MenuEntries.length-1].label = MainWin.getLocaleString("SubChaptext", c, Book[Bindex].shortName, scs[sc].vs);
+            MenuEntries[MenuEntries.length-1].target = Book[Bindex].shortName + "-" + Number(c + nsubchs);
+            MenuEntries[MenuEntries.length-1].className = (scs[sc].hasAudio ? "hasAudio":"");
+          }
+        }
       }
       MenuEntryIndex = 0;
       MenuNumber = 0;
@@ -517,9 +534,20 @@ function saveScreenImage(book, chapter, pagenumber, screentext) {
   return chapter;
 }
 
+// Recognizable audio file name patterns are as follows:
+//  audioCode-book-ch.ac3
+//  audioCode-book-ch-ch.ac3
+//  audioCode-book-ch:v-v.ac3
+// AudioChapters keys are as follows:
+//  book-ch-subchapter (where subchapter is 0 if there are no subchapters)
+//  if there are subchapters, then they will be sequential starting with 
+//  1 and ordered by their starting verse.
+// hasAudio returns null if there is no audio FOR THE WHOLE CHAPTER,
+//  otherwise it returns the first audio file in the chapter.
 var AudioChapters;
 var CheckAudioChapters = {};
-function hasAudio(book, chapter) {
+function hasAudio(book, chapter, subchapter) {
+  if (!subchapter) subchapter = 0;
   if (MainWin.document.getElementById("noaudio").checked) return null;
   if (!AudioChapters) {
     AudioChapters = {};
@@ -528,20 +556,97 @@ function hasAudio(book, chapter) {
     var files = audiodir.directoryEntries;
     while (files.hasMoreElements()) {
       var file = files.getNext().QueryInterface(Components.interfaces.nsIFile);
-      var parts = file.leafName.match(/^([^-]+)-([^-]+)-(\d+)(-(\d+))?\.ac3$/);
-      if (!parts || parts[1]!=MainWin.getLocaleString("AudioPrefix")) {
+      var parts = file.leafName.match(AudioFileRE);
+      if (!parts) {
         MainWin.logmsg("WARNING: Could not parse audio file name \"" + file.leafName + "\"");
         continue;
       }
-      var endc = (parts[4] ? Number(parts[5]):Number(parts[3]));
-      for (var c=Number(parts[3]); c<=endc; c++) {
-        AudioChapters[parts[2] + "-" + c] = file.leafName;
-        CheckAudioChapters[parts[2] + "-" + c] = file.leafName;
+      var ap = MainWin.getLocaleString("AudioPrefix");
+      if (ap && parts[1]!=ap) {
+        MainWin.logmsg("WARNING: Skipping audio file because audio code is different than " + ap + ": \"" + file.leafName + "\"");
+        continue;      
+      }
+      if (!parts[6]) { // if not a subchapter
+        var endc = (parts[4] ? Number(parts[5]):Number(parts[3]));
+        for (var c=Number(parts[3]); c<=endc; c++) {
+          recordFileAs(parts[2] + "-" + c + "-0", file.leafName);
+        }
+      }
+      else {
+        if (!AudioChapters[parts[2] + "-" + c + "-1"])
+            recordFileAs(parts[2] + "-" + c + "-1", file.leafName);
+        else {
+          var inserted = false;
+          var savef, lastsavef;
+          for (var sc=1; AudioChapters[parts[2] + "-" + c + "-" + sc]; sc++) {
+            savef = AudioChapters[parts[2] + "-" + c + "-" + sc];
+            var sv = savef.match(AudioFileRE)[5];
+            if (inserted) recordFileAs(parts[2] + "-" + c + "-" + sc, lastsavef);
+            else if (parts[5] <= sv) {
+              if (parts[5] == sv) {
+                MainWin.logmsg("ERROR: Two different audio files begin at the same verse: \"" + file.leafName + "\", \"" + savef + "\"");
+              }
+              recordFileAs(parts[2] + "-" + c + "-" + sc, file.leafName);
+              inserted = true;
+            }
+            lastsavef = savef;
+          }
+          if (!inserted) recordFileAs(parts[2] + "-" + c + "-" + sc, file.leafName);
+          else recordFileAs(parts[2] + "-" + c + "-" + sc, lastsavef);
+        }
       }
     }
   }
-  
-  return (AudioChapters[book + "-" + chapter] ? AudioChapters[book + "-" + chapter]:null);
+  if (subchapter == 0 && AudioChapters[book + "-" + chapter + "-1"]) {
+    if (AudioChapters[book + "-" + chapter + "-0"]) {
+      MainWin.logmsg("ERROR: Audio file collision: \"" + AudioChapters[book + "-" + chapter + "-0"] + "\", \"" + AudioChapters[book + "-" + chapter + "-1"] + "\"");
+      return AudioChapters[book + "-" + chapter + "-0"];
+    }
+    return AudioChapters[book + "-" + chapter + "-1"];
+  }
+  return (AudioChapters[book + "-" + chapter + "-" + subchapter] ? AudioChapters[book + "-" + chapter + "-" + subchapter]:null);
+}
+
+// audio subchapters are recorded for each subchapter audio file
+// non-audio subchapters are recorded as follows:
+// - at verse 1 if verses 1-3 are all non-audio (Psalms does not always start at verse 1!)
+// - between audio subchapters IF there is a gap between them
+// - after last audio subchapter if final audio verse is not the last verse in the chapter
+// ve (verse end) of -1 means "last verse in chapter"
+var getSubChapters(bkobj, ch) {
+  var scs = [null];
+  var sc = 1;
+  while (hasAudio(bkobj.shortName + "-" + ch + "-" + sc)) {
+    var file = hasAudio(bkobj.shortName + "-" + ch + "-" + sc);
+    var parts = file.match(AudioFileRE);
+    var tsc = {vs:parts[5], ve:parts[6], hasAudio:true, file:file};
+    var prevend = (scs[scs.length-1] ? scs[scs.length-1].ve:0);
+    if (prevend != (tsc.vs-1)) {
+      var tscna = {vs:prevend+1, ve:tsc.vs-1, hasAudio:false, file:"still"};
+      scs.push(tscna);
+    }
+    scs.push(tsc);
+  }
+  if (!bkobj["ch" + ch + "MaxVerse"]) {
+    MainWin.logmsg("Error: Unknown max-verse for \"" + bkobj.shortName + " " + ch + "\".");
+    return scs;
+  }
+  if (tsc.ve == bkobj["ch" + ch + "MaxVerse"]) {
+    scs[scs.length-1].ve = -1;
+    return scs;
+  }
+  if (tsc.ve > bkobj["ch" + ch + "MaxVerse"]) {
+    MainWin.logmsg("WARNING: Audio last verse is greater than max-verse for \"" + bkobj.shortName + " " + ch + "\".");
+    scs[scs.length-1].ve = -1;
+    return scs;  
+  }
+  scs.push({vs:(tsc.ve+1), ve:-1, hasAudio:false, file:"still"});
+  return scs;
+}
+
+function recordFileAs(key, name) {
+  AudioChapters[key] = name;
+  CheckAudioChapters[key] = name;
 }
 
 function captureImage(subfolder, imageName, returnFun) {
@@ -678,7 +783,7 @@ function calculateReadingLength(info, html, lang, book, chapter) {
   if (incAutoCh && incAutoCh == "true") numtitles += countDivsClass(html, "chapter-title");
 
   //Remove verse numbers
-  var nv = new RegExp(NEWVERSE, "ig");
+  var nv = new RegExp(MainWin.NEWVERSE, "ig");
   html = html.replace(nv, "");
 
   //Remove titles if they are not read

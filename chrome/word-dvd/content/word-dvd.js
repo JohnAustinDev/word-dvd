@@ -25,6 +25,7 @@ const INDIR=0, AUDIO=1, OUTDIR=2;
 const NUMINPUTS=3; 
 const MYGUID="{f597ab2a-3a14-11de-a792-e68e56d89593}";
 const NEWCHAPTER = "<span name=\"chapter.";
+const NEWVERSE = "<sup>[\\d\\s-]+<\/sup>";
 const WAIT=500;
 // Output directory
 const OUTDIRNAME="OUTPUTS";
@@ -156,24 +157,26 @@ var prefs = Components.classes["@mozilla.org/preferences-service;1"].
                     getService(Components.interfaces.nsIPrefService);  
 prefs = prefs.getBranch("wordDVD.");
 
-function getLocaleString(name, chapnum, book) {
+function getLocaleString(name, chapnum, book, verse) {
   if (name=="Chaptext" || name=="PsalmTerm") return getChaptext(name, chapnum, book);
+  else if (name=="SubChaptext") return getChaptextVariant("SubChaptext", chapnum);
   return getLocaleLiteral(name);
 }
   
 function getChaptext(name, chapnum, book) {
   var loctext = null;
   if (name=="PsalmTerm" || (book && book=="Ps")) loctext = getChaptextVariant("PsalmTerm", chapnum);
-  if (!loctext) loctext = getChaptextVariant("Chaptext", chapnum);
+  if (!loctext) loctext = getChaptextVariant("Chaptext", chapnum, verse);
   return loctext;
 }
 
-function getChaptextVariant(name, chapnum) {
+function getChaptextVariant(name, chapnum, verse) {
   chapnum = String(chapnum);
   var loctext = getLocaleLiteral(name + "-" + chapnum);
   if (!loctext) loctext = getLocaleLiteral(name + "-" + chapnum.substr(chapnum.length-1,1));
   if (!loctext) loctext = getLocaleLiteral(name);
   if (loctext) loctext = loctext.replace("%1$S", chapnum);
+  if (loctext) loctext = loctext.replace("%2$S", verse);
   return loctext;
 }
 
@@ -690,7 +693,7 @@ function checkOSISConverion() {
 }
 
 function readHtmlFiles() {
-  // Read HTML books and maxchapters
+  // Read HTML books, maxchapters, and maxverses
   var htmlFiles = UIfile[INDIR].clone();
   htmlFiles.append(HTMLDIR);
   if (!htmlFiles.exists() || !htmlFiles.isDirectory()) {
@@ -707,7 +710,7 @@ function readHtmlFiles() {
   Book = [];
   while (htmlFiles.hasMoreElements()) {
     var file = htmlFiles.getNext().QueryInterface(Components.interfaces.nsIFile);
-    var fileName = file.leafName.match(/^([^\.]+)\.(.*)$/);
+    var fileName = file.leafName.match(/^([^\.]+)\.(.*)$/); // process only book text files
     if (!fileName || fileName[2]!="html") continue;
     var data = readFile(file);
     if (!data) {
@@ -718,12 +721,34 @@ function readHtmlFiles() {
     Book[Book.length-1] = new Object();
     Book[Book.length-1].shortName = fileName[1];
     var re = new RegExp("(" + NEWCHAPTER + ")", "gim");
-    data = data.match(re);
-    if (!data) {
+    var res = data.match(re);
+    if (!res) {
       logmsg("ERROR: HTML file has no chapters \"" + file.path + "\"");
       continue;
     }
-    Book[Book.length-1].maxChapter = data.length;
+    Book[Book.length-1].maxChapter = res.length;
+    
+    // save maxVerse for each chapter now
+    re = new RegExp("(" + NEWCHAPTER + ")", "im");
+    var re2 = new RegExp("(" + NEWVERSE + ")", "gim");
+    var chstart = data.search(re);
+    var more = true;
+    var chn = 0;
+    while(more) {
+      chn++;
+      var chend = data.substr(chstart).search(re) + chstart;
+      if (chend == -1) {chend = data.length; more = false;}
+      res = data.substring(chstart, chend).match(re2);
+      var maxv = res[res.length-1];
+      maxv = maxv.match(/^\s*(\d+)(\s*-\s*(\d+))?\s*$/);
+      if (!maxv) {
+        logmsg("ERROR: Illegal verse number \"" + res[res.length-1] + "\" in \"" + file.path + "\"");
+        quit(); return; 
+      }
+      maxv = (maxv[2] ? maxv[3]:maxv[1]);
+      Book[Book.length-1]["ch" + chn + "MaxVerse"] = maxv;
+      chstart = chend;
+    }
   }
   Book = Book.sort(booksort);
 

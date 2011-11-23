@@ -3,7 +3,7 @@
 # WORD-DVD SETTINGS:
 #-------------------
 AudioPrefix       = ex      # audio file names begin with this prefix
-LangCode          = en      # DVD language code
+LangCode          =         # DVD language code. Blank means any code
 DontBreakBooks    = false   # disallow breaking books between VTS?
 AllBooksStartVTS  = false   # force each book to start in a new VTS?
 MattewStartsVTS   = false   # force the book of Matthew to start a VTS?
@@ -56,10 +56,12 @@ IntroLink  = Introduction    # phrase designating introductions
 
 # Chaptext[-n] designates the name of each chapter number n. 
 # If -n is included then value applies to a specific chapter, otherwise it applies to all chapters.
-# Any occurences of special symbol %1$S will be replaced by the chapter number.
+# Any occurences of special symbols like %1$S will be replaced by a number at run time.
 # PsalmTerm is like Chaptext but only applies to the book of Psalms.
-Chaptext    =  Chapter %1$S
-Chaptext-5  =  Conclusion
+# SubChaptext is used for sub-chapter titles which are created when a chapter has partial audio.
+Chaptext    = Chapter %1$S
+Chaptext-5  = Conclusion
+SubChaptext = Chapter %1$s verse %2$s
 
 
 # BOOK NAMES:
