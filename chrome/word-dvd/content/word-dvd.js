@@ -26,6 +26,7 @@ const NUMINPUTS=3;
 const MYGUID="{f597ab2a-3a14-11de-a792-e68e56d89593}";
 const NEWCHAPTER = "<span name=\"chapter.";
 const NEWVERSERE = "<sup>[\\d\\s-]+<\/sup>";
+const VERSENUMBER = ">\\s*(\\d+)(\\s*-\\s*(\\d+))?\\s*<";
 const WAIT=500;
 // Output directory
 const OUTDIRNAME="OUTPUTS";
@@ -159,18 +160,19 @@ prefs = prefs.getBranch("wordDVD.");
 
 function getLocaleString(name, chapnum, book, verse) {
   if (name=="Chaptext" || name=="PsalmTerm") return getChaptext(name, chapnum, book);
-  else if (name=="SubChaptext") return getChaptextVariant("SubChaptext", chapnum);
+  else if (name=="SubChaptext") return getChaptextVariant("SubChaptext", chapnum, verse);
   return getLocaleLiteral(name);
 }
   
 function getChaptext(name, chapnum, book) {
   var loctext = null;
   if (name=="PsalmTerm" || (book && book=="Ps")) loctext = getChaptextVariant("PsalmTerm", chapnum);
-  if (!loctext) loctext = getChaptextVariant("Chaptext", chapnum, verse);
+  if (!loctext) loctext = getChaptextVariant("Chaptext", chapnum);
   return loctext;
 }
 
 function getChaptextVariant(name, chapnum, verse) {
+  if (!verse) verse = 1;
   chapnum = String(chapnum);
   var loctext = getLocaleLiteral(name + "-" + chapnum);
   if (!loctext) loctext = getLocaleLiteral(name + "-" + chapnum.substr(chapnum.length-1,1));
@@ -720,7 +722,7 @@ function readHtmlFiles() {
     Book.push(null);
     Book[Book.length-1] = new Object();
     Book[Book.length-1].shortName = fileName[1];
-    var re = new RegExp("(" + NEWCHAPTER + ")", "gim");
+    var re = new RegExp("(" + escapeRE(NEWCHAPTER) + ")", "gim");
     var res = data.match(re);
     if (!res) {
       logmsg("ERROR: HTML file has no chapters \"" + file.path + "\"");
@@ -729,24 +731,28 @@ function readHtmlFiles() {
     Book[Book.length-1].maxChapter = res.length;
     
     // save maxVerse for each chapter now
-    re = new RegExp("(" + NEWCHAPTER + ")", "im");
+    re = new RegExp("(" + escapeRE(NEWCHAPTER) + ")", "im");
     var re2 = new RegExp("(" + NEWVERSERE + ")", "gim");
     var chstart = data.search(re);
     var more = true;
     var chn = 0;
     while(more) {
       chn++;
-      var chend = data.substr(chstart).search(re) + chstart;
+      var chend = data.substr(chstart+1).search(re);
       if (chend == -1) {chend = data.length; more = false;}
+      else chend += chstart+1; // relative to data now
       res = data.substring(chstart, chend).match(re2);
-      var maxv = res[res.length-1];
-      maxv = maxv.match(/^\s*(\d+)(\s*-\s*(\d+))?\s*$/);
-      if (!maxv) {
-        logmsg("ERROR: Illegal verse number \"" + res[res.length-1] + "\" in \"" + file.path + "\"");
-        quit(); return; 
+      if (res) {
+        var maxv = res[res.length-1];
+        var re3 = new RegExp(VERSENUMBER, "i");
+        maxv = maxv.match(re3);
+        if (!maxv) {
+          logmsg("ERROR: Illegal verse number \"" + res[res.length-1] + "\" in \"" + file.path + "\"");
+          quit(); return; 
+        }
+        maxv = (maxv[2] ? maxv[3]:maxv[1]);
+        Book[Book.length-1]["ch" + chn + "MaxVerse"] = maxv;
       }
-      maxv = (maxv[2] ? maxv[3]:maxv[1]);
-      Book[Book.length-1]["ch" + chn + "MaxVerse"] = maxv;
       chstart = chend;
     }
   }
