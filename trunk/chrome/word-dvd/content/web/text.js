@@ -582,7 +582,7 @@ function formatPage(elem, page, windowCheck) {
   //look for special case new chapter
   var isLeftPage = elem.id=="text-page1";
   if (isLeftPage) {
-    var re = new RegExp("^((<[^>]+>)|\\s)*" + MainWin.NEWCHAPTER + "(\\d+)\">", "i");
+    var re = new RegExp("^((<[^>]+>)|\\s)*" + escapeRE(MainWin.NEWCHAPTER) + "(\\d+)\">", "i");
     var special = html.match(re);
     if (special && special[3]) DisplayChapter = special[3];
   }

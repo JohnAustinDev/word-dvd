@@ -69,9 +69,15 @@ function startMenuGeneration() {
     // CREATE TABLE OF CONTENTS
     MenuEntries = [];
     for (var b=0; b<Book.length; b++) {
+      // does book have any audio?
+      var hasAudio = false;
+      for (var ch=1; ch<=Book[b].maxChapter; ch++) {
+        if (getAudio(Book[b].shortName, ch)) {hasAudio = true; break;}
+      }
+      // save new menu entry
       MenuEntries.push(new Object());
       MenuEntries[MenuEntries.length-1].label = MainWin.getLocaleString(Book[b].shortName);
-      MenuEntries[MenuEntries.length-1].className = (hasAudio(Book[b].shortName, 1) ? "hasAudio":"");
+      MenuEntries[MenuEntries.length-1].className = (hasAudio ? "hasAudio":"");
       if (Book[b].maxChapter>1 || getPassage(Book[b].shortName, true)) {
         MenuEntries[MenuEntries.length-1].target = Book[b].shortName + "-m1";
       }
@@ -210,17 +216,19 @@ function renderChapterMenus() {
       for (var c=0; c<=Book[Bindex].maxChapter; c++) {
         if (c==0 && !intro) continue;
         
+        var scs = getSubChapters(Book[Bindex], c);
+        
         MenuEntries.push(new Object());
         if (c>0) MenuEntries[MenuEntries.length-1].label = MainWin.getLocaleString("Chaptext", c, Book[Bindex].shortName);
         else MenuEntries[MenuEntries.length-1].label = MainWin.getLocaleString("IntroLink");
         MenuEntries[MenuEntries.length-1].target = Book[Bindex].shortName + "-" + Number(c + SubChapters);
-        MenuEntries[MenuEntries.length-1].className = (hasAudio(Book[Bindex].shortName, c) ? "hasAudio":"");
+        var hasAudio = (scs.length > 1 ? scs[1].hasAudio:getAudio(Book[Bindex].shortName, c, 0));
+        MenuEntries[MenuEntries.length-1].className = (hasAudio ? "hasAudio":"");
  
         // subchapters are shown as follows:
         // - normal chapter item is first (allready done above)
         // - followed by any other audio subchapters (using the subchapter UI)        
-        if (c > 0 && hasAudio(Book[Bindex].shortName + "-" + c + "-1")) {
-          var scs = getSubChapters(Book[Bindex], c);
+        if (c > 0 && scs.length > 2) {
           for (var sc=2; sc<scs.length; sc++) {
             SubChapters++;
             if (!scs[sc].hasAudio) continue;
@@ -499,32 +507,33 @@ function saveScreenImage(bkobj, chapter, subchap, pagenumber, subchapters, scree
   var renderImages = !MainWin.document.getElementById("images").checked;
   var imgfile, footNotesSaved;
   
-  var tblock = {beg:null, end:0, endtype:"none", hasAudio:-1};
+  var tblock = {beg:-1, end:0, endtype:-1, hasAudio:-1};
   
   while (tblock.endtype != "screen-end") {
 		var lastAudio = tblock.hasAudio;
-		tblock.beg = tblock.end;
+		tblock.beg = tblock.end+1;
 		setTextBlock(tblock, screentext, chapter, subchap, bkobj);
-		if (lastAudio != -1 && !lastAudio && !tblock.hasAudio) continue;
-		
-		// report audio file usage
-		if (tblock.hasAudio && !ReportedAudioFiles[tblock.hasAudio]) {
-			MainWin.logmsg("Utilizing audio file: " + tblock.hasAudio);
-			ReportedAudioFiles[tblock.hasAudio] = true;
+    
+		if (lastAudio == -1 || lastAudio || tblock.hasAudio) {
+      // report audio file usage
+      if (tblock.hasAudio && !ReportedAudioFiles[tblock.hasAudio]) {
+        MainWin.logmsg("Utilizing audio file: " + tblock.hasAudio);
+        ReportedAudioFiles[tblock.hasAudio] = true;
+      }
+      
+      // save this text block info and its image
+      var basename = book + "-" + Number(chapter + subchapters) + "-" + pagenumber;
+      var hasText = saveStats(basename, screentext.substring(tblock.beg, tblock.end), tblock.hasAudio);
+      if (hasText) {
+        if (renderImages) {
+          if (!imgfile) imgfile = captureImage(book, basename);
+          else imgfile.copyTo(null, basename + "." + imgfile.leafName.match(/\.(.*)$/)[1]);
+        }
+        if (!footNotesSaved) saveFootnotes(book, basename, screentext);
+        footNotesSaved = true;
+      }
 		}
-		
-		// save this text block info and its image
-		var basename = book + "-" + Number(chapter + subchapters) + "-" + pagenumber;
-	  var hasText = saveStats(basename, screentext.substring(tblock.beg, tblock.end), tblock.hasAudio);
-		if (hasText) {
-			if (renderImages) {
-				if (!imgfile) imgfile = captureImage(book, basename);
-				else imgfile.copyTo(null, basename + "." + imgfile.leafName.match(/\.(.*)$/)[1]);
-			}
-			if (!footNotesSaved) saveFootnotes(book, basename, screentext);
-			footNotesSaved = true;
-		}
-		
+    
 		// save chapter info when a chapter is finished
 		if (tblock.endtype == "chapter" || (tblock.endtype == "screen-end" && pagecomplete)) 
 			writeStats(basename, tblock.hasAudio);
@@ -539,8 +548,63 @@ function saveScreenImage(bkobj, chapter, subchap, pagenumber, subchapters, scree
 }
 
 function setTextBlock(tblock, text, ch, subch, bkobj) {
-	
-	
+  // does a new chapter start on this page?
+  var nch = text.substr(tblock.beg).indexOf(MainWin.NEWCHAPTER);
+  if (nch != -1) nch += tblock.beg;
+  
+  var scs = getSubChapters(bkobj, ch);
+    
+  // if this is subch 0, check if subchapters exist
+  if (subch == 0 && scs.length < 1) subch = 1;
+
+  // does a subchapter start or end on this page?
+  if (subch) {
+    var nsc;
+    if (scs[subch]) {
+      if (scs[subch].ve = -1) nsc = nch;
+      else if (!scs[subch+1]) 
+          MainWin.logmsg("ERROR: Missing last subchapter after: bk=" + bkobj.shortName + ", ch=" + ch + ", subch=" + subch);
+      else {
+        var re1 = new RegExp("(" + MainWin.NEWVERSERE + ")", "gim");
+        var re2 = new RegExp(MainWin.VERSENUMBER, "i");
+        var versetags = text.substr(tblock.beg).match(re);
+        for (var i=0; versetags && i<versetags.length; i++) {
+          var verse = versetags[i].match(re2);
+          if (!verse) {
+            MainWin.logmsg("ERROR: Could no parse verse number from \"" + versetags[i] + "\"");
+            continue;
+          }
+          else if ((scs[subch+1].vs == verse[1] || 
+              (verse[2] && scs[subch+1].vs > verse[1] && scs[subch+1].vs <= verse[3]))) {
+            nsc = versetags[i];
+            break;
+          }
+        }
+        if (nsc) {
+          nsc = text.substr(tblock.beg).indexOf(nsc);
+          if (nsc != -1) nsc += tblock.beg;
+        }
+        
+        // check for missing subchapters
+        if (nch != -1 && (nch <= nsc || !nsc || nsc == -1)) {
+          MainWin.logmsg("ERROR: Could find start of subchapter in text: bk=" + bkobj.shortName + ", ch=" + ch + ", subch=" + Number(subch+1) + ", start-verse=" + scs[subch+1].vs);
+          nsc = null;
+        }
+      }
+    }
+    else MainWin.logmsg("ERROR: Subchapter requested, but it does not exist: bk=" + bkobj.shortName + ", ch=" + ch + ", subch=" + subch);
+  }
+  
+  // set return values...
+  tblock.hasAudio = getAudio(bkobj.shortName, ch, subch);
+  tblock.end = null;
+  tblock.end = (nsc && nsc != -1 ? nsc:nch);
+  if (!tblock.end || tblock.end == -1) {
+    tblock.end = text.length;
+    tblock.endtype = "screen-end";
+  }
+  else tblock.endtype = (nsc && nsc != -1 && nsc != nch ? "subchap":"chapter");
+MainWin.logmsg("setTextBlock: beg=" + tblock.beg + ", end=" + tblock.end + ", endtype=" + tblock.endtype + ", hasAudio=" + tblock.hasAudio);
 }
 
 /*
@@ -553,7 +617,7 @@ function saveScreenImage(book, chapter, subchap, pagenumber, subchapters, screen
   var imgfile = null;
   var renderImages = !MainWin.document.getElementById("images").checked;
   var basename = book + "-" + Number(chapter + subchapters) + "-" + pagenumber;
-  var hasAudio1 = hasAudio(book, chapter, subchap);
+  var hasAudio1 = getAudio(book, chapter, subchap);
   var hasChapterText = saveStats(basename, screentext, hasAudio1);
   if (hasChapterText) {
     if (renderImages) imgfile = captureImage(book, basename);
@@ -569,7 +633,7 @@ function saveScreenImage(book, chapter, subchap, pagenumber, subchapters, screen
       chapter = Number(newchaps[i].match(chapter)[1]);
       if (chapter < 2) continue; // Would have already been written
       basename = book + "-" + chapter + "-1";
-      var hasAudio2 = hasAudio(book, chapter);
+      var hasAudio2 = getAudio(book, chapter);
       // if hasChapterText && !hasAudio2 then this page has been captured once and does not need to be captured again.
       if ((hasChapterText && !hasAudio2) || !saveStats(basename, screentext, hasAudio2)) continue;
       if (!footNotesSaved) {
@@ -598,8 +662,6 @@ function saveScreenImage(book, chapter, subchap, pagenumber, subchapters, screen
 }
 */
 
-
-
 // Recognizable audio file name patterns are as follows:
 //  audioCode-book-ch.ac3
 //  audioCode-book-ch-ch.ac3
@@ -609,15 +671,15 @@ function saveScreenImage(book, chapter, subchap, pagenumber, subchapters, screen
 //  if there are subchapters, then they will be sequential starting with 
 //  1 and ordered by their starting verse.
 //
-// If subchap = NULL, hasAudio returns the full-chapter audio file or else
-//  NULL if there isn't one, even if there are partial audio files for the chapter.
-// If subchap == 0, hasAudio returns the first, or only, audio file in the chapter.
+// If subchap == NULL or undefined, hasAudio returns the first, or only, audio file in the chapter.
 //  or else NULL if there is no audio for any part of the chapter.
+// If subchap = 0, hasAudio returns the full-chapter audio file or else
+//  NULL if there isn't one, even if there are partial audio files for the chapter.
 // If subchap != NULL and > 0, hasAudio returns the audio file for the specified
 //  subchapter, or NULL if there is no audio file for that subchapter. 
 var AudioChapters;
 var CheckAudioChapters = {};
-function hasAudio(book, chapter, subchap) {
+function getAudio(book, chapter, subchap) {
   if (MainWin.document.getElementById("noaudio").checked) return null;
   if (!AudioChapters) {
     AudioChapters = {};
@@ -643,43 +705,54 @@ function hasAudio(book, chapter, subchap) {
         }
       }
       else {
-        if (!AudioChapters[parts[2] + "-" + c + "-1"])
-            recordFileAs(parts[2] + "-" + c + "-1", file.leafName);
+        if (!AudioChapters[parts[2] + "-" + parts[3] + "-1"])
+            recordFileAs(parts[2] + "-" + parts[3] + "-1", file.leafName);
         else {
           var inserted = false;
           var savef, lastsavef;
-          for (var sc=1; AudioChapters[parts[2] + "-" + c + "-" + sc]; sc++) {
-            savef = AudioChapters[parts[2] + "-" + c + "-" + sc];
+          for (var sc=1; AudioChapters[parts[2] + "-" + parts[3] + "-" + sc]; sc++) {
+            savef = AudioChapters[parts[2] + "-" + parts[3] + "-" + sc];
             var sv = savef.match(AudioFileRE)[5];
-            if (inserted) recordFileAs(parts[2] + "-" + c + "-" + sc, lastsavef);
+            if (inserted) recordFileAs(parts[2] + "-" + parts[3] + "-" + sc, lastsavef);
             else if (parts[5] <= sv) {
               if (parts[5] == sv) {
                 MainWin.logmsg("ERROR: Two different audio files begin at the same verse: \"" + file.leafName + "\", \"" + savef + "\"");
               }
-              recordFileAs(parts[2] + "-" + c + "-" + sc, file.leafName);
+              recordFileAs(parts[2] + "-" + parts[3] + "-" + sc, file.leafName);
               inserted = true;
             }
             lastsavef = savef;
           }
-          if (!inserted) recordFileAs(parts[2] + "-" + c + "-" + sc, file.leafName);
-          else recordFileAs(parts[2] + "-" + c + "-" + sc, lastsavef);
+          if (!inserted) recordFileAs(parts[2] + "-" + parts[3] + "-" + sc, file.leafName);
+          else recordFileAs(parts[2] + "-" + parts[3] + "-" + sc, lastsavef);
         }
       }
     }
   }
   
   // return a value...
-  if (subchap===null) subchap = 0;
-  else if (subchap == 0 && AudioChapters[book + "-" + chapter + "-1"]) {
-    if (AudioChapters[book + "-" + chapter + "-0"]) {
-      MainWin.logmsg("ERROR: Audio file collision: \"" + AudioChapters[book + "-" + chapter + "-0"] + "\", \"" + AudioChapters[book + "-" + chapter + "-1"] + "\"");
-      return AudioChapters[book + "-" + chapter + "-0"];
+  if (subchap === null || subchap === undefined) {
+    if (AudioChapters[book + "-" + chapter + "-1"]) {
+      if (AudioChapters[book + "-" + chapter + "-0"]) {
+        MainWin.logmsg("ERROR: Audio file collision: \"" + AudioChapters[book + "-" + chapter + "-0"] + "\", \"" + AudioChapters[book + "-" + chapter + "-1"] + "\"");
+        return AudioChapters[book + "-" + chapter + "-0"];
+      }
+      return AudioChapters[book + "-" + chapter + "-1"];
     }
-    return AudioChapters[book + "-" + chapter + "-1"];
+    else subchap = 0;
   }
-  
-  return (AudioChapters[book + "-" + chapter + "-" + subchap] ? AudioChapters[book + "-" + chapter + "-" + subchap]:null);
+
+var tmp = (AudioChapters[book + "-" + chapter + "-" + subchap] ? AudioChapters[book + "-" + chapter + "-" + subchap]:null);
+//MainWin.logmsg("getAudio(" + book + ", " + chapter + ", " + subchap + ")=" + tmp);
+return tmp;  
+  //return (AudioChapters[book + "-" + chapter + "-" + subchap] ? AudioChapters[book + "-" + chapter + "-" + subchap]:null);
 }
+
+function recordFileAs(key, name) {
+  AudioChapters[key] = name;
+  CheckAudioChapters[key] = name;
+}
+
 
 // audio subchapters are recorded for each subchapter audio file
 // and non-audio subchapters are additionally recorded as follows:
@@ -687,40 +760,41 @@ function hasAudio(book, chapter, subchap) {
 // - between audio subchapters IF there is a gap between them
 // - after last audio subchapter if final audio verse is not the last verse in the chapter
 // ve (verse end) of -1 means "last verse in chapter"
-var getSubChapters(bkobj, ch) {
+function getSubChapters(bkobj, ch) {
   var scs = [null];
   var sc = 1;
-  while (hasAudio(bkobj.shortName + "-" + ch + "-" + sc)) {
-    var file = hasAudio(bkobj.shortName + "-" + ch + "-" + sc);
+  var tsc;
+  while (getAudio(bkobj.shortName, ch, sc)) {
+    var file = getAudio(bkobj.shortName, ch, sc);
     var parts = file.match(AudioFileRE);
-    var tsc = {vs:parts[5], ve:parts[6], hasAudio:true, file:file};
+    tsc = {vs:parts[6], ve:parts[7], hasAudio:true, file:file};
     var prevend = (scs[scs.length-1] ? scs[scs.length-1].ve:0);
     if (prevend != (tsc.vs-1)) {
       var tscna = {vs:prevend+1, ve:tsc.vs-1, hasAudio:false, file:"still"};
       scs.push(tscna);
     }
     scs.push(tsc);
+    sc++;
   }
-  if (!bkobj["ch" + ch + "MaxVerse"]) {
-    MainWin.logmsg("Error: Unknown max-verse for \"" + bkobj.shortName + " " + ch + "\".");
-    return scs;
+  
+  if (tsc) {
+    if (!bkobj["ch" + ch + "MaxVerse"]) {
+      MainWin.logmsg("Error: Unknown max-verse for \"" + bkobj.shortName + " " + ch + "\".");
+      return scs;
+    }
+    if (tsc.ve == bkobj["ch" + ch + "MaxVerse"]) {
+      scs[scs.length-1].ve = -1;
+      return scs;
+    }
+    if (tsc.ve > bkobj["ch" + ch + "MaxVerse"]) {
+      MainWin.logmsg("WARNING: Audio last verse is greater than max-verse for \"" + bkobj.shortName + " " + ch + "\".");
+      scs[scs.length-1].ve = -1;
+      return scs;  
+    }
+    scs.push({vs:(tsc.ve+1), ve:-1, hasAudio:false, file:"still"});
   }
-  if (tsc.ve == bkobj["ch" + ch + "MaxVerse"]) {
-    scs[scs.length-1].ve = -1;
-    return scs;
-  }
-  if (tsc.ve > bkobj["ch" + ch + "MaxVerse"]) {
-    MainWin.logmsg("WARNING: Audio last verse is greater than max-verse for \"" + bkobj.shortName + " " + ch + "\".");
-    scs[scs.length-1].ve = -1;
-    return scs;  
-  }
-  scs.push({vs:(tsc.ve+1), ve:-1, hasAudio:false, file:"still"});
+  
   return scs;
-}
-
-function recordFileAs(key, name) {
-  AudioChapters[key] = name;
-  CheckAudioChapters[key] = name;
 }
 
 function captureImage(subfolder, imageName, returnFun) {
