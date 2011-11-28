@@ -21,7 +21,8 @@
  ***********************************************************************/ 
 const APPROXLINE = 24;
 const APPNUMLINE = 12;
-const PARSTART = "<br><span class=\"paragraph-start\"></span>";
+const INDENT = "<span class=\"paragraph-start\"></span>";
+const PARSTART = "<br>" + INDENT;
 const NOTESTART = "<div class=\"footnote\">";
 const NOTEREF  = "<span class=\"verseref\"";
 const NOTESYMBOL = "<span class=\"fnsymbol\"";
@@ -47,7 +48,7 @@ function loadedRender() {
   RenderFrame.style.height = String(MainWin.PAL.H + 16) + "px";
   window.setTimeout("postLoad1();", 1);
 } function postLoad1() {
-  initWaitRenderDone();
+  initWaitRenderDone(false, false);
   
   window.resizeTo(RenderFrame.boxObject.width, document.getElementById("body").boxObject.height);
 
@@ -55,7 +56,6 @@ function loadedRender() {
 }
 
 function startMenuGeneration() {
-  window.onchange="";
   if (!MainWin.document.getElementById("skipmenus").checked) {
     MainWin.logmsg("Generating Menus...");
   
@@ -102,7 +102,7 @@ function startMenuGeneration() {
 function startTextGeneration() {
 MainWin.logmsg("startTextGeneration");
   // switch from menu to text background
-  initWaitRenderDone(true);
+  initWaitRenderDone(true, true);
   
   RenderFrame.contentDocument.defaultView.location.assign("chrome://word-dvd/content/web/text.html");
   
@@ -319,7 +319,7 @@ function renderMenu(menubase, menunumber, listArrayL, listArrayR, isFirstMenu, i
   
   MainWin.write2File(MenusFile, formatMenuString(menuname, 8, false, targets[BR], btype), true); 
 
-  initWaitRenderDone();
+  initWaitRenderDone(false, false);
 
   if (MainWin.Aborted) return;
   else if (!MainWin.Paused) waitRenderDoneThenDo("captureImage('', '" + menuname + "', '" + returnFun + "');");
@@ -341,8 +341,8 @@ function writeButtonList(listArray, menuname, isLeft, doc) {
     var id = (isLeft ? "p1b":"p2b");
     doc.getElementById(id + String(i+1)).className = aClass;
     doc.getElementById(id + String(i+1)).innerHTML = aLabel;
-    if (doc.getElementById(id + String(i+1)).className.search(/(^|\s)hasAudio(\s|$)/)!=-1)
-          doc.getElementById(id + String(i+1)).innerHTML += "<img src=\"file://" + MainWin.UIfile[MainWin.INDIR].path + "/" + MainWin.RESOURCE + "/" + MainWin.AUDIOICON + "\" style=\"-moz-margin-start:12px;\" >";
+    //if (doc.getElementById(id + String(i+1)).className.search(/(^|\s)hasAudio(\s|$)/)!=-1)
+          //doc.getElementById(id + String(i+1)).innerHTML += "<img src=\"file://" + MainWin.UIfile[MainWin.INDIR].path + "/" + MainWin.RESOURCE + "/" + MainWin.AUDIOICON + "\" style=\"-moz-margin-start:12px;\" >";
     MainWin.write2File(MenusFile, formatMenuString(menuname, i, isLeft, aTarget), true);
   }
 }
@@ -437,7 +437,7 @@ function renderNewScreen() {
   var tstyle = mdoc.defaultView.getComputedStyle(mdoc.getElementById("text-page2"), null);
   var skipPage2 = (tstyle.visibility == "hidden"); // this allows single column display by setting text-page2 visibility=hidden
   
-  initWaitRenderDone(true);
+  initWaitRenderDone(false, true);
   
   RenderFrame.contentDocument.defaultView.fitScreen(Book[Bindex].shortName, Chapter, Page, skipPage1, skipPage2);
     
@@ -451,10 +451,13 @@ function screenDrawComplete() {
   var imginfo = saveScreenImage(Book[Bindex], Chapter, SubChap, Page.pagenumber, SubChapters, Page.passage.substring(ILastPage, Page.end), Page.complete);
   ILastPage = Page.end;
   SubChapters = imginfo.subchapters;
-  SubChap = imginfo.subchap;
   if (imginfo.chapter != Chapter) { 
     Chapter = imginfo.chapter;
     SubChap = 0;
+    Page.pagenumber = 1; // needs increment below!
+  }
+  if (imginfo.subchap != SubChap) { 
+    SubChap = imginfo.subchap;
     Page.pagenumber = 1; // needs increment below!
   }
   if (Page.complete) {
@@ -507,23 +510,26 @@ function saveScreenImage(bkobj, chapter, subchap, pagenumber, subchapters, scree
   var renderImages = !MainWin.document.getElementById("images").checked;
   var imgfile, footNotesSaved;
   
-  var tblock = {beg:-1, end:0, endtype:-1, hasAudio:-1};
+  var tblock = {passage:screentext, beg:-1, end:0, endtype:-1, hasAudio:-1};
   
   while (tblock.endtype != "screen-end") {
 		var lastAudio = tblock.hasAudio;
 		tblock.beg = tblock.end+1;
-		setTextBlock(tblock, screentext, chapter, subchap, bkobj);
-    
-		if (lastAudio == -1 || lastAudio || tblock.hasAudio) {
+		setTextBlock(tblock, chapter, subchap, bkobj);
+  
+		if (!imgfile || lastAudio || tblock.hasAudio) {
       // report audio file usage
       if (tblock.hasAudio && !ReportedAudioFiles[tblock.hasAudio]) {
         MainWin.logmsg("Utilizing audio file: " + tblock.hasAudio);
         ReportedAudioFiles[tblock.hasAudio] = true;
+        for (var k in CheckAudioChapters) {
+          if (CheckAudioChapters[k] == tblock.hasAudio) CheckAudioChapters[k] = "";
+        }
       }
       
       // save this text block info and its image
       var basename = book + "-" + Number(chapter + subchapters) + "-" + pagenumber;
-      var hasText = saveStats(basename, screentext.substring(tblock.beg, tblock.end), tblock.hasAudio);
+      var hasText = saveStats(basename, screentext.substring(tblock.beg-1, tblock.end));
       if (hasText) {
         if (renderImages) {
           if (!imgfile) imgfile = captureImage(book, basename);
@@ -535,39 +541,43 @@ function saveScreenImage(bkobj, chapter, subchap, pagenumber, subchapters, scree
 		}
     
 		// save chapter info when a chapter is finished
-		if (tblock.endtype == "chapter" || (tblock.endtype == "screen-end" && pagecomplete)) 
+		if (tblock.endtype == "chapter" || tblock.endtype == "subchap"  || (tblock.endtype == "screen-end" && pagecomplete)) 
 			writeStats(basename, tblock.hasAudio);
 		
 		// prepare for next use of this image...
 		pagenumber = 1;	  
 	  if (tblock.endtype == "chapter") {chapter++; subchap = 0;}
-		if (tblock.endtype == "subchap") {subchap++; subchapters++;}
+		if (tblock.endtype == "subchap") {
+      if (!subchap) subchap = 1;
+      subchap++; 
+      subchapters++; 
+    }
   }
 	  
   return {chapter:chapter, subchap:subchap, subchapters:subchapters};
 }
 
-function setTextBlock(tblock, text, ch, subch, bkobj) {
+function setTextBlock(tblock, ch, subch, bkobj) {
   // does a new chapter start on this page?
-  var nch = text.substr(tblock.beg).indexOf(MainWin.NEWCHAPTER);
+  var nch = tblock.passage.substr(tblock.beg).indexOf(MainWin.NEWCHAPTER);
   if (nch != -1) nch += tblock.beg;
   
   var scs = getSubChapters(bkobj, ch);
     
-  // if this is subch 0, check if subchapters exist
-  if (subch == 0 && scs.length < 1) subch = 1;
+  // if this is a new chapter, check if subchapters exist
+  if (subch == 0 && scs.length > 1) subch = 1;
 
   // does a subchapter start or end on this page?
+  var nsc = null;
   if (subch) {
-    var nsc;
     if (scs[subch]) {
-      if (scs[subch].ve = -1) nsc = nch;
+      if (scs[subch].ve == -1) nsc = nch; 
       else if (!scs[subch+1]) 
           MainWin.logmsg("ERROR: Missing last subchapter after: bk=" + bkobj.shortName + ", ch=" + ch + ", subch=" + subch);
       else {
         var re1 = new RegExp("(" + MainWin.NEWVERSERE + ")", "gim");
         var re2 = new RegExp(MainWin.VERSENUMBER, "i");
-        var versetags = text.substr(tblock.beg).match(re);
+        var versetags = tblock.passage.substr(tblock.beg).match(re1);
         for (var i=0; versetags && i<versetags.length; i++) {
           var verse = versetags[i].match(re2);
           if (!verse) {
@@ -581,13 +591,19 @@ function setTextBlock(tblock, text, ch, subch, bkobj) {
           }
         }
         if (nsc) {
-          nsc = text.substr(tblock.beg).indexOf(nsc);
-          if (nsc != -1) nsc += tblock.beg;
+          nsc = tblock.passage.substr(tblock.beg).indexOf(nsc);
+          if (nsc != -1) {
+            // shift before all interverse stuff (get to end of previous verse)
+            var pve = new RegExp("(" + MainWin.escapeRE(INDENT) + "|<div[^>]*>.*?<\\/div>|<br>|\\s)+" + MainWin.escapeRE(versetags[i]), "im");
+            pve = tblock.passage.substr(tblock.beg-1).search(pve); // -1 allows back-search all the way to text-block's beginning
+            if (pve != -1) nsc = pve;
+            nsc += (tblock.beg-1);
+          }
         }
         
         // check for missing subchapters
-        if (nch != -1 && (nch <= nsc || !nsc || nsc == -1)) {
-          MainWin.logmsg("ERROR: Could find start of subchapter in text: bk=" + bkobj.shortName + ", ch=" + ch + ", subch=" + Number(subch+1) + ", start-verse=" + scs[subch+1].vs);
+        if (nch != -1 && (nch <= nsc || nsc===null || nsc == -1)) {
+          MainWin.logmsg("ERROR: Could not find start of subchapter in text: bk=" + bkobj.shortName + ", ch=" + ch + ", subch=" + Number(subch+1) + ", start-verse=" + scs[subch+1].vs);
           nsc = null;
         }
       }
@@ -596,15 +612,15 @@ function setTextBlock(tblock, text, ch, subch, bkobj) {
   }
   
   // set return values...
-  tblock.hasAudio = getAudio(bkobj.shortName, ch, subch);
+  tblock.hasAudio = (scs.length > 1 ? scs[subch].hasAudio:getAudio(bkobj.shortName, ch, 0));
   tblock.end = null;
-  tblock.end = (nsc && nsc != -1 ? nsc:nch);
-  if (!tblock.end || tblock.end == -1) {
-    tblock.end = text.length;
+  tblock.end = (nsc !== null && nsc != -1 ? nsc:nch);
+  if (tblock.end == -1) {
+    tblock.end = tblock.passage.length;
     tblock.endtype = "screen-end";
   }
-  else tblock.endtype = (nsc && nsc != -1 && nsc != nch ? "subchap":"chapter");
-MainWin.logmsg("setTextBlock: beg=" + tblock.beg + ", end=" + tblock.end + ", endtype=" + tblock.endtype + ", hasAudio=" + tblock.hasAudio);
+  else tblock.endtype = (nsc !== null && nsc != -1 && nsc != nch ? "subchap":"chapter");
+//MainWin.logmsg("setTextBlock: beg=" + tblock.beg + ", end=" + tblock.end + ", endtype=" + tblock.endtype + ", hasAudio=" + tblock.hasAudio);
 }
 
 /*
@@ -666,6 +682,7 @@ function saveScreenImage(book, chapter, subchap, pagenumber, subchapters, screen
 //  audioCode-book-ch.ac3
 //  audioCode-book-ch-ch.ac3
 //  audioCode-book-ch:v-v.ac3
+//
 // AudioChapters keys are as follows:
 //  book-ch-subchap (where subchap is 0 if there are no subchapters)
 //  if there are subchapters, then they will be sequential starting with 
@@ -705,26 +722,26 @@ function getAudio(book, chapter, subchap) {
         }
       }
       else {
-        if (!AudioChapters[parts[2] + "-" + parts[3] + "-1"])
-            recordFileAs(parts[2] + "-" + parts[3] + "-1", file.leafName);
+        if (!AudioChapters[parts[2] + "-" + Number(parts[3]) + "-1"])
+            recordFileAs(parts[2] + "-" + Number(parts[3]) + "-1", file.leafName);
         else {
           var inserted = false;
           var savef, lastsavef;
-          for (var sc=1; AudioChapters[parts[2] + "-" + parts[3] + "-" + sc]; sc++) {
-            savef = AudioChapters[parts[2] + "-" + parts[3] + "-" + sc];
-            var sv = savef.match(AudioFileRE)[5];
-            if (inserted) recordFileAs(parts[2] + "-" + parts[3] + "-" + sc, lastsavef);
-            else if (parts[5] <= sv) {
-              if (parts[5] == sv) {
+          for (var sc=1; AudioChapters[parts[2] + "-" + Number(parts[3]) + "-" + sc]; sc++) {
+            savef = AudioChapters[parts[2] + "-" + Number(parts[3]) + "-" + sc];
+            var sv = Number(savef.match(AudioFileRE)[5]);
+            if (inserted) recordFileAs(parts[2] + "-" + Number(parts[3]) + "-" + sc, lastsavef);
+            else if (Number(parts[5]) <= sv) {
+              if (Number(parts[5]) == sv) {
                 MainWin.logmsg("ERROR: Two different audio files begin at the same verse: \"" + file.leafName + "\", \"" + savef + "\"");
               }
-              recordFileAs(parts[2] + "-" + parts[3] + "-" + sc, file.leafName);
+              recordFileAs(parts[2] + "-" + Number(parts[3]) + "-" + sc, file.leafName);
               inserted = true;
             }
             lastsavef = savef;
           }
-          if (!inserted) recordFileAs(parts[2] + "-" + parts[3] + "-" + sc, file.leafName);
-          else recordFileAs(parts[2] + "-" + parts[3] + "-" + sc, lastsavef);
+          if (!inserted) recordFileAs(parts[2] + "-" + Number(parts[3]) + "-" + sc, file.leafName);
+          else recordFileAs(parts[2] + "-" + Number(parts[3]) + "-" + sc, lastsavef);
         }
       }
     }
@@ -767,10 +784,10 @@ function getSubChapters(bkobj, ch) {
   while (getAudio(bkobj.shortName, ch, sc)) {
     var file = getAudio(bkobj.shortName, ch, sc);
     var parts = file.match(AudioFileRE);
-    tsc = {vs:parts[6], ve:parts[7], hasAudio:true, file:file};
+    tsc = {vs:Number(parts[6]), ve:Number(parts[7]), hasAudio:file};
     var prevend = (scs[scs.length-1] ? scs[scs.length-1].ve:0);
     if (prevend != (tsc.vs-1)) {
-      var tscna = {vs:prevend+1, ve:tsc.vs-1, hasAudio:false, file:"still"};
+      var tscna = {vs:prevend+1, ve:tsc.vs-1, hasAudio:null};
       scs.push(tscna);
     }
     scs.push(tsc);
@@ -791,7 +808,7 @@ function getSubChapters(bkobj, ch) {
       scs[scs.length-1].ve = -1;
       return scs;  
     }
-    scs.push({vs:(tsc.ve+1), ve:-1, hasAudio:false, file:"still"});
+    scs.push({vs:(tsc.ve+1), ve:-1, hasAudio:null});
   }
   
   return scs;
@@ -827,7 +844,7 @@ function captureImage(subfolder, imageName, returnFun) {
 // AFTER a chapter is completed, writeStats is called so that all information 
 // for that chapter is recorded into the listing and transitions files.
 var ChapterStats = [];
-function saveStats(basename, blocktext, hasAudio) {
+function saveStats(basename, blocktext) {
   var parts = basename.split("-");
   var book = parts[0];
   var chapter = Number(parts[1]);
@@ -900,7 +917,6 @@ function writeStats(basename, hasAudio) {
 	MainWin.write2File(file, transtring, true);
 	
 	ChapterStats = [];
-	CheckAudioChapters[book + "-" + chapter] = "";
 }
 
 function formatStatString(s, total, hasAudio) {
@@ -916,7 +932,7 @@ function appendVerseTimingInfo(i, stxt, info, vt) {
   var re = new RegExp("<sup>\\s*" + vt[i].verse + "\\s*[-<]", "im");
   var iverse = stxt.search(re);
   if (iverse != -1 && vt[i].trans) {
-    stxt = stxt.substring(0, stxt.indexOf(se, beg+iverse) + se.length) + vt[i].trans;
+    stxt = stxt.substring(0, stxt.indexOf(se, iverse) + se.length) + vt[i].trans;
     iverse = stxt.length;
   }
 
@@ -1120,7 +1136,7 @@ function renderNewFNScreen() {
     Page.passage += PageWithFootnotes[FootnoteIndex].html;
   }
   
-  initWaitRenderDone(true);
+  initWaitRenderDone(false, true);
 
   var tstart = Page.end;
   RenderFrame.contentDocument.defaultView.fitScreen(Book[Bindex].shortName, Chapter, Page, false, false);
@@ -1194,14 +1210,24 @@ var PaintCount;
 var PaintCheckInterval;  // works with firefox 4+
 var DrawInterval;
 var RenderDoneTO;
-function initWaitRenderDone(skipFallback) {
+// set skipFallback if fallback init is handled elsewhere
+function initWaitRenderDone(dontWaitForImages, skipFallback) {
   // prepare for waitRenderDoneThenDo
   RenderFrame.contentDocument.defaultView.RenderDone = false;
   try {
     if (UseRenderDoneFallback || window.mozPaintCount===undefined) throw true;
     PaintCount = window.mozPaintCount;
     if (PaintCheckInterval) clearInterval(PaintCheckInterval);
-    PaintCheckInterval = window.setInterval("if (window.mozPaintCount > PaintCount) {window.clearInterval(PaintCheckInterval); RenderFrame.contentDocument.defaultView.RenderDone = true;}", 10);
+    if (!dontWaitForImages) setLoadingImages();
+    else LoadingImages = 0;
+    var func  = "if (window.mozPaintCount > PaintCount) { ";
+        func +=   "if (LoadingImages > 0) {PaintCount = window.mozPaintCount;} ";
+        func +=   "else { ";
+        func +=     "window.clearInterval(PaintCheckInterval); ";
+        func +=     "RenderFrame.contentDocument.defaultView.RenderDone = true;";
+        func +=   "}";
+        func += "}";
+    PaintCheckInterval = window.setInterval(func, 10);
   }
   catch (er) {
     // skip the firefox 3- fallback method if RenderDone is handled somewhere else
@@ -1209,6 +1235,30 @@ function initWaitRenderDone(skipFallback) {
       if (RenderDoneTO) window.clearTimeout(RenderDoneTO);
       RenderDoneTO = window.setTimeout("RenderFrame.contentDocument.defaultView.setTimeout(\"window.setTimeout('RenderDone = true;', MainWin.WAIT);\", 1);", 1);
     }
+  }
+}
+
+// Get all images, and wait for certain images to load before waiting for a final redraw.
+// The following criteria are intended to choose images which will force the redraw:
+//    src is not empty
+//    image is not hidden
+//    src is different than it was previously
+var LoadingImages = 0;
+var ImageSrc = {};
+var Imgid = 0;
+function setLoadingImages() {
+  LoadingImages = 0;
+  var imgs = RenderFrame.contentDocument.getElementsByTagName("img");
+  for (var i=0; i<imgs.length; i++) {
+    if (!imgs[i].src || imgs[i].src.indexOf(".html")!=-1) continue; // empty src's show page's URL (why?)
+    if (imgs[i].style.visibility == "hidden") continue;
+    if (!imgs[i].id || !ImageSrc[imgs[i].id] || imgs[i].src != ImageSrc[imgs[i].id]) {
+      LoadingImages++;
+      imgs[i].onload = new Function("LoadingImages--;");
+      imgs[i].src = imgs[i].src;
+    }
+    if (!imgs[i].id) imgs[i].id = "img" + Imgid++;
+    ImageSrc[imgs[i].id] = imgs[i].src;
   }
 }
 
