@@ -729,7 +729,7 @@ function readHtmlFiles() {
     }
     Book[Book.length-1].maxChapter = res.length;
     
-    // save maxVerse for each chapter now
+    // save minVerse and maxVerse for each chapter now
     re = new RegExp("(" + escapeRE(NEWCHAPTER) + ")", "im");
     var re2 = new RegExp("(" + NEWVERSERE + ")", "gim");
     var chstart = data.search(re);
@@ -742,16 +742,29 @@ function readHtmlFiles() {
       else chend += chstart+1; // relative to data now
       res = data.substring(chstart, chend).match(re2);
       if (res) {
+				var re3 = new RegExp(VERSENUMBER, "i");
+				
+				// save maxVerse
         var maxv = res[res.length-1];
-        var re3 = new RegExp(VERSENUMBER, "i");
         maxv = maxv.match(re3);
         if (!maxv) {
-          logmsg("ERROR: Illegal verse number \"" + res[res.length-1] + "\" in \"" + file.path + "\"");
+          logmsg("ERROR: Illegal max-verse number \"" + res[res.length-1] + "\" in \"" + file.path + "\"");
           quit(); return; 
         }
         maxv = (maxv[2] ? maxv[3]:maxv[1]);
         Book[Book.length-1]["ch" + chn + "MaxVerse"] = maxv;
+        
+        // save minVerse
+        var minv = res[0];
+        minv = minv.match(re3);
+        if (!minv) {
+          logmsg("ERROR: Illegal min-verse number \"" + res[0] + "\" in \"" + file.path + "\"");
+          quit(); return; 
+        }
+        minv = minv[1];
+        Book[Book.length-1]["ch" + chn + "MinVerse"] = minv;       
       }
+      
       chstart = chend;
     }
   }
@@ -1024,7 +1037,7 @@ function stop() {
   var endDate = new Date();
   var unUtilizedAudio = "";
   if (RenderWin) {
-    for each (var files in RenderWin.CheckAudioChapters) {
+    for each (var files in RenderWin.CheckAudioFiles) {
       if (files.match(/^\s*$/)) {continue;}
       unUtilizedAudio += files + "\n";
     }
