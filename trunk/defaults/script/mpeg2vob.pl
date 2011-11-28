@@ -308,9 +308,16 @@ if ($FOOTNOTES_IN_OWN_VTS ne "true") {
   $LASTVTS = $MAXVTS;
 }
 else {
-  $step = int($MAXVTS/($MAXFNVTS));
-  $tstep = int($step/2);
-  if ( $tstep > $step-($MAXVTS%$MAXFNVTS) ) {$tstep = $step;}
+  if (!$MAXFNTITLE{$MAXFNVTS}) {$MAXFNVTS--;}
+  if (!$MAXFNVTS) {
+    $step = $MAXVTS;
+    $tstep = $MAXVTS;
+  }
+  else {
+    $step = int($MAXVTS/($MAXFNVTS));
+    $tstep = int($step/2);
+    if ( $tstep > $step-($MAXVTS%$MAXFNVTS) ) {$tstep = $step;}
+  }
   $nrvts = 1;
   $nfvts = 1;
   for ($vts=1; $vts<=($MAXVTS + $MAXFNVTS); $vts++) {
@@ -418,7 +425,7 @@ else {
       $numVMGMmenus++;
       $menuVMGM{$tocmenu} = $numVMGMmenus;
       print XML "\t\t\t\t<pre>\n\t\t\t\t\t{\n";
-      if ($FOOTNOTES_IN_OWN_VTS eq "true") {
+      if ($FOOTNOTES_IN_OWN_VTS eq "true" && $MAXFNVTS) {
         print XML "\t\t\t\t\t\tif ( ".$gTYPE." eq 1 ) {\n";
         $fmcalc = "\t\t\t\t\t\t\t".$gTMP1." = ".$cMaxProgram."*".$gJSTI."+".$gJCHP.";\n";
         for ($fnvts=$MAXFNVTS; $fnvts>1; $fnvts--) {

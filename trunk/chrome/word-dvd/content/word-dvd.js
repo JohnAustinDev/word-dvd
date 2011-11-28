@@ -40,7 +40,6 @@ const WORDDVD="word-dvd.sh";
 const VIDEOFILES="word-video.sh";
 const DBLOGFILE="logfile.txt";
 const MENUSFILE="MENU_BUTTONS.csv";
-const AUDIOICON="audio-icon.png";
 const IMAGEEXT="jpg";
 const CONVERSIONDONE="conversion-finished";
 const OSISPROGRESS="osis2html-progress";
@@ -606,7 +605,6 @@ function wordDVD() {
   // COPY RESOURCES AND BUILD-CODE TO INDIR
   exportDir(RESOURCE, UIfile[INDIR].path, document.getElementById("restoreDefaults").checked);
   exportDir(CODE, UIfile[INDIR].path, document.getElementById("restoreDefaults").checked);
-  document.getElementById("restoreDefaults").checked = false;
   exportDir(MENUSDIR, UIfile[INDIR].path, false);
   exportDir(HTMLDIR, UIfile[INDIR].path, false);
   exportFile(LOCALEFILE, UIfile[INDIR].path, false);
@@ -651,6 +649,7 @@ function wordDVD() {
   
   // COPY CSS to HTML DIRECTORY AND RELOAD CAPTURE WINDOW
   CssFile = exportFile(STYLESHEET, UIfile[INDIR].path, document.getElementById("restoreDefaults").checked);
+  document.getElementById("restoreDefaults").checked = false; // clear only after final time restoreDefaults is referenced!!
   
   // START OSIS CONVERTER SCRIPT
   if (document.getElementById("osis2html").checked) {

@@ -83,7 +83,7 @@ body {
 
 /* NOTE: if "max-width" is specified here in px, it will 
 actually be removed from the CSS rules, and will instead be 
-enforced dynamically by reducing font-size size to acheive
+enforced dynamically by reducing font-size to acheive
 the desired width. */
 .menu-header {
   max-width:220px;
@@ -113,7 +113,15 @@ the desired width. */
   top:-2px;
 }
 
-.hasAudio {}
+.hasAudio:after {
+  content: url(../resource/audio-icon.png);
+  margin-left:7px;
+}
+
+.hasAudio {
+  position:relative;
+  left:12px; /* approx (width-of-audio-icon.png + margin-left)/2 */
+}
 
 .custombutton {
   font-weight:bold;
@@ -122,6 +130,8 @@ the desired width. */
 .button {
   font-size:20px;
   text-align:center;
+  position:relative;
+  left:-12px;
 }
 
 .navbutton {
@@ -185,7 +195,7 @@ will be rendered only to page 1, and page 2 will be skipped */
 
 /* NOTE: if "max-width" is specified here in px, it will 
 actually be removed from the CSS rules, and will instead be 
-enforced dynamically by reducing font-size size to acheive
+enforced dynamically by reducing font-size to acheive
 the desired width. */
 .text-header {
   max-width:220px;

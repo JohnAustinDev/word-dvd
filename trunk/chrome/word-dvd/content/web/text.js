@@ -75,7 +75,7 @@ MainWin.jsdump("Chapter=" + chapter + ", Pagenumber=" + aPage.pagenumber);
       newChapter.atPageTop = true;
       aPage.newChapterVTinfo = newChapter;
     }
-    else MainWin.logmsg("ERROR" + book + "-" + chapter + "-" + aPage.pagenumber + ": Could not preserve verse text timing.");
+    else MainWin.logmsg("ERROR " + book + "-" + chapter + "-" + aPage.pagenumber + ": Could not preserve verse text timing.");
   }
 //MainWin.jsdump("PageElem1:" + PageElem1.innerHTML + "\nPageElem2:" + PageElem2.innerHTML);
 
@@ -175,13 +175,17 @@ function checkForNewChapter(book, page, newChapter) {
 
   var ch = page.passage.substring(page.beg + chsi + MainWin.NEWCHAPTER.length, page.passage.indexOf("\"", page.beg + chsi + MainWin.NEWCHAPTER.length));
   var vt = RenderWin.VerseTiming["vt_" + book + "_" + ch];
-
+  var chmatch = MainWin.getLocaleLiteral("MatchChapterTransitions");
+  if (!chmatch) return;
+  if (chmatch && !chmatch.match(/(true)/i)) return;
   if (!vt) return; // no verse timings for chapter
   var firstTrans;
   for (var i=0; i<vt.length; i++) {
+    if (!vt[i]) continue;
     if (!firstTrans || Number(vt[i].verse) < Number(firstTrans.verse)) firstTrans = vt[i];    
   }
 
+  if (!firstTrans) return;
   var transEnd = lastIndexOfTrans(firstTrans, (page.beg+chsi), page.passage);
   if (transEnd == -1) return; // timing text not found on first page
   newChapter.preserveTextTiming = true;
@@ -192,7 +196,7 @@ function checkForNewChapter(book, page, newChapter) {
 function lastIndexOfTrans(vto, beg, psg) {
   var vend = "</sup>";
   var re = new RegExp("<sup>" + vto.verse + "[-\s<]", "im");
-  var i = psg.substr(beg, 2*RenderWin.APPROXLINE*MainWin.APPNUMLINE).search(re);
+  var i = psg.substr(beg, 2*RenderWin.APPROXLINE*RenderWin.APPNUMLINE).search(re);
   if (i == -1) return -1;
   return psg.indexOf(vend, beg+i) + vend.length + vto.trans.length; 
 }
