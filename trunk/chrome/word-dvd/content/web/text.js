@@ -37,13 +37,25 @@ MainWin.jsdump("Chapter=" + chapter + ", Pagenumber=" + aPage.pagenumber);
   DisplayBook = book;
   DisplayChapter = chapter;
   
-  var newChapter = {exists:false, preserveTextTiming:false, preserved:false, beg:-1, endTextTiming:-1, atPageTop:false};
-  if (aPage.newChapterVTinfo) copyPropsA2B(aPage.newChapterVTinfo, newChapter);
-  aPage.newChapterVTinfo = null;
+  // The config.txt file's "MatchChapterTransitions" flag set to "1" tells the paginator to try and match the first transition of a 
+  // chapter to that of a previous run (if it has been recorded in the pageTiming.txt file's text locative transition information). 
+  // The reason this may be helpful is that it may help the following page transitions to fall near their previous locations as well. 
+  // This improves transition accuracy when using text locative timing values. This may also add undesireable white-space before 
+  // some chapter headings. For this reason, setting "MatchChapterTransitions" flag to "2" will limit pagination to three possibiities,
+  // and choose the one that closest matches the first transition. These are 1) normal pagination. 2) start the new chapter at
+  // the top of the left page. 3) start the new chapter at the start of the right page. These options leave more desirable white-space 
+  // when trying to match the transition.
+  var matchTransition;
+  var chmatch = MainWin.getLocaleLiteral("MatchChapterTransitions");
+  if (chmatch) {
+		if (aPage.matchTransition && aPage.matchTransition.secondTry) {matchTransition = {}; copyPropsA2B(aPage.matchTransition, matchTransition);}
+		else matchTransition = {foundTransition:false, preservingTransition:false, preserved:false, chapter_beg:-1, transition:-1, secondTry:false, flag:chmatch};
+		aPage.matchTransition = null;
+	}
   
   // render page Left   
   if (skipPage1) formatPage(PageElem1, null, false);
-  else fitPage(PageElem1, book, chapter, aPage, SPACE, newChapter);
+  else fitPage(PageElem1, book, chapter, aPage, SPACE, matchTransition);
   
   // save page 1 for verse timing preservation
   var page1 = {};
@@ -51,32 +63,39 @@ MainWin.jsdump("Chapter=" + chapter + ", Pagenumber=" + aPage.pagenumber);
  
  // render page Right
   if (aPage.complete) PageElem2.innerHTML="";
-  else if (newChapter.preserveTextTiming && newChapter.preserved) {
+  else if (matchTransition && matchTransition.preservingTransition && matchTransition.preserved) {
+		// we already matched the text-locative transition, so just move the left page to right and move on
     MainWin.logmsg("WARNING " + book + "-" + chapter + "-" + aPage.pagenumber + ": Preserving transition by skipping left page.");
     PageElem2.innerHTML = PageElem1.innerHTML;
     formatPage(PageElem1, null, false);
   }
   else if (skipPage2) formatPage(PageElem2, null, false);
   else {
-    fitPage(PageElem2, book, chapter, aPage, SPACE, newChapter);
-    if (aPage.end < aPage.beg) {
+    fitPage(PageElem2, book, chapter, aPage, SPACE, matchTransition);
+    // page.end < page.beg may occur if a text-locative transition could not be matched on this page, so
+    // the left page is backtracked in this case to the chapter transition. So the new chapter is begun on 
+    // the next page instead, where the transition should then be matched.
+    if (matchTransition && aPage.end < aPage.beg) {
       MainWin.logmsg("WARNING " + book + "-" + chapter + "-" + aPage.pagenumber + ": Preserving transition by skipping right page.");
-      page1.end = newChapter.beg;
+      page1.end = matchTransition.chapter_beg;
       page1.bottomSplitTag = "";
       copyPropsA2B(page1, aPage); 
       formatPage(PageElem1, aPage, false);      
     }
   }
 
-  if (newChapter.preserveTextTiming) {
-    if (newChapter.preserved) 
+	// If our text-locative transition was matched, then report it, otherwise look for it on the next page.
+	// But if it cannot be matched on the next page, then there is a problem somewhere...
+  if (matchTransition && matchTransition.preservingTransition) {
+    if (matchTransition.preserved) 
       MainWin.logmsg("NOTE: " + book + "-" + chapter + "-" + aPage.pagenumber + ": First chapter transition was preserved according to text timing info.");
-    else if (!newChapter.atPageTop) {
-      newChapter.atPageTop = true;
-      aPage.newChapterVTinfo = newChapter;
+    else if (!matchTransition.secondTry) {
+      matchTransition.secondTry = true;
+      aPage.matchTransition = matchTransition;
     }
     else MainWin.logmsg("ERROR " + book + "-" + chapter + "-" + aPage.pagenumber + ": Could not preserve verse text timing.");
   }
+  
 //MainWin.jsdump("PageElem1:" + PageElem1.innerHTML + "\nPageElem2:" + PageElem2.innerHTML);
 
   // firefox 3- needs a fallback waitRender method (simple delay) so test and do if needed
@@ -88,22 +107,22 @@ MainWin.jsdump("Chapter=" + chapter + ", Pagenumber=" + aPage.pagenumber);
   return true;
 }
 
-function fitPage(elem, book, chapter, page, sep, newChapter) {
-  var windowCheck = true;
+function fitPage(elem, book, chapter, page, sep, matchTransition) {
+  var widowCheck = true;
   var isFirstPass = true;
   page.beg = page.end;
   page.topSplitTag = page.bottomSplitTag;
   page.bottomSplitTag = "";
-  formatPage(elem, page, windowCheck);
+  formatPage(elem, page, widowCheck);
   var goodpage={};
   while (elem.scrollHeight <= elem.clientHeight) {
     copyPropsA2B(page, goodpage);
-    if (newChapter.preserveTextTiming && page.end > newChapter.endTextTiming) {
+    if (matchTransition && matchTransition.preservingTransition && page.end > matchTransition.transition) {
       MainWin.logmsg("WARNING " + book + "-" + chapter + "-" + page.pagenumber + ": Preserving transition by truncating page.");
       break;
     }
     if (page.passage.substring(page.beg, page.end).search(RenderWin.PAGEBREAK)!=-1) break;
-    if (!shiftup(elem, page, sep, windowCheck, isFirstPass)) {
+    if (!shiftup(elem, page, sep, widowCheck, isFirstPass)) {
       // either end of passage, or impossible to shift up
       page.end = page.passage.length;
       formatPage(elem, page, false);
@@ -118,45 +137,47 @@ function fitPage(elem, book, chapter, page, sep, newChapter) {
     }
 jsdump2(page, "Shifted up to:" + page.passage.substr(page.end,16) + ", isFirstPass=" + isFirstPass);
     
-    if (windowCheck && elem.scrollHeight > elem.clientHeight) {
-      // When the page has overflowed with windowCheck, there is still another 
+    if (widowCheck && elem.scrollHeight > elem.clientHeight) {
+      // When the page has overflowed with widowCheck, there is still another 
       // line available to use. But only try to use it if there are more than two 
-      // lines left in that paragraph (to guarantee there is no window at the 
+      // lines left in that paragraph (to guarantee there is no widow at the 
       // top of the next page).
       
-      windowCheck=false;
+      widowCheck=false;
       
-      // First find the index which will start the last line (the windowCheck line)
+      // First find the index which will start the last line (the widowCheck line)
       var startFinalLine = findFinalLine(elem, page);
 
       // Next count chars from start of last line until end of paragraph...
       var parEnd = (page.isNotes ? findNoteEnd(page.passage, startFinalLine+2):findParEnd(page.passage, startFinalLine+2));
       var charsLeft = countPrintChars(startFinalLine, parEnd, page.passage); //+2 skips the space and the possible first "<"
 
-jsdump2(page, "WindowCheck:charsLeft=" + charsLeft + ", startFinalLine=" + page.passage.substr(startFinalLine, 16) + ", findParEnd=" + page.passage.substr(parEnd, 16));
+jsdump2(page, "WidowCheck:charsLeft=" + charsLeft + ", startFinalLine=" + page.passage.substr(startFinalLine, 16) + ", findParEnd=" + page.passage.substr(parEnd, 16));
       if (!isFirstPass && charsLeft < 2*RenderWin.APPROXLINE) {
-        // In this case a window might result. So stretch to the end of the 
+        // In this case a widow might result. So stretch to the end of the 
         // paragraph and if it all fits on the last line, then good. 
         // Otherwise, the last line will not be utilized.
         var startingIndex = page.end;
         page.end = page.passage.lastIndexOf(SPACE, parEnd);
         if (page.end < startingIndex) page.end = startingIndex;
-        if (!checkTags(elem, page, sep, windowCheck, false)) page.end = page.passage.length;
+        if (!checkTags(elem, page, sep, widowCheck, false)) page.end = page.passage.length;
       }
-      formatPage(elem, page, windowCheck);
+      formatPage(elem, page, widowCheck);
     }
-    if (!newChapter.exists) checkForNewChapter(book, page, newChapter);
+    if (matchTransition && !matchTransition.foundTransition) findTransition(book, page, matchTransition);
     
     isFirstPass = false;
   }
 
 jsdump2(page, "Finished " + elem.id + ", page break before:" + page.passage.substr(goodpage.end, 16));
   
-  if (newChapter.preserveTextTiming) {
-    newChapter.preserved = (Math.abs(goodpage.end-newChapter.endTextTiming) < 48);
-    if (elem.id=="p2" && !newChapter.preserved && !newChapter.atPageTop) {
+  if (matchTransition && matchTransition.preservingTransition) {
+    matchTransition.preserved = (Math.abs(goodpage.end-matchTransition.transition) < 48);
+    // if this is the second page, and we did not match our transistion on the first try, 
+    // then end the current page at the chapter boundary, and try again on the next page.
+    if (elem.id=="p2" && !matchTransition.preserved && !matchTransition.secondTry) {
       MainWin.logmsg("WARNING " + book + "-" + chapter + "-" + page.pagenumber + ": Preserving transition by pushing chapter to next page.");
-      goodpage.end = newChapter.beg;
+      goodpage.end = matchTransition.chapter_beg;
       goodpage.bottomSplitTag = ""; 
     }
   }
@@ -167,43 +188,53 @@ jsdump2(page, "Finished " + elem.id + ", page break before:" + page.passage.subs
 
 function copyPropsA2B(a, b) {for (var p in a) {b[p]=a[p];}}
 
-function checkForNewChapter(book, page, newChapter) {
+// Check if the current page includes a new chapter boundary, and if so, try and find the
+// first text locative transition from pageTiming.txt which was recorded for this new chapter. 
+// This transition information is saved to allow the present page's transition to be matched 
+// to the previously recorded transition.
+function findTransition(book, page, matchTransition) {
   var chsi = page.passage.substring(page.beg, page.end).indexOf(MainWin.NEWCHAPTER);
-  if (chsi == -1) return; // no new chapter
-  newChapter.exists = true;
-  newChapter.beg = page.beg + chsi;
-
+  if (chsi == -1) return; // no new chapter yet
+  
+  // we have a new chapter
+  matchTransition.foundTransition = true;
+  
+  // now save the transition information
+  matchTransition.chapter_beg = page.beg + chsi;
   var ch = page.passage.substring(page.beg + chsi + MainWin.NEWCHAPTER.length, page.passage.indexOf("\"", page.beg + chsi + MainWin.NEWCHAPTER.length));
   var vt = RenderWin.VerseTiming["vt_" + book + "_" + ch];
-  var chmatch = MainWin.getLocaleLiteral("MatchChapterTransitions");
-  if (!chmatch) return;
-  if (chmatch && !chmatch.match(/(true)/i)) return;
   if (!vt) return; // no verse timings for chapter
+  
+  // locate first text-locative transition recorded in pageTiming.txt
   var firstTrans;
   for (var i=0; i<vt.length; i++) {
     if (!vt[i]) continue;
     if (!firstTrans || Number(vt[i].verse) < Number(firstTrans.verse)) firstTrans = vt[i];    
   }
-
   if (!firstTrans) return;
-  var transEnd = lastIndexOfTrans(firstTrans, (page.beg+chsi), page.passage);
+  
+  // save the text location of the first text-locative transition if it's within reach
+  var transEnd = lastIndexOfTrans(firstTrans, matchTransition.chapter_beg, page.passage);
   if (transEnd == -1) return; // timing text not found on first page
-  newChapter.preserveTextTiming = true;
-  newChapter.endTextTiming = transEnd;
+  matchTransition.preservingTransition = true;
+  matchTransition.transition = transEnd;
   return;
 }
 
-function lastIndexOfTrans(vto, beg, psg) {
+// search for the transition on the first (approximate) full page of the chapter
+// which begins at chapter_beg. If the first transition seems to occur after the first
+// page worth of text, then return -1.
+function lastIndexOfTrans(vto, chapter_beg, psg) {
   var vend = "</sup>";
   var re = new RegExp("<sup>" + vto.verse + "[-\s<]", "im");
-  var i = psg.substr(beg, 2*RenderWin.APPROXLINE*RenderWin.APPNUMLINE).search(re);
+  var i = psg.substr(chapter_beg, 2*RenderWin.APPROXLINE*RenderWin.APPNUMLINE).search(re);
   if (i == -1) return -1;
-  return psg.indexOf(vend, beg+i) + vend.length + vto.trans.length; 
+  return psg.indexOf(vend, chapter_beg+i) + vend.length + vto.trans.length; 
 }
 
 // This function must progress the page break to the next available place.
 // False is returned if forward progress cannot be made for any reason.
-function shiftup(elem, page, sep, windowCheck, minPossibleShift) {
+function shiftup(elem, page, sep, widowCheck, minPossibleShift) {
   page.bottomSplitTag = "";
   var startingIndex = page.end;
   var end = page.passage.indexOf(sep, page.end+1);
@@ -213,12 +244,12 @@ jsdump2(page, "Examining break point:" + page.passage.substr(end,16));
     return false;
   }
   page.end = end;
-  if (!adjustPageBreak(elem, page, sep, windowCheck, minPossibleShift)) return false;
+  if (!adjustPageBreak(elem, page, sep, widowCheck, minPossibleShift)) return false;
   if (page.end <= startingIndex) {
     MainWin.logmsg("ERROR(shiftup): Could not progress before=\"" + startingIndex + "\" after=\"" + page.end + "\"", true);
     return false;
   }
-  formatPage(elem, page, windowCheck);
+  formatPage(elem, page, widowCheck);
   return true;
 }
 
@@ -230,7 +261,7 @@ jsdump2(page, "Examining break point:" + page.passage.substr(end,16));
 //
 //NOTE: footnotes sometimes break rule A! Could cause error message and
 //wrong italics across page breaks
-function adjustPageBreak(elem, page, sep, windowCheck, minPossibleShift) {
+function adjustPageBreak(elem, page, sep, widowCheck, minPossibleShift) {
     
   // Prevent orphans by disallowing page breaks which occur on the same line that 
   // a paragraph starts on. In such cases, we should stretch forward some amount:
@@ -259,21 +290,21 @@ function adjustPageBreak(elem, page, sep, windowCheck, minPossibleShift) {
     if (page.end < startingIndex) page.end = startingIndex;
   }
   
-  return checkTags(elem, page, sep, windowCheck, minPossibleShift);
+  return checkTags(elem, page, sep, widowCheck, minPossibleShift);
 }
 
 
-function checkTags(elem, page, sep, windowCheck, minPossibleShift) {
+function checkTags(elem, page, sep, widowCheck, minPossibleShift) {
   // check if break is between tags, or inside a tag. If so shift out accordingly.
   var tag = enclosingTag(page.passage, page.end);
   if (tag.name) {
-    if (!adjustIndexForTag(elem, page, sep, tag, windowCheck, minPossibleShift, false)) return false;
+    if (!adjustIndexForTag(elem, page, sep, tag, widowCheck, minPossibleShift, false)) return false;
   }
   else page.bottomSplitTag = "";
   
   // check for splitable tag enclosure
   var tag = enclosingTag(page.passage, page.end);
-  if (tag.name) return adjustIndexForTag(elem, page, sep, tag, windowCheck, minPossibleShift, true);
+  if (tag.name) return adjustIndexForTag(elem, page, sep, tag, widowCheck, minPossibleShift, true);
   else page.bottomSplitTag = "";
   
   return true;
@@ -309,7 +340,7 @@ function enclosingTag(passage, index) {
   return tag;
 }
 
-function adjustIndexForTag(elem, page, sep, tag, windowCheck, minPossibleShift, onlySplitTags) {
+function adjustIndexForTag(elem, page, sep, tag, widowCheck, minPossibleShift, onlySplitTags) {
   page.bottomSplitTag = "";
   
   var itagE = page.passage.indexOf("</" + tag.name, tag.beg);
@@ -350,7 +381,7 @@ function adjustIndexForTag(elem, page, sep, tag, windowCheck, minPossibleShift, 
     }
     // unless this is the first pass, move forward n lines
     if (!minPossibleShift) page.end = iAfterNPrintChars(page.passage, page.end, 2*RenderWin.APPROXLINE);
-    if (!shiftup(elem, page, sep, windowCheck, minPossibleShift)) {
+    if (!shiftup(elem, page, sep, widowCheck, minPossibleShift)) {
       MainWin.logmsg("NOTE (exitTitles): Could not shift up n lines after title. May be at end of passage.", true);
       return false;
     }
@@ -358,7 +389,7 @@ function adjustIndexForTag(elem, page, sep, tag, windowCheck, minPossibleShift, 
   case "exitTag":
     // shift out of the whole tag 
     page.end = itagE;
-    if (!shiftup(elem, page, sep, windowCheck, minPossibleShift)) {
+    if (!shiftup(elem, page, sep, widowCheck, minPossibleShift)) {
       MainWin.logmsg("NOTE (exitTag): Could not shift up after \"" + tag.name + "\" tag. May be at end of passage.", true);
       return false;
     }
@@ -369,7 +400,7 @@ function adjustIndexForTag(elem, page, sep, tag, windowCheck, minPossibleShift, 
     if (fstgt > page.end) {
       // We're in the starting tag itself...
       page.end = fstgt+1;
-      if (!shiftup(elem, page, sep, windowCheck, minPossibleShift)) {
+      if (!shiftup(elem, page, sep, widowCheck, minPossibleShift)) {
         MainWin.logmsg("NOTE (split): Could not shift up after exiting starting tag \"" + tag.name + "\" tag. May be at end of passage.", true);
         return false
       }
@@ -381,8 +412,8 @@ function adjustIndexForTag(elem, page, sep, tag, windowCheck, minPossibleShift, 
 }
 
 // Finds first line-break at or before page.end which allows complete
-// fit with windowCheck. If no line-break is found before page.end 
-// and window doesn't fit, returns -1.
+// fit with widowCheck. If no line-break is found before page.end 
+// and widow doesn't fit, returns -1.
 function findFinalLine(elem, page) {
   var saveEnd = page.end;
   var saveHTML = elem.innerHTML;
@@ -576,7 +607,7 @@ function resetHTML(elem) {
 var DisplayBook;
 var DisplayChapter;
 var TextHeaders = {};
-function formatPage(elem, page, windowCheck) {
+function formatPage(elem, page, widowCheck) {
   resetHTML(elem);
   var html = (page && page.beg < page.end ? page.passage.substring(page.beg, page.end):"");
   var isNotes = (page ? page.isNotes:false);
@@ -615,9 +646,9 @@ function formatPage(elem, page, windowCheck) {
     firstBR = html.indexOf("<br>");
   }
   
-  // If windowCheck, include approx. next line worth of chars, 
+  // If widowCheck, include approx. next line worth of chars, 
   // so that line height is accurate.
-  if (page && windowCheck) {
+  if (page && widowCheck) {
     var nextLine = iAfterNPrintChars(page.passage, page.end, Math.floor(0.75*RenderWin.APPROXLINE), false);
     var endPar = (page.isNotes ? findNoteEnd(page.passage, page.end):findParEnd(page.passage, page.end));
     if (nextLine > endPar) nextLine = endPar;
