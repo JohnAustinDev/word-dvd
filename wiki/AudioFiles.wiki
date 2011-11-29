@@ -2,13 +2,14 @@
 = Audio files for Word-DVD=
 
  * Audio files must be AC3 encoded at 48000Hz sample rate.
- * Each audio file needs to cover one full chapter.
  * Not all chapters need to have an audio file.
  * Audio can be mono or stereo.
  * Audio files need to be placed in the "Audio Directory" listed on the word-dvd control window (and make sure the "none" checkbox to the right of the directory box is unchecked).
- * Audio files need the following naming convention:
+ * Audio files need one of the following naming conventions:
 
-`<AudioPrefix>-<BookName>-<ChapterNumber>.ac3` (for example: en-Mark-1.ac3)
+ # `<AudioPrefix>-<Book>-<Chapter>.ac3` (for example: en-Mark-1.ac3)
+ # `<AudioPrefix>-<Book>-<Chapter1>-<Chapter2>.ac3` (en-Mark-1-5.ac3)
+ # `<AudioPrefix>-<Book>-<Chapter>:<Verse1>-<Verse2>.ac3` (en-Mark-1:12-22.ac3)
 
 
 `AudioPrefix` and` BookName` must appear in the appropriate place in the config.txt file which is located in the Word-DVD inputs directory.
@@ -19,4 +20,3 @@ Included with Word-DVD is a [http://code.google.com/p/word-dvd/source/browse/tru
 ffmpeg -i audioFile.wav -acodec ac3 -ar 48000 audioFile.ac3
 
 Depending on the content size of your final DVD, you may need to adjust the bitrate of AC3 files to reduce their size. The sum total of audio files should not exceed roughly 3.5GB to be able to fit onto a standard DVD.
-
