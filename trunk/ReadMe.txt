@@ -94,7 +94,7 @@ rendered across page boundaries.
 
 audio directory
 ---------------
-Audio files for the project can be put in the audio directory. Audio
+Audio files for the project should be put in the audio directory. Audio
 is optional and can be disabled by checking the "no-audio" checkbox
 on the word-dvd control window. They are ideally one chapter per file,
 but can contain more than one chapter (even a whole book).
@@ -105,13 +105,15 @@ but can contain more than one chapter (even a whole book).
 
 -Audio can be mono or stereo.
 
--Audio files need the following naming convention:
-<AudioPrefix>-<BookName>-<ChapterNumber>.ac3
+-Audio files need one of these three naming patterns:
+    AudioPrefix-book-chapter.ac3
+    AudioPrefix-book-chapter1-chapter2.ac3
+    AudioPrefix-book-chapter:verse1-verse2.ac3
+  If an audio file does not cover an entire chapter, the third form
+  must be used, where verse1 is the first verse in the file and verse2
+  is the last. 
 
--or in the case of multiple chapters in one audio file:
-<AudioPrefix>-<BookName>-<ChapterNumber>-<ChapterNumber>.ac3
-
--<AudioPrefix> and <BookName> must appear in the appropriate place in
+- AudioPrefix and BookName must appear in the appropriate place in
 the config.txt.
 
 
@@ -156,6 +158,14 @@ session these modified files will be used.
 
 
 REVISION HISTORY
+
+1.5
+-----
+- Audio files covering only a part of a chapter are now supported.
+- Added automatic menu generation for sub-chapters created by partial chapter audio files.
+- Fixed a bug where /defaults/CSS/pal.css would not be overwritten when "Restore Default Files" was checked.
+- New "MatchChapterTransitions" config.txt entry is used to enable tranistion matching. Transition matching still has bugs and has been turned off by default.
+- Fixed minor bugs.
 
 1.4.4
 -----
