@@ -56,7 +56,6 @@ const OSISFILE = "osis.xml";
 const PAGETIMING="pageTiming.txt";
 const LOCALEFILE="config.txt";
 const CAPTURE="import.sh";
-const MULTICHAPTIMING="multiChapterTiming.txt";
 
 /************************************************************************
  * Exception Handling
@@ -609,7 +608,6 @@ function wordDVD() {
   exportDir(HTMLDIR, UIfile[INDIR].path, false);
   exportFile(LOCALEFILE, UIfile[INDIR].path, false);
   exportFile(PAGETIMING, UIfile[INDIR].path, false);
-  exportFile(MULTICHAPTIMING, UIfile[INDIR].path, false);
   
   // READ LOCALE FILE
   LocaleFile = UIfile[INDIR].clone();
@@ -752,7 +750,7 @@ function readHtmlFiles() {
           quit(); return; 
         }
         maxv = (maxv[2] ? maxv[3]:maxv[1]);
-        Book[Book.length-1]["ch" + chn + "MaxVerse"] = maxv;
+        Book[Book.length-1]["ch" + chn + "MaxVerse"] = Number(maxv);
         
         // save minVerse
         var minv = res[0];
@@ -762,7 +760,7 @@ function readHtmlFiles() {
           quit(); return; 
         }
         minv = minv[1];
-        Book[Book.length-1]["ch" + chn + "MinVerse"] = minv;       
+        Book[Book.length-1]["ch" + chn + "MinVerse"] = Number(minv);       
       }
       
       chstart = chend;
@@ -1042,6 +1040,9 @@ function stop() {
       unUtilizedAudio += files + "\n";
     }
     for (var vt in RenderWin.VerseTiming) {
+      var keep = false;
+      for (var i=0; i<Book.length; i++) {if (vt.indexOf("vt_" + Book[i].shortName + "_") === 0) keep = true;}
+      if (!keep) continue;
       for (var i=0; i<RenderWin.VerseTiming[vt].length; i++) {
         if (RenderWin.VerseTiming[vt][i]) logmsg("WARNING: Did not calculate " + PAGETIMING + " data: " + RenderWin.VerseTiming[vt][i].entry);
       }

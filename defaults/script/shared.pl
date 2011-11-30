@@ -116,6 +116,12 @@ sub readDataFiles() {
         if ($ty eq "s") {$correctChapStartTime{$bk."-".$ch} = ($framesRND/$framesPS);}
         if ($ty eq "e") {$correctChapEndTime{$bk."-".$ch} = ($framesRND/$framesPS);}
       }
+      elsif ($_ =~ /([^-]+)-(\d+)-chs\s*=\s*(.*?)\s*$/) {
+        $bk = $1;
+        $ch = $2;
+        $t = &unformatTime($3, "noFrameCheck");
+        $multiChapTiming{$bk."-".$ch} = $t;
+      }
       elsif ($_ =~ /([^-]+)-(\d+):(\d+)\s*=\s*(.*?)$/) {
         # Ignore these lines now. These lines should have already been processed 
         # by word-dvd.js during the page image capture phase, and a corresponding 

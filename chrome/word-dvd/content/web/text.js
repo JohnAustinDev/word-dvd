@@ -85,7 +85,7 @@ MainWin.jsdump("Chapter=" + chapter + ", Pagenumber=" + aPage.pagenumber);
   }
 
 	// If our text-locative transition was matched, then report it, otherwise look for it on the next page.
-	// But if it cannot be matched on the next page, then there is a problem somewhere...
+	// But if it cannot be matched on the next page, then skip...
   if (matchTransition && matchTransition.preservingTransition) {
     if (matchTransition.preserved) 
       MainWin.logmsg("NOTE: " + book + "-" + chapter + "-" + aPage.pagenumber + ": First chapter transition was preserved according to text timing info.");
@@ -93,7 +93,7 @@ MainWin.jsdump("Chapter=" + chapter + ", Pagenumber=" + aPage.pagenumber);
       matchTransition.secondTry = true;
       aPage.matchTransition = matchTransition;
     }
-    else MainWin.logmsg("ERROR " + book + "-" + chapter + "-" + aPage.pagenumber + ": Could not preserve verse text timing.");
+    else MainWin.logmsg("ERRIR " + book + "-" + chapter + "-" + aPage.pagenumber + ": Failed to preserve verse text timing.");
   }
   
 //MainWin.jsdump("PageElem1:" + PageElem1.innerHTML + "\nPageElem2:" + PageElem2.innerHTML);
@@ -118,6 +118,7 @@ function fitPage(elem, book, chapter, page, sep, matchTransition) {
   while (elem.scrollHeight <= elem.clientHeight) {
     copyPropsA2B(page, goodpage);
     if (matchTransition && matchTransition.preservingTransition && page.end > matchTransition.transition) {
+      matchTransition.preserved = true;
       MainWin.logmsg("WARNING " + book + "-" + chapter + "-" + page.pagenumber + ": Preserving transition by truncating page.");
       break;
     }
@@ -172,10 +173,10 @@ jsdump2(page, "WidowCheck:charsLeft=" + charsLeft + ", startFinalLine=" + page.p
 jsdump2(page, "Finished " + elem.id + ", page break before:" + page.passage.substr(goodpage.end, 16));
   
   if (matchTransition && matchTransition.preservingTransition) {
-    matchTransition.preserved = (Math.abs(goodpage.end-matchTransition.transition) < 48);
+    if (!matchTransition.preserved) matchTransition.preserved = (Math.abs(goodpage.end-matchTransition.transition) < 48);
     // if this is the second page, and we did not match our transistion on the first try, 
     // then end the current page at the chapter boundary, and try again on the next page.
-    if (elem.id=="p2" && !matchTransition.preserved && !matchTransition.secondTry) {
+    if (elem.id=="text-page2" && !matchTransition.preserved && !matchTransition.secondTry) {
       MainWin.logmsg("WARNING " + book + "-" + chapter + "-" + page.pagenumber + ": Preserving transition by pushing chapter to next page.");
       goodpage.end = matchTransition.chapter_beg;
       goodpage.bottomSplitTag = ""; 
@@ -198,11 +199,13 @@ function findTransition(book, page, matchTransition) {
   
   // we have a new chapter
   matchTransition.foundTransition = true;
-  
+
   // now save the transition information
   matchTransition.chapter_beg = page.beg + chsi;
-  var ch = page.passage.substring(page.beg + chsi + MainWin.NEWCHAPTER.length, page.passage.indexOf("\"", page.beg + chsi + MainWin.NEWCHAPTER.length));
-  var vt = RenderWin.VerseTiming["vt_" + book + "_" + ch];
+  var nextchn = RenderWin.Chapter;
+  if (page.beg != 0) nextchn++; // get next
+  nextchn += RenderWin.SubChapters; // get internal chapter number
+  var vt = RenderWin.VerseTiming["vt_" + book + "_" + nextchn];
   if (!vt) return; // no verse timings for chapter
   
   // locate first text-locative transition recorded in pageTiming.txt

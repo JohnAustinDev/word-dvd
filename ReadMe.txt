@@ -25,17 +25,6 @@ pageTiming.txt itself. After modifying pageTiming.txt, xword-dvd.sh (for
 DVD) or xvideo-sh (for video files) can be rerun to apply the transitions.
 
 
-multiChapterTiming.txt
-----------------------
-Preferably each audio file contains a single chapter. But in some cases a
-single audio file contains multiple chapters or even an entire book. The
-multiChapterTiming.txt file is only needed in such cases. After the first
-run, a multiChapterTiming.txt will be created in ./OUTPUTS/audio/ which
-contains calculated chapter boundaries. This file should be copied to ./
-and then actual chapter boundary timings should be manually entered into
-the file.
-
-
 osis.xml
 --------
 Optional: Word-DVD will optionally convert an OSIS file into HTML. It
@@ -105,13 +94,13 @@ but can contain more than one chapter (even a whole book).
 
 -Audio can be mono or stereo.
 
--Audio files need one of these three naming patterns:
-    AudioPrefix-book-chapter.ac3
-    AudioPrefix-book-chapter1-chapter2.ac3
-    AudioPrefix-book-chapter:verse1-verse2.ac3
-  If an audio file does not cover an entire chapter, the third form
-  must be used, where verse1 is the first verse in the file and verse2
-  is the last. 
+-Audio files need one of these four naming patterns:
+ 1) AudioPrefix-book-chapter.ac3
+ 2) AudioPrefix-book-chapter1-chapter2.ac3
+ 3) AudioPrefix-book-chapter:verse1-verse2.ac3
+ 4) AudioPrefix-book-chapter1:verse1-chapter2:verse2.ac3
+ A single chapter may have multiple audio files for it. But audio file
+ recordings must never overlap one another.
 
 - AudioPrefix and BookName must appear in the appropriate place in
 the config.txt.
