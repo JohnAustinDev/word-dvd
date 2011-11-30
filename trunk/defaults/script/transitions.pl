@@ -71,8 +71,12 @@ if ($MBK eq "") {
   exit;
 }
 
-&initBookOrder();
-if (!exists($bkorder{$MBK})) {
+print "\nRUNNING transitions.pl $MBK $MCH $MPG\n";
+require "$scriptdir/shared.pl";
+&readDataFiles();
+&readTransitionInformation();
+
+if (!exists($books{$MBK})) {
   print "Unknown book: \"$MBK\", exiting...\n";
   exit;
 }
@@ -80,13 +84,37 @@ if (!exists($bkorder{$MBK})) {
 use Term::ReadKey;
 ReadMode 4;
 
-print "\nRUNNING transitions.pl $MBK $MCH $MPG\n";
-require "$scriptdir/shared.pl";
-&readDataFiles();
-&readTransitionInformation();
-
 $quit = "false";
+$wchapter = $firstChapter;
 for ($MCH=$firstChapter; $quit ne "true" && $MCH <= $lastChapter{$MBK}; $MCH++) {
+
+  # skip over any chapters which don't have audio
+  $gotAudio = 1;
+  if (!$haveAudio{$MBK."-".$MCH) {print "\n\nSKIPPING non audio chapter $MCH\n\n";}
+  $done = 0;
+  while (!$haveAudio{$MBK."-".$MCH}) {    
+    if ($wchapter <= $MCH) {
+      $MCH = ($MCH - 1);
+      if ($MCH == $lastChapter{$MBK}) {
+        if ($done) {$gotAudio = 0; last;}
+        $done++;
+        $MCH--; 
+        $wchapter = $MCH;
+      }
+    }
+    else {
+      $MCH = ($MCH - 1);
+      if ($MCH == 0) {
+        if ($done) {$gotAudio = 0; last;}
+        $done++;
+        $MCH++; 
+        $wchapter = $MCH;
+      }
+    }
+  }
+  if (!$gotAudio) {last;}
+  $wchapter = $MCH;
+  
   &audioPlay(0);
 
   $gotoNextChapter = "false";
@@ -102,7 +130,7 @@ for ($MCH=$firstChapter; $quit ne "true" && $MCH <= $lastChapter{$MBK}; $MCH++) 
       print "************* LAST PAGE **************\n\n";
     }
      
-    if (!$AudioPlaying) {&audioPlayPage($MBK, $MCH, $MPG);}
+    if (!$AudioPlaying) {&audioPlayPage($MPG);}
     else {&updateStatus();}
     &showPageImage($MBK, $MCH, $MPG);
     $gotoNextPage = "false";
@@ -122,7 +150,12 @@ for ($MCH=$firstChapter; $quit ne "true" && $MCH <= $lastChapter{$MBK}; $MCH++) 
         $gotoNextPage = "true";
         &audioStop();
         if ($MPG == 0) {&saveTime("start");}
-        elsif ($MPG == $lastPage{$MBK."-".$MCH}) {&saveTime("end");}
+        elsif ($MPG == $lastPage{$MBK."-".$MCH}) {
+          &saveTime("end");
+          if (&isMultiChapter($MBK, $MCH) && $MCH < $lastChapter{$MBK}) {
+            &saveTime("multi-chap-end");
+          }
+        }
         else {
           &saveTime("trans");
           if ($MPG>0 && $numpts) {
@@ -138,7 +171,12 @@ for ($MCH=$firstChapter; $quit ne "true" && $MCH <= $lastChapter{$MBK}; $MCH++) 
         $newEntry = "true";
         $gotoNextPage = "true";  
         if ($MPG == 0) {&saveTime("start");}
-        elsif ($MPG == $lastPage{$MBK."-".$MCH}) {&saveTime("end");}
+        elsif ($MPG == $lastPage{$MBK."-".$MCH}) {
+          &saveTime("end");
+          if (&isMultiChapter($MBK, $MCH) && $MCH < $lastChapter{$MBK}) {
+            &saveTime("multi-chap-end");
+          }
+        }
         else {&saveTime("trans");}            
       }
             
@@ -399,7 +437,14 @@ sub updateTime() {
 sub saveTime($$) {
   my $type = shift;
   my $savezero = shift;
-  my $posuf = $savezero ? 0:&audioGetTime();  
+  
+  my $posuf = $savezero ? 0:&audioGetTime();
+    
+  # normalize most times if this is multi-chap
+  if ($type ne "multi-chap-end" && &isMultiChapter($MBK, $MCH)) {
+    $posuf = &normalizeMultiChapTime($MBK, $MCH, $posuf);
+  }
+    
   my $pos = &formatTime(&roundToNearestFrame($posuf));
   print "= $pos\n\n\n";
   
@@ -407,6 +452,7 @@ sub saveTime($$) {
   if    ($type eq "trans") {$en = "$MBK-$MCH-".($MPG+1);}
   elsif ($type eq "start") {$en = "$MBK-$MCH-s";}
   elsif ($type eq "end")   {$en = "$MBK-$MCH-e";}
+  elsif ($type eq "multi-chap-end")   {$en = "$MBK-$MCH-chs";}
   my $entry = "$en = $pos";
 
   if (exists($pageTimingEntry{$en})) {
@@ -556,10 +602,11 @@ sub audioPlay($) {
   &waitAndRefocus("(".quotemeta($f)."|FFplay)");
 }
 
-sub audioPlayPage($$$) {
-  my $b = shift;
-  my $c = shift;
+sub audioPlayPage($) {
   my $p = shift;
+  
+  my $b = $MBK;
+  my $c = $MCH; 
   
   my $pos = 0;
   if ($p > 0 && $p < $lastPage{$b."-".$c}) {  
@@ -567,6 +614,8 @@ sub audioPlayPage($$$) {
     if ($pos < 0) {$pos = 0;}
   }
   elsif ($p == $lastPage{$b."-".$c}) {$pos = $Chapterlength{$b."-".$c} - 10;}
+  
+  if (&isMultiChapter($b, $ch)) {$pos = &denormalizeMultiChapTime($b, $ch, $pos);}
   
   my $dt = $pos - &audioGetTime();
   &audioPlay($pos);
@@ -625,6 +674,28 @@ sub waitAndRefocus($) {
   &sys("wmctrl -a \"$t\"");
 }
 
+sub normalizeMultiChapTime($$$) {
+  my $bk = shift;
+  my $ch = shift;
+  my $t = shift;
+  
+  $offset = &multiChapOffset($bk, $ch);
+  $t = $t - $offset;
+  
+  return $t;
+}
+
+sub denormalizeMultiChapTime($$$) {
+  my $bk = shift;
+  my $ch = shift;
+  my $t = shift;
+  
+  $offset = &multiChapOffset($bk, $ch);
+  $t = $t + $offset;
+  
+  return $t;  
+}
+
 sub sys($) {
   my $cmd = shift;
   my $ret = `$cmd`;
@@ -640,73 +711,4 @@ sub DIE($) {
   ReadMode 0;
   print $m;
   die;
-}
-
-sub initBookOrder() {
-  $bkorder{"Gen"} = 0;
-  $bkorder{"Exod"} = 1;
-  $bkorder{"Lev"} = 2;
-  $bkorder{"Num"} = 3;
-  $bkorder{"Deut"} = 4;
-  $bkorder{"Josh"} = 5;
-  $bkorder{"Judg"} = 6;
-  $bkorder{"Ruth"} = 7;
-  $bkorder{"1Sam"} = 8;
-  $bkorder{"2Sam"} = 9;
-  $bkorder{"1Kgs"} = 10;
-  $bkorder{"2Kgs"} = 11;
-  $bkorder{"1Chr"} = 12;
-  $bkorder{"2Chr"} = 13;
-  $bkorder{"Ezra"} = 14;
-  $bkorder{"Neh"} = 15;
-  $bkorder{"Esth"} = 16;
-  $bkorder{"Job"} = 17;
-  $bkorder{"Ps"} = 18;
-  $bkorder{"Prov"} = 19;
-  $bkorder{"Eccl"} = 20;
-  $bkorder{"Song"} = 21;
-  $bkorder{"Isa"} = 22;
-  $bkorder{"Jer"} = 23;
-  $bkorder{"Lam"} = 24;
-  $bkorder{"Ezek"} = 25;
-  $bkorder{"Dan"} = 26;
-  $bkorder{"Hos"} = 27;
-  $bkorder{"Joel"} = 28;
-  $bkorder{"Amos"} = 29;
-  $bkorder{"Obad"} = 30;
-  $bkorder{"Jonah"} = 31;
-  $bkorder{"Mic"} = 32;
-  $bkorder{"Nah"} = 33;
-  $bkorder{"Hab"} = 34;
-  $bkorder{"Zeph"} = 35;
-  $bkorder{"Hag"} = 36;
-  $bkorder{"Zech"} = 37;
-  $bkorder{"Mal"} = 38;
-  $bkorder{"Matt"} = 39;
-  $bkorder{"Mark"} = 40;
-  $bkorder{"Luke"} = 41;
-  $bkorder{"John"} = 42;
-  $bkorder{"Acts"} = 43;
-  $bkorder{"Jas"} = 44;
-  $bkorder{"1Pet"} = 45;
-  $bkorder{"2Pet"} = 46;
-  $bkorder{"1John"} = 47;
-  $bkorder{"2John"} = 48;
-  $bkorder{"3John"} = 49;
-  $bkorder{"Jude"} = 50;
-  $bkorder{"Rom"} = 51;
-  $bkorder{"1Cor"} = 52;
-  $bkorder{"2Cor"} = 53;
-  $bkorder{"Gal"} = 54;
-  $bkorder{"Eph"} = 55;
-  $bkorder{"Phil"} = 56;
-  $bkorder{"Col"} = 57;
-  $bkorder{"1Thess"} = 58;
-  $bkorder{"2Thess"} = 59;
-  $bkorder{"1Tim"} = 60;
-  $bkorder{"2Tim"} = 61;
-  $bkorder{"Titus"} = 62;
-  $bkorder{"Phlm"} = 63;
-  $bkorder{"Heb"} = 64;
-  $bkorder{"Rev"} = 65;
 }
