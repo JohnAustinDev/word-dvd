@@ -514,7 +514,7 @@ sub makeSilentSlide($$) {
 sub isMultiChapter($$) {
   my $bk = shift;
   my $ch = shift;
-  
+ 
   if ($haveAudio{"$bk-$ch"} =~ /^[^-]+-[^-]+-(\d+)-(\d+)\.ac3$/i ||
       $haveAudio{"$bk-$ch"} =~ /^[^-]+-[^-]+-(\d+):\d+-(\d+):\d+\.ac3$/i) {
     return 1;
@@ -523,7 +523,7 @@ sub isMultiChapter($$) {
   return 0;
 }
 
-# returns time offset of a real chapter within its audio file
+# returns time offset of an internal chapter within its audio file
 # returns 0 for non-multi-chapter audio files
 sub multiChapOffset($$) {
   my $bk = shift;
@@ -540,12 +540,12 @@ sub multiChapOffset($$) {
     my $chos = &realChapterOffset($haveAudio{"$bk-$ch"});
     $cs = ($cs+$chos);
     $ce = ($ce+$chos);
-    
+  
     # calculate requested offset
     for (my $c=$cs+1; $c<=$ce; $c++) {
       if ($c<=$ch) {$os = ($os + $Chapterlength{$bk."-".($c-1)});}
     }
-    
+  
     # round offset to nearest frame
     my $f = $framesPS*$os;
     my $framesRND = sprintf("%i", $f);
@@ -562,14 +562,15 @@ sub realChapterOffset($) {
   my $f = shift;
   
   my $ret = -1;
-  if ($f =~ /^[^-]+-([^-]+)-(\d+)[-:].*?\.ac3$/i {
+  if ($f =~ /^[^-]+-([^-]+)-(\d+)[-:].*?\.ac3$/i) {
     my $bk = $1;
     my $cs = (1*$2);
-    
-    for (my $ch=1; $ch<=$lastChapter{$bk}; $ch++) {
-      if ($haveAudio{"$bk-$ch"} && $haveAudio{"$bk-$ch"} eq $f) {last;}
+
+	my $c;
+    for ($c=1; $c<=$lastChapter{$bk}; $c++) {
+      if ($haveAudio{"$bk-$c"} && $haveAudio{"$bk-$c"} eq $f) {last;}
     }
-    if ($ch <= $lastChapter{$bk}) {$ret = $ch - $cs;}
+    if ($c <= $lastChapter{$bk}) {$ret = $c - $cs;}
   }
   
   if ($ret == -1) {print "ERROR: Indeterminate chapter offset \"$f\".\n";}

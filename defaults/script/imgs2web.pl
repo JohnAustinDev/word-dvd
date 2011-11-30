@@ -47,8 +47,6 @@ $ffmpgVersion = $1;
 
 #CREATE MPG FILES
 foreach $book (sort {$books{$a}<=>$books{$b}} keys %books) {
-  my $lastAudioFile = "";
-  my $chos = 0;
   for ($ch=0; $ch<=$lastChapter{$book}; $ch++) {
     if (!$chapters{"$book-$ch"}) {next;}
     if ($haveAudio{"$book-$ch"} eq "still") {next;}
@@ -57,32 +55,17 @@ foreach $book (sort {$books{$a}<=>$books{$b}} keys %books) {
     $nextPTS = 0;
       
     $multChapFileOFS = 0;
-    $multChapEnd = 0;
     @chaps = split(/,/, $Chapterlist{$book."-".$ch});
     $tlastchap = 0;
     $lastAudioPTS = 0;
-    if ($haveAudio{"$book-$ch"} =~ /^[^-]+-[^-]+-(\d+)-(\d+)\.ac3$/i ||
-        $haveAudio{"$book-$ch"} =~ /^[^-]+-[^-]+-(\d+):\d+-(\d+):\d+\.ac3$/i) {
-      $cs = (1*$1);
-      $ce = (1*$2);
-      # get offset from audio file's chapter to real chapter
-      if ($lastAudioFile ne $haveAudio{"$book-$ch"}) {
-        $chos = ($ch-$cs);
-        $lastAudioFile = $haveAudio{"$book-$ch"};
-      }
-      $cs = ($cs+$chos);
-      $ce = ($ce+$chos);
-      for ($c=$cs; $c<=$ce; $c++) {
-        if ($c<$ch) {$multChapFileOFS = ($multChapFileOFS + $Chapterlength{$book."-".$c});}
-        if ($c<=$ch) {$multChapEnd = ($multChapEnd + $Chapterlength{$book."-".$c});}
-      }
-      $f = $framesPS*$multChapFileOFS;
-      $framesRND = sprintf("%i", $f);
-      $multChapFileOFS = ($framesRND/$framesPS);
-      print " start=".$multChapFileOFS."s, finish=".$multChapEnd."s, length=".sprintf("%.2f", ($multChapEnd-$multChapFileOFS))."s\n";
+    
+    # set up for multi-chapter audio files if necesssary
+    if (&isMultiChapter($book, $ch)) {
+      $multChapFileOFS = &multiChapOffset($book, $ch);
+      print " start=".$multChapFileOFS."s, finish=".($multChapFileOFS+$Chapterlength{$book."-".$ch})."s, length=".sprintf("%.2f", ($Chapterlength{$book."-".$ch}))."s\n";
     }
     else {print " start=0s, finish=".$Chapterlength{$book."-".$ch}."s, length=".$Chapterlength{$book."-".$ch}."s\n";}
-  
+
     for ($pg=1; $pg<=$lastPage{$book."-".$ch}; $pg++) {
       if (!$pages{"$book-$ch-$pg"}) {next;}
       
@@ -122,17 +105,17 @@ foreach $book (sort {$books{$a}<=>$books{$b}} keys %books) {
         $startPTS = $seekto + 1; # the + 1 accounts for the 1 second lead-in (see next step)
         
         if (!$seekto) {
-			# ffmpeg insists on cutting off the first 0.52 seconds during web-video post processing, so here we add a one second lead-in to insure nothing is lost!
-			$cmd = "jpeg2yuv -v 0 -n 25 -I p -f 25 -j $imagedir/$book/$book-$ch-$pg.jpg | mpeg2enc -v 0 -f 3 -g 1 -G ".(2*$framesPS)." -b 5000 -o $webdir/videotmp/$book-$ch-0.m2v";
-			print "$cmd\n\n";
-			`$cmd`;
-			$cmd = "ffmpeg -v $Verbosity -t 1 -i $resourcedir/blankaudio.ac3 -acodec copy -y $webdir/videotmp/$book-$ch-0.m2a";
-			print "$cmd\n\n";
-			`$cmd`;
-			$cmd = "mplex -v $Verbosity -V $seqend -T 0 -f 3 $webdir/videotmp/$book-$ch-0.m2v $webdir/videotmp/$book-$ch-0.m2a -o $webdir/$book/$book-$ch-0.mpg";
-			print "$cmd\n\n";
-			`$cmd`;
-		}
+          # ffmpeg insists on cutting off the first 0.52 seconds during web-video post processing, so here we add a one second lead-in to insure nothing is lost!
+          $cmd = "jpeg2yuv -v 0 -n 25 -I p -f 25 -j $imagedir/$book/$book-$ch-$pg.jpg | mpeg2enc -v 0 -f 3 -g 1 -G ".(2*$framesPS)." -b 5000 -o $webdir/videotmp/$book-$ch-0.m2v";
+          print "$cmd\n\n";
+          `$cmd`;
+          $cmd = "ffmpeg -v $Verbosity -t 1 -i $resourcedir/blankaudio.ac3 -acodec copy -y $webdir/videotmp/$book-$ch-0.m2a";
+          print "$cmd\n\n";
+          `$cmd`;
+          $cmd = "mplex -v $Verbosity -V $seqend -T 0 -f 3 $webdir/videotmp/$book-$ch-0.m2v $webdir/videotmp/$book-$ch-0.m2a -o $webdir/$book/$book-$ch-0.mpg";
+          print "$cmd\n\n";
+          `$cmd`;
+        }
         
         $cmd = "mplex -v $Verbosity -V $seqend -T $startPTS -f 3 $webdir/videotmp/$book-$ch-$pg.m2v $webdir/videotmp/$book-$ch-$pg.m2a -o $webdir/$book/$book-$ch-$pg.mpg";
         print "$cmd\n\n";

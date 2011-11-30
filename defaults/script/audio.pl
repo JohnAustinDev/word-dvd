@@ -195,6 +195,7 @@ foreach $book (sort {$books{$a}<=>$books{$b}} keys %books) {
     }
     
     #SAVE FINAL VALUES TO chapters.csv FILE
+    if ($audioreadlen{$book."-".$ch} > $audiofilelen{$book."-".$ch}) {$audioreadlen{$book."-".$ch} = $audiofilelen{$book."-".$ch}}
     print CHP "$book-$ch, ".$audiofilelen{$book."-".$ch}.", ".$audioreadlen{$book."-".$ch};
     for ($pg=1; $pg<=$lastPage{$book."-".$ch}; $pg++) {
       $nextT = $TSTART{$book."-".$ch."-".($pg+1)};
