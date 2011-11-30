@@ -1002,10 +1002,10 @@ function writeStats(pagename, hasAudio) {
 	}
 	var file = MainWin.StatsFile.clone();
 	file.append(book + ".csv");
-	if (!file.exists()) MainWin.write2File(file, "#Page,Chapter Fraction,Audio File,Number of Titles,Chapter Length,Absolute Time\n", true);
+	if (!file.exists()) MainWin.write2File(file, "#Page,Chapter Fraction,Audio File,Number of Titles,Absolute Length,Absolute Time\n", true);
 	else if (file.exists() && (chapter == 0 || (chapter == 1 && !getPassage(book, true)))) {
 		file.remove(false);
-		MainWin.write2File(file, "#Page,Chapter Fraction,Audio File,Number of Titles,Chapter Length,Absolute Time\n", true);
+		MainWin.write2File(file, "#Page,Chapter Fraction,Audio File,Number of Titles,Absolute Length,Absolute Time\n", true);
 	}
 	MainWin.write2File(file, statstring, true);
 	

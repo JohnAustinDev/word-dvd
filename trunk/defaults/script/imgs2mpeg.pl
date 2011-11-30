@@ -47,8 +47,6 @@ $ffmpgVersion = $1;
 foreach $book (sort {$books{$a}<=>$books{$b}} keys %books) {
   `mkdir $videodir/$book`;
 
-  my $lastAudioFile = "";
-  my $chos = 0;
   for ($ch=0; $ch<=$lastChapter{$book}; $ch++) {
     if (!$chapters{"$book-$ch"}) {next;}
     print "Creating mpg for $book-$ch (".$haveAudio{"$book-$ch"}.")";
@@ -56,33 +54,15 @@ foreach $book (sort {$books{$a}<=>$books{$b}} keys %books) {
 
     if ($haveAudio{"$book-$ch"} ne "still") {
       $multChapFileOFS = 0;
-      $multChapEnd = 0;
       @chaps = split(/,/, $Chapterlist{$book."-".$ch});
       $tlastchap = 0;
       $lastAudioPTS = 0;
       $gap = 0;
       
       # set up for multi-chapter audio files if necesssary
-      if ($haveAudio{"$book-$ch"} =~ /^[^-]+-[^-]+-(\d+)-(\d+)\.ac3$/i ||
-          $haveAudio{"$book-$ch"} =~ /^[^-]+-[^-]+-(\d+):\d+-(\d+):\d+\.ac3$/i) {
-        $cs = (1*$1);
-        $ce = (1*$2);
-        # get offset from audio file's chapter to real chapter
-        if ($lastAudioFile ne $haveAudio{"$book-$ch"}) {
-          $chos = ($ch-$cs);
-          $lastAudioFile = $haveAudio{"$book-$ch"};
-        }
-        $cs = ($cs+$chos);
-        $ce = ($ce+$chos); 
-        for ($c=$cs; $c<=$ce; $c++) {
-          if ($c<$ch) {$multChapFileOFS = ($multChapFileOFS + $Chapterlength{$book."-".$c});}
-          if ($c<=$ch) {$multChapEnd = ($multChapEnd + $Chapterlength{$book."-".$c});}
-        }
-        $f = $framesPS*$multChapFileOFS;
-        $framesRND = sprintf("%i", $f);
-        $multChapFileOFS = ($framesRND/$framesPS);
-        $multChapListing = $multChapListing."$book-$ch = ".&formatTime($multChapFileOFS)."\n";
-        print " start=".$multChapFileOFS."s, finish=".$multChapEnd."s, length=".sprintf("%.2f", ($multChapEnd-$multChapFileOFS))."s\n";
+      if (&isMultiChapter($book, $ch)) {
+        $multChapFileOFS = &multiChapOffset($book, $ch);
+        print " start=".$multChapFileOFS."s, finish=".($multChapFileOFS+$Chapterlength{$book."-".$ch})."s, length=".sprintf("%.2f", ($Chapterlength{$book."-".$ch}))."s\n";
       }
       else {print " start=0s, finish=".$Chapterlength{$book."-".$ch}."s, length=".$Chapterlength{$book."-".$ch}."s\n";}
     }

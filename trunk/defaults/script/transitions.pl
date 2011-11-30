@@ -43,8 +43,8 @@ if ($MBK eq "") {
   print "usage: ./xtransitions.pl book [chapter=??] [margin=??] [numpts=??]\n";
   print "\n";
   print "Press the space bar when the reading begins. Playback will jump to\n";
-  print "the end of the audio file then press the spacebar when the reading\n";
-  print "stops. Playback will jump to before the 1st calculated page tran-\n";
+  print "the end of the chapter, then press the spacebar when the chapter read-\n";
+  print "ing ends. Playback will jump to before the 1st calculated page tran-\n";
   print "sition. Then press spacebar at the exact transition. Continue until\n";
   print "all pages are recorded. Use navigation keys below as needed:\n";
   print "\n";      
@@ -71,7 +71,6 @@ if ($MBK eq "") {
   exit;
 }
 
-print "\nRUNNING transitions.pl $MBK $MCH $MPG\n";
 require "$scriptdir/shared.pl";
 &readDataFiles();
 &readTransitionInformation();
@@ -80,6 +79,8 @@ if (!exists($books{$MBK})) {
   print "Unknown book: \"$MBK\", exiting...\n";
   exit;
 }
+
+print "\nRUNNING transitions.pl $MBK $firstChapter\n";
 
 use Term::ReadKey;
 ReadMode 4;
@@ -90,7 +91,7 @@ for ($MCH=$firstChapter; $quit ne "true" && $MCH <= $lastChapter{$MBK}; $MCH++) 
 
   # skip over any chapters which don't have audio
   $gotAudio = 1;
-  if (!$haveAudio{$MBK."-".$MCH) {print "\n\nSKIPPING non audio chapter $MCH\n\n";}
+  if (!$haveAudio{$MBK."-".$MCH}) {print "\n\nSKIPPING non audio chapter $MCH\n\n";}
   $done = 0;
   while (!$haveAudio{$MBK."-".$MCH}) {    
     if ($wchapter <= $MCH) {
@@ -114,11 +115,12 @@ for ($MCH=$firstChapter; $quit ne "true" && $MCH <= $lastChapter{$MBK}; $MCH++) 
   }
   if (!$gotAudio) {last;}
   $wchapter = $MCH;
-  
-  &audioPlay(0);
 
   $gotoNextChapter = "false";
   $MPG=0;
+  
+  &audioPlayPage($MPG);
+  
   while($quit ne "true" && $gotoNextChapter ne "true") {
     &doTimingAdjustment();
     &readDataFiles();
@@ -195,8 +197,7 @@ for ($MCH=$firstChapter; $quit ne "true" && $MCH <= $lastChapter{$MBK}; $MCH++) 
         print "\ntop of page\n";
         &audioStop();
         &doTimingAdjustment();
-        $tt = getCalcTime($MBK, $MCH, $MPG);
-        &audioPlay($tt);
+        &audioPlayPage($MPG)
         &showPageImage($MBK, $MCH, $MPG);
         &updateStatus("true"); 
       } 
@@ -340,6 +341,7 @@ for ($MCH=$firstChapter; $quit ne "true" && $MCH <= $lastChapter{$MBK}; $MCH++) 
       if ($MPG > $lastPage{"$MBK-$MCH"}) {$MPG = $lastPage{"$MBK-$MCH"};}
     }
   }
+  
   if ($MPG == $lastPage{$MBK."-".$MCH}) {print "\n\nCHAPTER COMPLETED...\n";}
 }
 $MCH--;
@@ -354,13 +356,15 @@ if (!-e "$indir/pageTiming.txt") {
   open(INF, "<$outaudiodir/pageTiming.tmp") || &DIE("Could not open $outaudiodir/pageTiming.tmp\n");
   open(OUTF, ">$indir/pageTiming.txt") || &DIE("Could not open $indir/pageTiming.txt\n");
   while(<INF>) {
-    if    ($_ =~ /^\s*([^-#]+-[^-]+-[\dse]+)\s*=/)
+	# capture all fixed timing parameters
+    if    ($_ =~ /^\s*([^-#]+-[^-]+-[\d\w]+)\s*=/)
     { 
       chomp;
       if (exists($allAT{$1})) {print sprintf("\n REMOVED:%.64s\nRETAINED:%.64s\n", $allAT{$1}, $_);} 
       $allAT{$1} = $_;
       next;
     }
+    # capture all text-locative parameters
     elsif ($_ =~ /^\s*([^-#]+-[^:]+:\d+)\s*=/) 
     {
       chomp;
@@ -411,14 +415,18 @@ sub updateStatus($) {
   my $p = $MPG;
   if ($p < 1) {
     $p = "s"; 
-    $v = &formatTime(&roundToNearestFrame($firstPageGap{$MBK."-".$MCH}), "short");
+    $v = &roundToNearestFrame($firstPageGap{$MBK."-".$MCH});
   }
   elsif ($p >= $lastPage{$MBK."-".$MCH}) {
     $p = "e"; 
-    $v = &formatTime(&roundToNearestFrame($Chapterlength{$MBK."-".$MCH} - $firstPageGap{$MBK."-".$MCH} - $ChapterReadlength{$MBK."-".$MCH}), "short");
+    $v = &roundToNearestFrame($Chapterlength{$MBK."-".$MCH} - $firstPageGap{$MBK."-".$MCH} - $ChapterReadlength{$MBK."-".$MCH});
   }
-  else {$v = &formatTime(&getCalcTime($MBK, $MCH, ($MPG+1)), "short");}
+  else {$v = &getCalcTime($MBK, $MCH, ($MPG+1));}
   if ($noret ne "true") {print "\n";}
+  
+  if (&isMultiChapter($MBK, $MCH)) {$v = &denormalizeMultiChapTime($MBK, $MCH, $v);}
+  
+  $v = &formatTime($v, "short");
   
   print sprintf("%-30s%19s%s\n", "", "CALCULATED TARGET: ", $v);
   print sprintf("%-30s%19s%s", "SPACEBAR==> $MBK-$MCH-$p", "REAL TIME: ", &formatTime(&roundToNearestFrame($cp), "short"));
@@ -441,7 +449,7 @@ sub saveTime($$) {
   my $posuf = $savezero ? 0:&audioGetTime();
     
   # normalize most times if this is multi-chap
-  if ($type ne "multi-chap-end" && &isMultiChapter($MBK, $MCH)) {
+  if ($type ne "multi-chap-end" && !$savezero && &isMultiChapter($MBK, $MCH)) {
     $posuf = &normalizeMultiChapTime($MBK, $MCH, $posuf);
   }
     
@@ -452,7 +460,7 @@ sub saveTime($$) {
   if    ($type eq "trans") {$en = "$MBK-$MCH-".($MPG+1);}
   elsif ($type eq "start") {$en = "$MBK-$MCH-s";}
   elsif ($type eq "end")   {$en = "$MBK-$MCH-e";}
-  elsif ($type eq "multi-chap-end")   {$en = "$MBK-$MCH-chs";}
+  elsif ($type eq "multi-chap-end")   {$en = "$MBK-".($MCH+1)."-chs";}
   my $entry = "$en = $pos";
 
   if (exists($pageTimingEntry{$en})) {
@@ -553,21 +561,25 @@ sub getCalcTime($$$$) {
 
 sub sortAT {
   my $bka = $allAT{$a};
-  $bka =~ /^([^-]+)-(\d+).*=\s*(\S+)/;
+  $bka =~ /^([^-]+)-(\d+)-([\d\w]+)\s*=\s*(\S+)/;
   $bka = $bkorder{$1};
   my $cha = $2;
-  my $ta = $3;
+  my $pa = $3;
+  my $ta = $4;
   
   my $bkb = $allAT{$b};
-  $bkb =~ /^([^-]+)-(\d+).*=\s*(\S+)/;
+  $bkb =~ /^([^-]+)-(\d+)-([\d\w]+)\s*=\s*(\S+)/;
   $bkb = $bkorder{$1};
   my $chb = $2;
-  my $tb = $3;
+  my $pb = $3;
+  my $tb = $4;
   
   my $r = $bka <=> $bkb;
   if ($r != 0) {return $r;}
   $r = $cha <=> $chb;
   if ($r != 0) {return $r;}
+  if ($pa eq "chs") {return -1;}
+  if ($pb eq "chs") {return 1;}
   return $ta cmp $tb;
 }
 
@@ -591,6 +603,8 @@ sub sortAV {
   return $ta cmp $tb;
 }
 
+# plays current audio file starting at $st seconds
+# does nothing if audio is already playing
 sub audioPlay($) {
   my $st = shift;
   if ($AudioPlaying) {return;}
@@ -602,8 +616,12 @@ sub audioPlay($) {
   &waitAndRefocus("(".quotemeta($f)."|FFplay)");
 }
 
+# plays audio starting from page $p of current audio file
+# does nothing if audio is already playing
 sub audioPlayPage($) {
   my $p = shift;
+  
+  if ($AudioPlaying) {return;}
   
   my $b = $MBK;
   my $c = $MCH; 
@@ -614,14 +632,17 @@ sub audioPlayPage($) {
     if ($pos < 0) {$pos = 0;}
   }
   elsif ($p == $lastPage{$b."-".$c}) {$pos = $Chapterlength{$b."-".$c} - 10;}
+ 
+  if (&isMultiChapter($b, $c)) {$pos = &denormalizeMultiChapTime($b, $c, $pos);}
   
-  if (&isMultiChapter($b, $ch)) {$pos = &denormalizeMultiChapTime($b, $ch, $pos);}
-  
-  my $dt = $pos - &audioGetTime();
+  my $at = &audioGetTime();
+  my $dt = $pos -$at;
   &audioPlay($pos);
   print "\n";
-  if ($dt > 5) {print sprintf("%-30s%19s%i s", "", "SKIPPING:", $dt);}
-  &updateStatus();
+  if ($at) {
+	if ($dt > 5) {print sprintf("%-30s%19s%i s", "", "SKIPPING:", $dt);}
+	&updateStatus();
+  }
   #print "Started $b-$c at $pos seconds in $p (".$lastPage{$b."-".$c}.")\n";  
 }
 
@@ -653,7 +674,7 @@ sub audioForward($) {
 sub audioGetTime() {
   my $tmp = "$outaudiodir/audiotmp";
   my $time = 0;
-  open(INF, "<$tmp/ffplay.txt") || &DIE("Could not read ffplay.txt\n");
+  open(INF, "<$tmp/ffplay.txt") || return 0;
   $f = <INF>;
   while($f =~ s/([\d\.]+) A\-V//) {$time = $1;}
   close(INF);
@@ -679,8 +700,9 @@ sub normalizeMultiChapTime($$$) {
   my $ch = shift;
   my $t = shift;
   
-  $offset = &multiChapOffset($bk, $ch);
-  $t = $t - $offset;
+  my $offset = &multiChapOffset($bk, $ch);
+  $t = ($t - $offset);
+  if ($t < 0) {$t = 0};
   
   return $t;
 }
@@ -689,9 +711,9 @@ sub denormalizeMultiChapTime($$$) {
   my $bk = shift;
   my $ch = shift;
   my $t = shift;
-  
-  $offset = &multiChapOffset($bk, $ch);
-  $t = $t + $offset;
+
+  my $offset = &multiChapOffset($bk, $ch);
+  $t = ($t + $offset);
   
   return $t;  
 }
