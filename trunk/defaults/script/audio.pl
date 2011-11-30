@@ -18,7 +18,7 @@
 
 # SCRIPT audio.pl creates the chapters.txt file which is used to time all audio pages.
 
-# If an audio file covers more than a single chapter, indir/multiChapterTiming.txt 
+# If an audio file covers more than a single chapter, indir/pageTiming.txt 
 # should provide the actual chapter lengths. Initial calculated values will not be 
 # accurate, but are useful as an aid to find the actual timing numbers.
 
@@ -48,28 +48,25 @@ foreach $k (sort keys %pageTimingFile) {
   print "pageTiming.txt: $k = ".$pageTimingFile{$k}."\n";
 }
 
-# READ multiChapterTiming.txt FILE
-if (-e "$indir/multiChapterTiming.txt") {
-  open(INF, "<$indir/multiChapterTiming.txt") || die "Could not open $indir/multiChapterTiming.txt\n";
-  while (<INF>) {
-    #Matt-2 = 00:02:57.96 3:21.254
-    if ($_ =~ /^(\S+)\s*=\s*\S+\s+(\S+)\s*$/) {
-      $c = $1;
-      $t = $2;
-      $t =~ s/\s*\#.*$//;
-      $multiChapTiming{$c} = &unformatTime($t, "noFrameCheck");
-    }
-  }
-  close(INF);
-}
-
 # FIND LENGTH OF CHAPTERS IN MULTI-CHAPTER FILES
 foreach $book (sort {$books{$a}<=>$books{$b}} keys %books) {
+  my $lastAudioFile = "";
+  my $chos = 0;
   for ($ch=1; $ch<=$lastChapter{$book}; $ch++) {
     if ($haveAudio{"$book-$ch"} eq "still") {next;}
-    if ($haveAudio{"$book-$ch"} !~ /^[^-]+-[^-]+-(\d+)-(\d+)\.ac3$/i) {next;}
-    $cs = (1*$1);
-    $ce = (1*$2);
+    elsif ($haveAudio{"$book-$ch"} =~ /^[^-]+-[^-]+-(\d+)-(\d+)\.ac3$/i || 
+           $haveAudio{"$book-$ch"} =~ /^[^-]+-[^-]+-(\d+):\d+-(\d+):\d+\.ac3$/i) {
+      $cs = (1*$1);
+      $ce = (1*$2);
+      # get offset from audio file's chapter to real chapter
+      if ($lastAudioFile ne $haveAudio{"$book-$ch"}) {
+        $chos = ($ch-$cs);
+        $lastAudioFile = $haveAudio{"$book-$ch"};
+      }
+      $cs = ($cs+$chos);
+      $ce = ($ce+$chos);   
+    }
+    else {next;}
     $totalfile = 0;
     $totalchapter = 0;      
     if (!(-e "$audiodir/".$haveAudio{$book."-".$ch})) {print "ERROR: No audio file found for $book-$ch\n"; die;}
@@ -102,7 +99,8 @@ foreach $book (sort {$books{$a}<=>$books{$b}} keys %books) {
 foreach $book (sort {$books{$a}<=>$books{$b}} keys %books) {
   for ($ch=1; $ch<=$lastChapter{$book}; $ch++) {
     if ($haveAudio{"$book-$ch"} eq "still") {next;}
-    if ($haveAudio{"$book-$ch"} =~ /^[^-]+-[^-]+-(\d+)-(\d+)\.ac3$/i) {next;}
+    if ($haveAudio{"$book-$ch"} =~ /^[^-]+-[^-]+-(\d+)-(\d+)\.ac3$/i || 
+        $haveAudio{"$book-$ch"} =~ /^[^-]+-[^-]+-(\d+):\d+-(\d+):\d+\.ac3$/i) {next;}
     if ($haveAudio{"$book-$ch"} eq "") {print "WARNING: \"haveAudio\" is undefined for $book-$ch. This may be a short non-audio chapter, or it may be a problem.\n"; next;}
 
     if (!(-e "$audiodir/".$haveAudio{$book."-".$ch})) {print "ERROR: No audio file found for $book-$ch\n"; die;}

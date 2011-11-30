@@ -47,6 +47,8 @@ $ffmpgVersion = $1;
 foreach $book (sort {$books{$a}<=>$books{$b}} keys %books) {
   `mkdir $videodir/$book`;
 
+  my $lastAudioFile = "";
+  my $chos = 0;
   for ($ch=0; $ch<=$lastChapter{$book}; $ch++) {
     if (!$chapters{"$book-$ch"}) {next;}
     print "Creating mpg for $book-$ch (".$haveAudio{"$book-$ch"}.")";
@@ -59,9 +61,19 @@ foreach $book (sort {$books{$a}<=>$books{$b}} keys %books) {
       $tlastchap = 0;
       $lastAudioPTS = 0;
       $gap = 0;
-      if ($haveAudio{"$book-$ch"} =~ /^[^-]+-[^-]+-(\d+)-(\d+)\.ac3$/i) {
+      
+      # set up for multi-chapter audio files if necesssary
+      if ($haveAudio{"$book-$ch"} =~ /^[^-]+-[^-]+-(\d+)-(\d+)\.ac3$/i ||
+          $haveAudio{"$book-$ch"} =~ /^[^-]+-[^-]+-(\d+):\d+-(\d+):\d+\.ac3$/i) {
         $cs = (1*$1);
         $ce = (1*$2);
+        # get offset from audio file's chapter to real chapter
+        if ($lastAudioFile ne $haveAudio{"$book-$ch"}) {
+          $chos = ($ch-$cs);
+          $lastAudioFile = $haveAudio{"$book-$ch"};
+        }
+        $cs = ($cs+$chos);
+        $ce = ($ce+$chos); 
         for ($c=$cs; $c<=$ce; $c++) {
           if ($c<$ch) {$multChapFileOFS = ($multChapFileOFS + $Chapterlength{$book."-".$c});}
           if ($c<=$ch) {$multChapEnd = ($multChapEnd + $Chapterlength{$book."-".$c});}
