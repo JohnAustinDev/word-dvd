@@ -510,6 +510,73 @@ sub makeSilentSlide($$) {
   `mplex -v $Verbosity -V -f 8 $videodir/videotmp/$leaf.m2v $resourcedir/blankaudio.ac3 -o $videodir/$subdir$leaf.mpg`
 }
 
+# returns 1 only if book and chapter has a multi-chapter audio file
+sub isMultiChapter($$) {
+  my $bk = shift;
+  my $ch = shift;
+  
+  if ($haveAudio{"$bk-$ch"} =~ /^[^-]+-[^-]+-(\d+)-(\d+)\.ac3$/i ||
+      $haveAudio{"$bk-$ch"} =~ /^[^-]+-[^-]+-(\d+):\d+-(\d+):\d+\.ac3$/i) {
+    return 1;
+  }
+  
+  return 0;
+}
+
+# returns time offset of a real chapter within its audio file
+# returns 0 for non-multi-chapter audio files
+sub multiChapOffset($$) {
+  my $bk = shift;
+  my $ch = shift;
+  
+  my $os = 0;
+  
+  if ($haveAudio{"$bk-$ch"} =~ /^[^-]+-[^-]+-(\d+)-(\d+)\.ac3$/i ||
+      $haveAudio{"$bk-$ch"} =~ /^[^-]+-[^-]+-(\d+):\d+-(\d+):\d+\.ac3$/i) {
+    my $cs = (1*$1);
+    my $ce = (1*$2);
+    
+    # convert audio file name chapters to real chapters
+    my $chos = &realChapterOffset($haveAudio{"$bk-$ch"});
+    $cs = ($cs+$chos);
+    $ce = ($ce+$chos);
+    
+    # calculate requested offset
+    for (my $c=$cs+1; $c<=$ce; $c++) {
+      if ($c<=$ch) {$os = ($os + $Chapterlength{$bk."-".($c-1)});}
+    }
+    
+    # round offset to nearest frame
+    my $f = $framesPS*$os;
+    my $framesRND = sprintf("%i", $f);
+    $os = ($framesRND/$framesPS);
+  }
+  else {return 0;}
+
+  return $os;
+}
+
+# returns chapter offset to real chapter from audio file name
+# returns -1 if it cannot be determined from the file name
+sub realChapterOffset($) {
+  my $f = shift;
+  
+  my $ret = -1;
+  if ($f =~ /^[^-]+-([^-]+)-(\d+)[-:].*?\.ac3$/i {
+    my $bk = $1;
+    my $cs = (1*$2);
+    
+    for (my $ch=1; $ch<=$lastChapter{$bk}; $ch++) {
+      if ($haveAudio{"$bk-$ch"} && $haveAudio{"$bk-$ch"} eq $f) {last;}
+    }
+    if ($ch <= $lastChapter{$bk}) {$ret = $ch - $cs;}
+  }
+  
+  if ($ret == -1) {print "ERROR: Indeterminate chapter offset \"$f\".\n";}
+  
+  return $ret;
+}
+
 sub readPTS($) {
 	my $f = shift;
 	my $lastPTS = -1;
