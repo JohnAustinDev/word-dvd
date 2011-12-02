@@ -72,6 +72,7 @@ if ($MBK eq "") {
 }
 
 require "$scriptdir/shared.pl";
+if (!-e "$outaudiodir") {&sys("mkdir \"$outaudiodir\"");}
 &readDataFiles();
 &readTransitionInformation();
 
@@ -761,6 +762,7 @@ sub sortPageTimingFile($) {
       if (exists($allAV{$1})) {print sprintf("\n REMOVED:%.64s\nRETAINED:%.64s\n", $allAV{$1}, $_);} 
       $allAV{$1} = $_;
     }
+    elsif ($_ =~ /^# INFO/) {next;}
     else {
       if ($_ =~ /^\s*$/) {
         if ($lastLineWasBlank eq "true") {next;}
@@ -775,14 +777,18 @@ sub sortPageTimingFile($) {
   
   open(OUTF, ">>$f") || &DIE("ERROR: Could not open $f!\n");
   foreach $k (sort sortAT keys %allAT) {
-    $allAT{$k} =~ /^\s*[^-]+-(\d+)[-:]/; $ch = $1;
-    if ($ch != $lch && $allAT{$k} !~ /-chs/) {print OUTF "\n";}
+    $allAT{$k} =~ /^\s*([^-]+)-(\d+)[-:]/; 
+    my $bk = $1; 
+    my $ch = (1*$2);
+    if ($ch != $lch && $allAT{$k} !~ /-chs/) {print OUTF "\n# INFO: Begin Chapter ".&internalChapter2Real($bk, $ch, 1)." (".$haveAudio{"$bk-$ch"}.")\n";}
     $lch = $ch;
     print OUTF "$allAT{$k}\n";
   }
   foreach $k (sort sortAV keys %allAV) {
-    $allAV{$k} =~ /^\s*[^-]+-(\d+)[-:]/; $ch = $1;
-    if ($ch != $lch) {print OUTF "\n";}
+    $allAV{$k} =~ /^\s*([^-]+)-(\d+)[-:]/; 
+    my $bk = $1; 
+    my $ch = (1*$2);
+    if ($ch != $lch) {print OUTF "\n# INFO: Chapter ".&internalChapter2Real($bk, $ch, 1)." (".$haveAudio{"$bk-$ch"}.")\n";}
     $lch = $ch;
     print OUTF "$allAV{$k}\n";
   }
