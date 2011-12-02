@@ -415,6 +415,7 @@ function initBookGlobals(skipIntroduction) {
     Chapter = 0;
     Page.passage = intro;
   }
+  Book[Bindex].overwriteStats = true;
   MainWin.logmsg("Rendering Pages for Book:" + Book[Bindex].shortName + "...");
 }
 
@@ -439,7 +440,7 @@ function renderNewScreen() {
   
   initWaitRenderDone(false, true);
   
-  RenderFrame.contentDocument.defaultView.fitScreen(Book[Bindex].shortName, Chapter, Page, skipPage1, skipPage2);
+  RenderFrame.contentDocument.defaultView.fitScreen(Book[Bindex].shortName, Chapter, SubChapters, Page, skipPage1, skipPage2);
     
   waitRenderDoneThenDo("screenDrawComplete()");
   
@@ -500,38 +501,75 @@ function stripHeaderFooter(html) {
 }
 
 // If a text block is empty then don't save an image for it, only data.
-// Each non-empty text block saves an image and data UNLESS the previous
-//   text block and the new text block are both non-audio, in which case, the new
-//   text block should be skipped entirely.
+// Each non-empty text block saves image and data UNLESS the previous 
+//   text block is non-audio, in which case, the new text block may be 
+//   skipped entirely.
 // Footnotes for an entire screen need to be saved only once.
 var ReportedAudioFiles = {};
+var ChapterStats = [];
 function saveScreenImage(bkobj, chapter, subchap, pagenumber, subchapters, screentext, pagecomplete) {
   var book = bkobj.shortName;
   var renderImages = !MainWin.document.getElementById("images").checked;
-  var imgfile, footNotesSaved;
+  var isAudio = false;
   
-  var tblock = {passage:screentext, beg:-1, end:0, inc:0, endtype:-1, hasAudio:-1};
+  // process this screen as a series of "text-blocks", each of which 
+  // may have data and an (identical) image associated with it
+  var tblock = {passage:screentext, beg:-1, end:0, inc:0, endtype:-1, hasAudio:null, chapter:chapter, subchap:subchap, subchapters:subchapters, pagenumber:pagenumber};
   
+  var tblocks = [];
   while (tblock.endtype != "screen-end") {
-		var lastAudio = tblock.hasAudio;
 		tblock.beg = tblock.end+tblock.inc;
-		setTextBlock(tblock, chapter, subchap, bkobj, (ILastPage == 0 && tblock.beg == 0));
-    tblock.inc = 1; // insure we don't  catch the same text-block twice
+		setTextBlock(tblock, tblock.chapter, tblock.subchap, bkobj, (ILastPage == 0 && tblock.beg == 0));
+ 
+    // copy and save tblock for another loop (so we can know the future there)
+    var copy = {};
+    for (var m in tblock) {copy[m] = tblock[m];}
+    tblocks.push(copy);
+    
+    isAudio |= (tblock.hasAudio ? true:false);
       
-		if (!imgfile || lastAudio || tblock.hasAudio) {
+    // prepare for next use of this image...
+    tblock.inc = 1; // insure we don't  catch the same text-block twice
+		tblock.pagenumber = 1;	  
+	  if (tblock.endtype == "chapter") {tblock.chapter++; tblock.subchap = 0;}
+		if (tblock.endtype == "subchap") {
+      if (!tblock.subchap) tblock.subchap = 1;
+      tblock.subchap++; 
+      tblock.subchapters++; 
+    }
+  }
+
+  // now re-loop, process and save image and data for tblock(s)
+  var imgfile, footNotesSaved;
+  var keepold = MainWin.getLocaleLiteral("NonAudioEndStop"); 
+  for (var i=0; i<tblocks.length; i++) {
+    var pagename = book + "-" + Number(tblocks[i].chapter + tblocks[i].subchapters) + "-" + tblocks[i].pagenumber;
+  
+    var keep1 = (tblocks[i].hasAudio ||  
+                (i > 0 && tblocks[i-1].hasAudio) || 
+                !imgfile); // OLD way
+                
+    var keep2 = (tblocks[i].hasAudio || 
+                (i > 0 && tblocks[i-1].hasAudio) || 
+                (!imgfile && !isAudio) ||
+                tblocks[i].pagenumber == 1); // NEW way
+                
+		if (keepold ? keep1:keep2) {
       // report audio file usage
-      if (tblock.hasAudio && !ReportedAudioFiles[tblock.hasAudio]) {
-        MainWin.logmsg("Utilizing audio file: " + tblock.hasAudio);
-        ReportedAudioFiles[tblock.hasAudio] = true;
+      if (tblocks[i].hasAudio && !ReportedAudioFiles[tblocks[i].hasAudio]) {
+        MainWin.logmsg("Utilizing audio file: " + tblocks[i].hasAudio);
+        ReportedAudioFiles[tblocks[i].hasAudio] = true;
         for (var k in CheckAudioFiles) {
-          if (CheckAudioFiles[k] == tblock.hasAudio) CheckAudioFiles[k] = "";
+          if (CheckAudioFiles[k] == tblocks[i].hasAudio) CheckAudioFiles[k] = "";
         }
       }
       
-      // save this text block info and its image
-      var pagename = book + "-" + Number(chapter + subchapters) + "-" + pagenumber;
-      var hasText = saveStats(pagename, screentext.substring(tblock.beg-1, tblock.end));
-      if (hasText) {
+      // save the page's info and image for this text block
+      var info = getStats(pagename, screentext.substring(tblocks[i].beg-1, tblocks[i].end), tblocks[i].hasAudio);
+//var t = "info\n"; for (var m in info) {t += m + "=" + info[m] + "\n";} MainWin.logmsg(t);
+
+      if (info) {
+        ChapterStats.push(info);
         if (renderImages) {
           if (!imgfile) imgfile = captureImage(pagename, ISTEXTIMAGE);
           else imgfile.copyTo(null, pagename + "." + imgfile.leafName.match(/\.(.*)$/)[1]);
@@ -541,35 +579,29 @@ function saveScreenImage(bkobj, chapter, subchap, pagenumber, subchapters, scree
       }
 		}
     
-		// save chapter info when a chapter is finished
-		if (tblock.endtype == "chapter" || tblock.endtype == "subchap"  || (tblock.endtype == "screen-end" && pagecomplete)) 
-			writeStats(pagename, tblock.hasAudio);
-		
-		// prepare for next use of this image...
-		pagenumber = 1;	  
-	  if (tblock.endtype == "chapter") {chapter++; subchap = 0;}
-		if (tblock.endtype == "subchap") {
-      if (!subchap) subchap = 1;
-      subchap++; 
-      subchapters++; 
+    // save previous chapter info anytime a chapter is finished
+		if (tblocks[i].endtype == "chapter" || tblocks[i].endtype == "subchap"  || (tblocks[i].endtype == "screen-end" && pagecomplete)) {
+			writeStats(book, ChapterStats, bkobj.overwriteStats);
+      ChapterStats = [];
+      bkobj.overwriteStats = false;
     }
   }
 	  
-  return {chapter:chapter, subchap:subchap, subchapters:subchapters};
+  return {chapter:tblock.chapter, subchap:tblock.subchap, subchapters:tblock.subchapters};
 }
 
-function setTextBlock(tblock, ch, subch, bkobj, skiptag) {
+function setTextBlock(tblock, ch, subch, bkobj, skipFirstChtag) {
   // does a new chapter start on this page?
   var nch = tblock.passage.substr(tblock.beg).indexOf(MainWin.NEWCHAPTER);
   if (nch != -1) nch += tblock.beg;
 
   // chapter 0 and 1 chapter tags should get skipped
-  if (skiptag) {
+  if (skipFirstChtag) {
     var nch2 = tblock.passage.substr(nch+1).indexOf(MainWin.NEWCHAPTER);
     if (nch2 != -1) nch2 += nch+1;
     nch = nch2;
   }
-  
+
   var scs = getSubChapterInfo(bkobj, ch);
     
   // if this is a new chapter, check if subchapters exist
@@ -581,7 +613,7 @@ function setTextBlock(tblock, ch, subch, bkobj, skiptag) {
     if (scs[subch]) {
       if (scs[subch].ve == -1) nsc = nch; 
       else if (!scs[subch+1]) 
-          MainWin.logmsg("ERROR: Missing last subchapter after: bk=" + bkobj.shortName + ", ch=" + ch + ", subch=" + subch);
+          MainWin.logmsg("ERROR: Missing last subchapter after: bk=" + bkobj.shortName + ", ch=" + Number(ch+SubChapters) + ", subch=" + subch);
       else {
         var re1 = new RegExp("(" + MainWin.NEWVERSERE + ")", "gim");
         var re2 = new RegExp(MainWin.VERSENUMBER, "i");
@@ -605,18 +637,18 @@ function setTextBlock(tblock, ch, subch, bkobj, skiptag) {
             var pve = new RegExp("(" + MainWin.escapeRE(INDENT) + "|<div[^>]*>.*?<\\/div>|<br>|\\s)+" + MainWin.escapeRE(versetags[i]), "im");
             pve = tblock.passage.substr(tblock.beg-tblock.inc).search(pve); // -tblock.inc allows back-search all the way to text-block's beginning
             if (pve != -1) nsc = pve;
-            nsc += (tblock.beg-1);
+            nsc += (tblock.beg-tblock.inc);
           }
         }
         
         // check for missing subchapters
         if (nch != -1 && (nch <= nsc || nsc===null || nsc == -1)) {
-          MainWin.logmsg("ERROR: Could not find start of subchapter in text: bk=" + bkobj.shortName + ", ch=" + ch + ", subch=" + Number(subch+1) + ", start-verse=" + scs[subch+1].vs);
+          MainWin.logmsg("ERROR: Could not find start of subchapter in text: bk=" + bkobj.shortName + ", ch=" + Number(ch+SubChapters) + ", subch=" + Number(subch+1) + ", start-verse=" + scs[subch+1].vs);
           nsc = null;
         }
       }
     }
-    else MainWin.logmsg("ERROR: Subchapter requested, but it does not exist: bk=" + bkobj.shortName + ", ch=" + ch + ", subch=" + subch);
+    else MainWin.logmsg("ERROR: Subchapter requested, but it does not exist: bk=" + bkobj.shortName + ", ch=" + Number(ch+SubChapters) + ", subch=" + subch);
   }
   
   // set return values...
@@ -628,7 +660,7 @@ function setTextBlock(tblock, ch, subch, bkobj, skiptag) {
     tblock.endtype = "screen-end";
   }
   else tblock.endtype = (nsc !== null && nsc != -1 && nsc != nch ? "subchap":"chapter");
-//MainWin.logmsg("setTextBlock: beg=" + tblock.beg + ", end=" + tblock.end + ", endtype=" + tblock.endtype + ", hasAudio=" + tblock.hasAudio);
+//var p = "tblock:\n"; for (var m in tblock) {p += "\t\t" + m + " = " + tblock[m] + "\n";} MainWin.logmsg(p);
 }
 
 // Recognizable audio file name patterns are as follows:
@@ -714,7 +746,7 @@ function getAudioFile(book, chapter, index) {
 	return (AudioFiles[book + "-" + chapter + "-" + index] ? AudioFiles[book + "-" + chapter + "-" + index]:null);  
 }
 
-// parses audio file names and returns an object with coverage information
+// parses all audio file names and returns an object with complete coverage information
 // does sanity checking and reporting as well
 function getAudioFileCoverage(filename) {
   var AudioFileRE1 = new RegExp(/^([^-]+)-([^-]+)-(\d+):(\d+)-(\d+):(\d+)\.ac3$/);
@@ -894,6 +926,8 @@ function getSubChapterInfo(bkobj, ch) {
     
     if (subchapinfo[subchapinfo.length-1].ve != -1) subchapinfo.push({vs:(tsc.ve+1), ve:-1, hasAudio:null});
   }
+
+//for (var i=1; i<subchapinfo.length; i++) {for (var m in subchapinfo[i]) {MainWin.logmsg("1: subchapinfo[" + i + "]." + m + " = " + subchapinfo[i][m]);}} 
  
   return subchapinfo;
 }
@@ -942,26 +976,30 @@ function captureImage(imageName, imageType, returnFun) {
   return imgfile;
 }
 
-// Saves listing file and transition file information for each page.
+// Returns listing file and transition file information for each page.
 // AFTER a chapter is completed, writeStats is called so that all information 
 // for that chapter is recorded into the listing and transitions files.
-var ChapterStats = [];
-function saveStats(pagename, textblock) {
+function getStats(pagename, textblock, hasAudio) {
   var parts = pagename.split("-");
   var book = parts[0];
   var chapter = Number(parts[1]);
   var pagenumber = Number(parts[2]);
-  var hasChapterText = false;
+  
+  // create an object to save all page's info
   var info = new Object();
+  info.hasAudio = (hasAudio ? hasAudio:"still");
+  info.name = pagename;
+  
   calculateReadingLength(info, textblock, MainWin.getLocaleString("LangCode"), book, chapter);
+  
   if (info.len>=1) {
-	  hasChapterText = true;
     if (textblock.search("class=\"majorquote\"") != -1) MainWin.logmsg("Found class=\"majorquote\" on " + pagename);
-    info["name"] = pagename;
+
+    // find transition text to be added to transition file
     var lastVerse = textblock;
     var lvi = lastVerse.lastIndexOf("<sup>");
     if (lvi != -1) {
-	  lastVerse = lastVerse.substr(lvi);
+      lastVerse = lastVerse.substr(lvi);
       var re = new RegExp("<sup>\\s*(\\d+)([\\s-]+\\d+)?\\s*<\/sup>(.*)");
       if (lastVerse) lastVerse = lastVerse.match(re);
       if (!lastVerse) {
@@ -972,58 +1010,58 @@ function saveStats(pagename, textblock) {
     }
     else info["trans"] = "last_page\n";
     
+    // find pageTiming.txt text-locative timings assocaited with this page to be added to listing file
     var prop = "vt_" + book + "_" + chapter;
-    if (VerseTiming[prop]) {
+    if (hasAudio && VerseTiming[prop]) {
       for (var i=0; i<VerseTiming[prop].length; i++) {
         if (VerseTiming[prop][i]) appendVerseTimingInfo(i, textblock, info, VerseTiming[prop]);        
       }
     }
-    ChapterStats.push(info);
   }
   
-  return hasChapterText;
+  return (info.len ? info:null);
 }
 
-function writeStats(pagename, hasAudio) {
-	var parts = pagename.split("-");
-  var book = parts[0];
-  var chapter = Number(parts[1]);
-  var pagenumber = Number(parts[2]);
+function writeStats(book, chapterstats, overwrite) {
+  // get chapter totals
+  var total = 0;
+	for (var i=0; i<chapterstats.length; i++) {total += chapterstats[i].len;}
   
-	var total = 0;
-	var statstring = "";
+  // create string to write to files
+  var statstring = "";
 	var transtring = "";
-	for (var i=0; i<ChapterStats.length; i++) {total += ChapterStats[i].len;}
-	for (i=0; i<ChapterStats.length; i++) {
-		statstring += formatStatString(ChapterStats[i], total, hasAudio);
-		if (hasAudio && ChapterStats[i].a) statstring += formatStatString(ChapterStats[i].a, total, hasAudio);
-		if (hasAudio && ChapterStats[i].b) statstring += formatStatString(ChapterStats[i].b, total, hasAudio);
-		transtring += ChapterStats[i].trans;
+	for (i=0; i<chapterstats.length; i++) {
+		statstring += formatStatString(chapterstats[i], total);
+		if (chapterstats[i].a) statstring += formatStatString(chapterstats[i].a, total);
+		if (chapterstats[i].b) statstring += formatStatString(chapterstats[i].b, total);
+    
+		transtring += chapterstats[i].trans;
 	}
+  
+  // write the book's listing file
 	var file = MainWin.StatsFile.clone();
 	file.append(book + ".csv");
 	if (!file.exists()) MainWin.write2File(file, "#Page,Chapter Fraction,Audio File,Number of Titles,Absolute Length,Absolute Time\n", true);
-	else if (file.exists() && (chapter == 0 || (chapter == 1 && !getPassage(book, true)))) {
+	else if (file.exists() && overwrite) { //(chapter == 0 || (chapter == 1 && !getPassage(book, true)))) {
 		file.remove(false);
 		MainWin.write2File(file, "#Page,Chapter Fraction,Audio File,Number of Titles,Absolute Length,Absolute Time\n", true);
 	}
 	MainWin.write2File(file, statstring, true);
 	
+  // write the book's transitions file
 	file = MainWin.TransFile.clone();
 	file.append(book + "-trans.csv");
-	if (!file.exists()) MainWin.write2File(file, "#Page,Verse,Transition\n", true);
-	if (file.exists() && (chapter == 0 || (chapter == 1 && !getPassage(book, true)))) {
+	if (!file.exists()) MainWin.write2File(file, "#Page,Verse,Transition Location\n", true);
+	if (file.exists() && overwrite) { //(chapter == 0 || (chapter == 1 && !getPassage(book, true)))) {
 		file.remove(false);
 		MainWin.write2File(file, "#Page,Verse,Transition Location\n", true);
 	}
 	MainWin.write2File(file, transtring, true);
-	
-	ChapterStats = [];
 }
 
-function formatStatString(s, total, hasAudio) {
+function formatStatString(s, total) {
   var rellen = Number(Math.round(10000000*s.len/total)/10000000);
-  return s.name + ", " + rellen + ", " + (hasAudio ? hasAudio:"still") + ", " + s.numtitles + ", " + s.len + (s.realtime ? ", " + s.realtime:"") + "\n"; 
+  return s.name + ", " + rellen + ", " + s.hasAudio + ", " + s.numtitles + ", " + s.len + (s.realtime ? ", " + s.realtime:"") + "\n"; 
 }
 
 // looks for the verse tag of instance "i" from "vt" and if it's found 
@@ -1047,7 +1085,8 @@ function appendVerseTimingInfo(i, stxt, info, vt) {
     info[subo].name = vt[i].book + "-" + vt[i].chapter + ":" + vt[i].verse;     
     info[subo].realtime = vt[i].realtime;          
     info[subo].numtitles = ni.numtitles;                  
-    info[subo].len = ni.len;                            
+    info[subo].len = ni.len;
+    info[subo].hasAudio = info.hasAudio;                            
     vt[i] = null;                                                                                                   
   }                           
 }
@@ -1241,7 +1280,7 @@ function renderNewFNScreen() {
   initWaitRenderDone(false, true);
 
   var tstart = Page.end;
-  RenderFrame.contentDocument.defaultView.fitScreen(Book[Bindex].shortName, Chapter, Page, false, false);
+  RenderFrame.contentDocument.defaultView.fitScreen(Book[Bindex].shortName, Chapter, 0, Page, false, false);
 
   // couldn't fit this last page, so start new page with it...
   if (!ContinuePage && !Page.complete) {

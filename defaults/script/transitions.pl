@@ -82,20 +82,28 @@ if (!exists($books{$MBK})) {
 
 print "\nRUNNING transitions.pl $MBK $firstChapter\n";
 
+# backup our pageTiming.txt file
+&sys("cp -f \"$indir/pageTiming.txt\" \"$outaudiodir/pageTiming.txt\"");
+
+# remove ffmpeg time file so it doesn't mess initial time up
+if (-e "$outaudiodir/audiotmp") {&sys("rm \"$outaudiodir/audiotmp\"");}
+
 use Term::ReadKey;
 ReadMode 4;
 
 $quit = "false";
+$firstChapter = &realChapter2Internal($MBK, $firstChapter);
+if ($firstChapter == -1) {$firstChapter = 1;}
 $wchapter = $firstChapter;
 for ($MCH=$firstChapter; $quit ne "true" && $MCH <= $lastChapter{$MBK}; $MCH++) {
 
   # skip over any chapters which don't have audio
   $gotAudio = 1;
-  if (!$haveAudio{$MBK."-".$MCH}) {print "\n\nSKIPPING non audio chapter $MCH\n\n";}
+  if ($haveAudio{$MBK."-".$MCH} eq "still") {print "\n\nSKIPPING non audio chapter $MCH\n\n";}
   $done = 0;
-  while (!$haveAudio{$MBK."-".$MCH}) {    
+  while ($haveAudio{$MBK."-".$MCH} eq "still") {    
     if ($wchapter <= $MCH) {
-      $MCH = ($MCH - 1);
+      $MCH = ($MCH + 1);
       if ($MCH == $lastChapter{$MBK}) {
         if ($done) {$gotAudio = 0; last;}
         $done++;
@@ -119,7 +127,7 @@ for ($MCH=$firstChapter; $quit ne "true" && $MCH <= $lastChapter{$MBK}; $MCH++) 
   $gotoNextChapter = "false";
   $MPG=0;
   
-  &audioPlayPage($MPG);
+  &audioPlayPage("start", $MPG);
   
   while($quit ne "true" && $gotoNextChapter ne "true") {
     &doTimingAdjustment();
@@ -132,7 +140,7 @@ for ($MCH=$firstChapter; $quit ne "true" && $MCH <= $lastChapter{$MBK}; $MCH++) 
       print "************* LAST PAGE **************\n\n";
     }
      
-    if (!$AudioPlaying) {&audioPlayPage($MPG);}
+    if (!$AudioPlaying) {&audioPlayPage("end", $MPG);}
     else {&updateStatus();}
     &showPageImage($MBK, $MCH, $MPG);
     $gotoNextPage = "false";
@@ -154,7 +162,7 @@ for ($MCH=$firstChapter; $quit ne "true" && $MCH <= $lastChapter{$MBK}; $MCH++) 
         if ($MPG == 0) {&saveTime("start");}
         elsif ($MPG == $lastPage{$MBK."-".$MCH}) {
           &saveTime("end");
-          if (&isMultiChapter($MBK, $MCH) && $MCH < $lastChapter{$MBK}) {
+          if (&isMultiChapter($MBK, $MCH) && $MCH < &audioFileInternalLastChapter($haveAudio{$MBK."-".$MCH})) {
             &saveTime("multi-chap-end");
           }
         }
@@ -175,7 +183,7 @@ for ($MCH=$firstChapter; $quit ne "true" && $MCH <= $lastChapter{$MBK}; $MCH++) 
         if ($MPG == 0) {&saveTime("start");}
         elsif ($MPG == $lastPage{$MBK."-".$MCH}) {
           &saveTime("end");
-          if (&isMultiChapter($MBK, $MCH) && $MCH < $lastChapter{$MBK}) {
+          if (&isMultiChapter($MBK, $MCH) && $MCH < &audioFileInternalLastChapter($haveAudio{$MBK."-".$MCH})) {
             &saveTime("multi-chap-end");
           }
         }
@@ -197,9 +205,9 @@ for ($MCH=$firstChapter; $quit ne "true" && $MCH <= $lastChapter{$MBK}; $MCH++) 
         print "\ntop of page\n";
         &audioStop();
         &doTimingAdjustment();
-        &audioPlayPage($MPG)
+        &audioPlayPage("start", $MPG);
         &showPageImage($MBK, $MCH, $MPG);
-        &updateStatus("true"); 
+        &updateStatus(); 
       } 
 
       # go back to last page ( b )
@@ -229,7 +237,7 @@ for ($MCH=$firstChapter; $quit ne "true" && $MCH <= $lastChapter{$MBK}; $MCH++) 
       elsif ($res eq "7" && $gtnum ne "") {
         if ($debug) {print "\nKEYBOARD=$res (Go to chapter $gtnum)\n";}
         print "\ngoto chapter $gtnum.\n";
-        $MCH = $gtnum;
+        $MCH = &realChapter2Internal($MBK, $gtnum);
         if ($MCH < 1) {$MCH = 1;}
         if ($MCH > $lastChapter{$MBK}) {$MCH = $lastChapter{$MBK};}
         $gotoNextPage = "true"; 
@@ -264,7 +272,7 @@ for ($MCH=$firstChapter; $quit ne "true" && $MCH <= $lastChapter{$MBK}; $MCH++) 
         if ($debug) {print "\nKEYBOARD=$res (Rewind $rewind seconds)\n";}
         print "\nrewind $rewind s.\n";
         &audioRewind($rewind);
-        &updateStatus("true");
+        &updateStatus();
       }
       
       # forward ( right-arrow | f )
@@ -272,7 +280,7 @@ for ($MCH=$firstChapter; $quit ne "true" && $MCH <= $lastChapter{$MBK}; $MCH++) 
         if ($debug) {print "\nKEYBOARD=$res (Forward $forward seconds)\n";}
         print "\nforward $forward s.\n";
         &audioForward($forward);
-        &updateStatus("true");
+        &updateStatus();
       }
 
       # rewind 4 s ( ctrl+left-arrow | ctrl+r )
@@ -280,7 +288,7 @@ for ($MCH=$firstChapter; $quit ne "true" && $MCH <= $lastChapter{$MBK}; $MCH++) 
         if ($debug) {print "\nKEYBOARD=$res (Rewind 4 seconds)\n";}
         print "\nrewind 4 s.\n"; 
         &audioRewind(4);
-        &updateStatus("true");
+        &updateStatus();
       }
       
       # forward 4 s ( ctrl+right-arrow | ctrl+f )
@@ -288,7 +296,7 @@ for ($MCH=$firstChapter; $quit ne "true" && $MCH <= $lastChapter{$MBK}; $MCH++) 
         if ($debug) {print "\nKEYBOARD=$res (Forward 4 seconds)\n";}
         print "\nforward 4 s.\n";
         &audioForward(4);
-        &updateStatus("true");
+        &updateStatus();
       }
             
       # pause ( p )
@@ -304,13 +312,13 @@ for ($MCH=$firstChapter; $quit ne "true" && $MCH <= $lastChapter{$MBK}; $MCH++) 
           &audioPlay($PauseTime);
           $PauseTime=0;
         }
-        &updateStatus("true");
+        &updateStatus();
       }
       
       # status ( z )
       elsif ($res eq "122") {
         if ($debug) {print "\nKEYBOARD=$res (Show status)\n";}
-        &updateStatus("true");
+        &updateStatus();
       }
       
       elsif ($debug) {print "\nKEYBOARD=$res (Unknown command)\n";}
@@ -324,10 +332,16 @@ for ($MCH=$firstChapter; $quit ne "true" && $MCH <= $lastChapter{$MBK}; $MCH++) 
     &audioStop();
     
     # new entries follow a different flow than navigation commands
+    my $gotoNextCH = 0;
     if ($newEntry eq "true") {
-      if    ($MPG == 1) {$MPG = $lastPage{"$MBK-$MCH"};}
-      elsif ($MPG > $lastPage{"$MBK-$MCH"}) {$MPG = 1;}
-      elsif ($MPG == $lastPage{"$MBK-$MCH"}) {
+      if ($MPG == 1) {$MPG = $lastPage{"$MBK-$MCH"};}
+      elsif ($MPG > $lastPage{"$MBK-$MCH"}) {
+        if ($lastPage{"$MBK-$MCH"} == 1) {$gotoNextCH = 1;}
+        else {$MPG = 1;}
+      }
+      elsif ($MPG == $lastPage{"$MBK-$MCH"}) {$gotoNextCH = 1;}
+      
+      if ($gotoNextCH) {
         print "\n\nMove on to the next chapter? (y/n):";
         while (!defined($res = ReadKey(-1))) {}
         getKeyCode($res); # insure key is completely read
@@ -351,52 +365,7 @@ print "\n\nexiting...\n";
 &sys("pkill -9 eog");
 
 # Clean and sort the pageTiming.txt file
-&sys("mv -f \"$indir/pageTiming.txt\" \"$outaudiodir/pageTiming.tmp\"");
-if (!-e "$indir/pageTiming.txt") {
-  open(INF, "<$outaudiodir/pageTiming.tmp") || &DIE("Could not open $outaudiodir/pageTiming.tmp\n");
-  open(OUTF, ">$indir/pageTiming.txt") || &DIE("Could not open $indir/pageTiming.txt\n");
-  while(<INF>) {
-	# capture all fixed timing parameters
-    if    ($_ =~ /^\s*([^-#]+-[^-]+-[\d\w]+)\s*=/)
-    { 
-      chomp;
-      if (exists($allAT{$1})) {print sprintf("\n REMOVED:%.64s\nRETAINED:%.64s\n", $allAT{$1}, $_);} 
-      $allAT{$1} = $_;
-      next;
-    }
-    # capture all text-locative parameters
-    elsif ($_ =~ /^\s*([^-#]+-[^:]+:\d+)\s*=/) 
-    {
-      chomp;
-      if (exists($allAV{$1})) {print sprintf("\n REMOVED:%.64s\nRETAINED:%.64s\n", $allAV{$1}, $_);} 
-      $allAV{$1} = $_;
-      next;
-    }
-    
-    if ($_ =~ /^\s*$/ && $lastLineWasBlank eq "true") {next;}
-    elsif ($_ =~ /^\s*$/) {$lastLineWasBlank = "true";}
-    else {$lastLineWasBlank = "false";}
-    print OUTF $_;
-  }
-  close(INF);
-  close(OUTF);
-  
-  open(OUTF, ">>$indir/pageTiming.txt");
-  foreach $k (sort sortAT keys %allAT) {
-    $allAT{$k} =~ /^\s*[^-]+-(\d+)[-:]/; $ch = $1;
-    if ($ch != $lch) {print OUTF "\n";}
-    $lch = $ch;
-    print OUTF "$allAT{$k}\n";
-  }
-  foreach $k (sort sortAV keys %allAV) {
-    $allAV{$k} =~ /^\s*[^-]+-(\d+)[-:]/; $ch = $1;
-    if ($ch != $lch) {print OUTF "\n";}
-    $lch = $ch;
-    print OUTF "$allAV{$k}\n";
-  }
-  close(OUTF);
-}
-else {print "WARNING: Could not sort pageTiming.txt\n";}
+&sortPageTimingFile("$indir/pageTiming.txt");
 
 if (!$debug && -e "$outaudiodir/audiotmp") {&sys("rm -r -f \"$outaudiodir/audiotmp\"");}
 
@@ -408,34 +377,41 @@ sub doTimingAdjustment() {
   &sys("\"$scriptdir/audio.pl\" \"$scriptdir\" \"$IDR\" \"$ODR\" \"$ADR\"");
 }
 
-sub updateStatus($) {
-  my $noret = shift;
-  my $cp = &audioGetTime();
+sub updateStatus() {
+  my $cp = &audioGetTime(1);
+
+  my $targr = "$MBK ".&internalChapter2Real($MBK, $MCH).": ";
+  my $targi = "$MBK-$MCH-";
+    
   my $v;
-  my $p = $MPG;
-  if ($p < 1) {
-    $p = "s"; 
-    $v = &roundToNearestFrame($firstPageGap{$MBK."-".$MCH});
+  if ($MPG < 1) {
+    $targr .= "READING START";
+    $targi .= "s"; 
+    $v = $firstPageGap{$MBK."-".$MCH};
   }
-  elsif ($p >= $lastPage{$MBK."-".$MCH}) {
-    $p = "e"; 
-    $v = &roundToNearestFrame($Chapterlength{$MBK."-".$MCH} - $firstPageGap{$MBK."-".$MCH} - $ChapterReadlength{$MBK."-".$MCH});
+  elsif ($MPG >= $lastPage{$MBK."-".$MCH}) {
+    $targr .= "READING END";
+    $targi .= "e"; 
+    $v = $Chapterlength{$MBK."-".$MCH} - $firstPageGap{$MBK."-".$MCH};
   }
-  else {$v = &getCalcTime($MBK, $MCH, ($MPG+1));}
-  if ($noret ne "true") {print "\n";}
-  
-  if (&isMultiChapter($MBK, $MCH)) {$v = &denormalizeMultiChapTime($MBK, $MCH, $v);}
-  
-  $v = &formatTime($v, "short");
-  
-  print sprintf("%-30s%19s%s\n", "", "CALCULATED TARGET: ", $v);
-  print sprintf("%-30s%19s%s", "SPACEBAR==> $MBK-$MCH-$p", "REAL TIME: ", &formatTime(&roundToNearestFrame($cp), "short"));
+  else {
+    $targr .= "PAGE END";
+    $targi .= ($MPG+1);
+    $v = &getCalcTime($MBK, $MCH, ($MPG+1));
+  }
+    
+  $v  = &formatTime(&roundToNearestFrame($v), "short");
+  $cp = &formatTime(&roundToNearestFrame($cp), "short");
+
+  print "\n";
+  print sprintf("%-30s%19s%s\n", $targr, "CALCULATED TARGET: ", $v);
+  print sprintf("%-30s%19s%s", "SPACEBAR==> ".$targi, "REAL TIME: ", $cp, "short");
 }
 
 sub updateTime() {
     my $t = time;
     if ($LastTimeCheck && $LastTimeCheck != $t) {
-      my $cp = &audioGetTime();
+      my $cp = &audioGetTime(1);
       print "\b\b\b\b\b";
       print &formatTime(&roundToNearestFrame($cp), "short");  
     }
@@ -446,15 +422,9 @@ sub saveTime($$) {
   my $type = shift;
   my $savezero = shift;
   
-  my $posuf = $savezero ? 0:&audioGetTime();
-    
-  # normalize most times if this is multi-chap
-  if ($type ne "multi-chap-end" && !$savezero && &isMultiChapter($MBK, $MCH)) {
-    $posuf = &normalizeMultiChapTime($MBK, $MCH, $posuf);
-  }
+  my $posuf = $savezero ? 0:&audioGetTime($type ne "multi-chap-end");
     
   my $pos = &formatTime(&roundToNearestFrame($posuf));
-  print "= $pos\n\n\n";
   
   my $en = "";
   if    ($type eq "trans") {$en = "$MBK-$MCH-".($MPG+1);}
@@ -463,10 +433,11 @@ sub saveTime($$) {
   elsif ($type eq "multi-chap-end")   {$en = "$MBK-".($MCH+1)."-chs";}
   my $entry = "$en = $pos";
 
+  print "\n\n";
   if (exists($pageTimingEntry{$en})) {
     &audioStop();
-    print "PAGETIMING FILE:   \"".$pageTimingEntry{$en}."\"\n";
-    print "SAVE ENTRY?        \"$entry\"  ?(y/n):";
+    print sprintf("IN PAGETIMING.TXT FILE: %s\n", $pageTimingEntry{$en});
+    print sprintf("EXISTS! SAVE NEW ENTRY: %s ?(y/n):",$entry);
     my $res;
     while (!defined($res = ReadKey(-1))) {} # playback starts during ReadKey (???)
     getKeyCode($res); # insure key is completely read
@@ -476,6 +447,42 @@ sub saveTime($$) {
       return;
     }
   }
+  
+  # if this is "multi-chap-end", all chapter values must be checked and possibly updated
+  if ($type eq "multi-chap-end") {
+    my %entries;
+    my $needed = 0;
+    my $delta = &roundToNearestFrame(&multiChapTimeOffset($MBK, ($MCH+1)) - $posuf); # to be added to original time
+    my $m = quotemeta($MBK."-".($MCH+1));
+    for my $fen (sort keys %pageTimingEntry) {
+      if ($fen !~ /^$m[\-:]/) {next;}
+      if ($fen =~ /^$m\-chs/) {next;}
+      $needed = 1;
+      $entries{$fen} = $delta;
+    }
+    for my $fen (keys %entries) {
+      print "UPDATE NEEDED: $fen ".($entries{$fen} > 0 ? "+":"").$entries{$fen}." s.\n";
+    }
+    if ($needed) {
+      &audioStop();
+      print "\nMAKE THESE UPDATES? (y/n):";
+      my $res;
+      while (!defined($res = ReadKey(-1))) {} # playback starts during ReadKey (???)
+      getKeyCode($res); # insure key is completely read
+      print "\n$res";
+      if ($res =~ /^y$/i) {
+        print "\nUpdating entries...\n";
+        &updateEntriesBy("$indir/pageTiming.txt", \%entries);
+        print "Finished updating entries.\n\n";    
+      }
+      else {
+        print "\nNOT UPDATING! The values above may now be incorrect!\nPress any key to continue...\n\n";
+        my $res;
+        while (!defined($res = ReadKey(-1))) {} # playback starts during ReadKey (???)
+        getKeyCode($res); # insure key is completely read
+      }
+    }
+  }
 
   open(INF, ">>$indir/pageTiming.txt") || &DIE("Could not open $indir/pageTiming.txt\n");
   if (!defined($hasRT)) {print INF "\n"; $hasRT = "true";}     
@@ -483,11 +490,11 @@ sub saveTime($$) {
     my $trans = $transitionVerse{"$MBK-$MCH-$MPG"};
     $trans =~ s/ValuE/$pos/;
     print INF "$trans\n";
-    print ">>".sprintf("%.64s...\n", $trans);
+    print sprintf(">> %.64s...\n", $trans);
   }
   elsif ($MPG > 0 && $MPG < $lastPage{"$MBK-$MCH"}) {print "\nWARNING!! No verse data available for \"$MBK-$MCH-$MPG\"\n\n";}
   print INF "$entry\n";
-  print ">>$entry\n";
+  print ">> $entry\n";
   if ($type eq "trans") {
     my $tdel = $posuf - &getCalcTime($MBK, $MCH, ($MPG+1));
     print "\nTRANSITION DELTA:".sprintf("%2.2f\n", $tdel);
@@ -559,6 +566,7 @@ sub getCalcTime($$$$) {
   else {return &unformatTime($chaps[($p-1)]);}
 }
 
+my %allAT;
 sub sortAT {
   my $bka = $allAT{$a};
   $bka =~ /^([^-]+)-(\d+)-([\d\w]+)\s*=\s*(\S+)/;
@@ -583,6 +591,7 @@ sub sortAT {
   return $ta cmp $tb;
 }
 
+my %allAV;
 sub sortAV {
   my $bka = $allAV{$a};
   $bka =~ /^([^-]+)-(\d+).*=\s*(\S+)/;
@@ -607,6 +616,7 @@ sub sortAV {
 # does nothing if audio is already playing
 sub audioPlay($) {
   my $st = shift;
+  if ($st < 0) {$st = 0;}
   if ($AudioPlaying) {return;}
   $tmp = "$outaudiodir/audiotmp";
   if (!-e "$tmp") {&sys("mkdir \"$tmp\"");}
@@ -618,7 +628,8 @@ sub audioPlay($) {
 
 # plays audio starting from page $p of current audio file
 # does nothing if audio is already playing
-sub audioPlayPage($) {
+sub audioPlayPage($$) {
+  my $t = shift;
   my $p = shift;
   
   if ($AudioPlaying) {return;}
@@ -627,21 +638,30 @@ sub audioPlayPage($) {
   my $c = $MCH; 
   
   my $pos = 0;
-  if ($p > 0 && $p < $lastPage{$b."-".$c}) {  
-    $pos = &getCalcTime($b, $c, ($p+1)) - $prepage;
-    if ($pos < 0) {$pos = 0;}
+  if ($t eq "end") {
+    if ($p > 0 && $p < $lastPage{$b."-".$c}) {  
+      $pos = &getCalcTime($b, $c, ($p+1)) - $prepage;
+      if ($pos < 0) {$pos = 0;}
+    }
+    elsif ($p == $lastPage{$b."-".$c}) {$pos = $Chapterlength{$b."-".$c} - 10;}
   }
-  elsif ($p == $lastPage{$b."-".$c}) {$pos = $Chapterlength{$b."-".$c} - 10;}
- 
+  elsif ($t eq "start") {
+    if ($p > 0 && $p <= $lastPage{$b."-".$c}) {  
+      $pos = &getCalcTime($b, $c, $p);
+      if ($pos < 0) {$pos = 0;}
+    }
+    elsif ($p == 0) {$pos = 0;}
+  }
+  
   if (&isMultiChapter($b, $c)) {$pos = &denormalizeMultiChapTime($b, $c, $pos);}
   
   my $at = &audioGetTime();
   my $dt = $pos -$at;
   &audioPlay($pos);
   print "\n";
-  if ($at) {
-	if ($dt > 5) {print sprintf("%-30s%19s%i s", "", "SKIPPING:", $dt);}
-	&updateStatus();
+  if ($at) {  
+    if ($dt > 5) {print sprintf("%-30s%19s%i s", "", "SKIPPING: ", $dt);}
+    &updateStatus();
   }
   #print "Started $b-$c at $pos seconds in $p (".$lastPage{$b."-".$c}.")\n";  
 }
@@ -671,13 +691,18 @@ sub audioForward($) {
   &audioPlay($s);
 }
 
-sub audioGetTime() {
+sub audioGetTime($) {
+  my $normalize = shift;
+    
   my $tmp = "$outaudiodir/audiotmp";
   my $time = 0;
   open(INF, "<$tmp/ffplay.txt") || return 0;
   $f = <INF>;
   while($f =~ s/([\d\.]+) A\-V//) {$time = $1;}
   close(INF);
+  
+  if ($normalize && &isMultiChapter($MBK, $MCH)) {$time = &normalizeMultiChapTime($MBK, $MCH, $time);}
+  
   return $time;  
 }
 
@@ -700,9 +725,8 @@ sub normalizeMultiChapTime($$$) {
   my $ch = shift;
   my $t = shift;
   
-  my $offset = &multiChapOffset($bk, $ch);
+  my $offset = &multiChapTimeOffset($bk, $ch);
   $t = ($t - $offset);
-  if ($t < 0) {$t = 0};
   
   return $t;
 }
@@ -712,10 +736,88 @@ sub denormalizeMultiChapTime($$$) {
   my $ch = shift;
   my $t = shift;
 
-  my $offset = &multiChapOffset($bk, $ch);
+  my $offset = &multiChapTimeOffset($bk, $ch);
   $t = ($t + $offset);
   
   return $t;  
+}
+
+sub sortPageTimingFile($) {
+  my $f = shift;
+  &sys("mv -f \"$f\" \"$f.tmp\"");
+  open(INF, "<$f.tmp") || return;
+  open(OUTF, ">$f") || return;
+  my $lastLineWasBlank;
+  while(<INF>) {
+    # capture all fixed timing parameters
+    if    ($_ =~ /^\s*([^-#]+-[^-]+-[\d\w]+)\s*=/) { 
+      chomp;
+      if (exists($allAT{$1})) {print sprintf("\n REMOVED:%.64s\nRETAINED:%.64s\n", $allAT{$1}, $_);} 
+      $allAT{$1} = $_;
+    }
+    # capture all text-locative parameters
+    elsif ($_ =~ /^\s*([^-#]+-[^:]+:\d+)\s*=/) {
+      chomp;
+      if (exists($allAV{$1})) {print sprintf("\n REMOVED:%.64s\nRETAINED:%.64s\n", $allAV{$1}, $_);} 
+      $allAV{$1} = $_;
+    }
+    else {
+      if ($_ =~ /^\s*$/) {
+        if ($lastLineWasBlank eq "true") {next;}
+        $lastLineWasBlank = "true";
+      }
+      else {$lastLineWasBlank = "false";}
+      print OUTF $_;
+    }
+  }
+  close(INF);
+  close(OUTF);
+  
+  open(OUTF, ">>$f") || &DIE("ERROR: Could not open $f!\n");
+  foreach $k (sort sortAT keys %allAT) {
+    $allAT{$k} =~ /^\s*[^-]+-(\d+)[-:]/; $ch = $1;
+    if ($ch != $lch && $allAT{$k} !~ /-chs/) {print OUTF "\n";}
+    $lch = $ch;
+    print OUTF "$allAT{$k}\n";
+  }
+  foreach $k (sort sortAV keys %allAV) {
+    $allAV{$k} =~ /^\s*[^-]+-(\d+)[-:]/; $ch = $1;
+    if ($ch != $lch) {print OUTF "\n";}
+    $lch = $ch;
+    print OUTF "$allAV{$k}\n";
+  }
+  close(OUTF);
+  unlink("$f.tmp");
+}
+
+sub updateEntriesBy($\%) {
+  my $f = shift;
+  my $eP = shift;
+
+  &sys("mv -f \"$f\" \"$f.tmp\"");
+  open(INF, "<$f.tmp") || return;
+  open(OUTF, ">$f") || return;
+  
+  my $new = "";
+  while(<INF>) {
+    if ($_ =~ /^\s*(.*?)\s*=\s*([\d\:\-\.]+)\s*(.*?)$/) {
+      my $e = $1;
+      my $v = $2;
+      my $t = $3;
+      foreach $en (keys %$eP) {
+        if ($en eq $e) {
+          my $n = "$en = ".&formatTime(&roundToNearestFrame((&unformatTime($v)+$eP->{$en})))." $t";
+          $new .= "$n\n";
+          print sprintf("appending %.64s...\n", $n);
+        }
+      }
+    }
+    print OUTF $_;
+  }
+  print OUTF "\n$new\n";
+  close(INF);
+  close(OUTF);
+  unlink("$f.tmp");
 }
 
 sub sys($) {

@@ -94,12 +94,17 @@ but can contain more than one chapter (even a whole book).
 
 -Audio can be mono or stereo.
 
--Audio files need one of these four naming patterns:
+-Audio files need one of these naming patterns:
+
  1) AudioPrefix-book-chapter.ac3
+ 
  2) AudioPrefix-book-chapter1-chapter2.ac3
+ 
  3) AudioPrefix-book-chapter:verse1-verse2.ac3
+ 
  4) AudioPrefix-book-chapter1:verse1-chapter2:verse2.ac3
- A single chapter may have multiple audio files for it. But audio file
+ 
+ A single chapter may have multiple audio files for it. But audio
  recordings must never overlap one another.
 
 - AudioPrefix and BookName must appear in the appropriate place in
@@ -148,32 +153,49 @@ session these modified files will be used.
 
 REVISION HISTORY
 
+1.5.1
+-----
+- Added ability to handle audio files of the form:
+  code-bk-ch1:v2-ch2:v2.ac3 
+- Improved the xtransitions.sh tool to handle all kinds of audio files
+- After rendering, absolute fixed timings in the pageTiming.txt file 
+  which correspond to text-locative timings are commented out.
+- Regarding pages within a book which transition from non-audio to 
+  audio: by default the non-audio page is dropped unless NonAudioEndStop
+  is set in config.txt. This causes the audio to start when viewed.
+
 1.5
 -----
 - Audio files covering only a part of a chapter are now supported.
-- Added automatic menu generation for sub-chapters created by partial chapter audio files.
-- Fixed a bug where /defaults/CSS/pal.css would not be overwritten when "Restore Default Files" was checked.
-- New "MatchChapterTransitions" config.txt entry is used to enable tranistion matching. Transition matching still has bugs and has been turned off by default.
+- Added automatic menu generation for sub-chapters created by partial 
+  chapter audio files.
+- Fixed a bug where /defaults/CSS/pal.css would not be overwritten when 
+  "Restore Default Files" was checked.
+- New "MatchChapterTransitions" config.txt entry is used to enable 
+  transition matching. Transition matching still has bugs and has been 
+  turned off by default.
 - Fixed minor bugs.
 
 1.4.4
 -----
 - Improved UI behaviour and interaction. 
 - Control window no longer closes after each render session.
-- Improved page rendering speed (using asynchronous page generation rather 
-than synchronous).
+- Improved page rendering speed (using asynchronous page generation 
+  rather than synchronous).
 - Added progress meter for osis2html conversion
-- Fixed a bug where FootnotesInOwnVTS=true would fail in certain configurations.
-- Fixed a problem where dvdauthor would stop with:  "ERR:  Can only have 128 commands for pre, post, and cell commands."
+- Fixed a bug where FootnotesInOwnVTS=true would fail in certain 
+  configurations.
+- Fixed a problem where dvdauthor would stop with:  "ERR:  Can only 
+  have 128 commands for pre, post, and cell commands."
 
 1.4.3
 -----
 - Added this ReadMe.
 - Added default config.txt and other input files necessary to create a 
-minimal working DVD when an empty project directory is selected.
+  minimal working DVD when an empty project directory is selected.
 - Updated and improved documentation of these files.
 - Improved transition capture tool: Got rid of ecasound in exchange 
-for ffplay and renamed ecasound.pl to transitions.pl
+  for ffplay and renamed ecasound.pl to transitions.pl
 - Bug fixes
 
 1.4.2
@@ -181,21 +203,21 @@ for ffplay and renamed ecasound.pl to transitions.pl
 - pal.css was completely redone to make full customization easy.
 - Files are re-organized to be easier to use and back up.
 - A defaults directory in the project directory holds all default CSS,
-image, and resource files.
+  image, and resource files.
 - By default, all project files (inputs and outputs) are contained
-within a single folder. This folder can even be renamed or moved to a
-different location.
+  within a single folder. This folder can even be renamed or moved to a
+  different location.
 - Better error reporting and logging.
 - Component version logging for easier debug.
 - Backup of the firefox extension, log files, and listings in the
-OUTPUTS directory.
+  OUTPUTS directory.
 - Tested on Lucid and Natty Ubuntu and firefox 3 and 7.
 - Bug fixes.
 
 1.4.1
 -----
 - Single column text rendering is possible by setting visibility=hidden
-to page 2.
+  to page 2.
 - Video output no longer shows the DVD control buttons.
 - Bug fixes.
 
@@ -203,7 +225,7 @@ to page 2.
 ---
 - Improved mpeg video quality.
 - Works with firefox 4+ which does not unzip extensions in the
-extensions directory.
+  extensions directory.
 - Works with ffmpeg 0.6.
 - Added debug options to scripts.
 - Bug fixes.

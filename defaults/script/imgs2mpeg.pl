@@ -61,7 +61,7 @@ foreach $book (sort {$books{$a}<=>$books{$b}} keys %books) {
       
       # set up for multi-chapter audio files if necesssary
       if (&isMultiChapter($book, $ch)) {
-        $multChapFileOFS = &multiChapOffset($book, $ch);
+        $multChapFileOFS = &multiChapTimeOffset($book, $ch);
         print " start=".$multChapFileOFS."s, finish=".($multChapFileOFS+$Chapterlength{$book."-".$ch})."s, length=".sprintf("%.2f", ($Chapterlength{$book."-".$ch}))."s\n";
       }
       else {print " start=0s, finish=".$Chapterlength{$book."-".$ch}."s, length=".$Chapterlength{$book."-".$ch}."s\n";}
