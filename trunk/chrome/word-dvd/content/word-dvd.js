@@ -36,6 +36,7 @@ const OUTAUDIODIR="audio";
 const IMGDIR="images";
 const BACKUP="backup";
 const OSISPL="osis2html.pl";
+const FIXEDTRANSITIONS="fixedTransitions.pl";
 const WORDDVD="word-dvd.sh";
 const VIDEOFILES="word-video.sh";
 const DBLOGFILE="logfile.txt";
@@ -440,7 +441,7 @@ function updateControlPanel() {
     htmlFiles.append(HTMLDIR);
     if (!osis2html.disabled && !htmlFiles.exists()) osis2html.checked = true;
   }
-  
+/*
   // Render Nothing (can't "render only" and "render nothing"!)
   if (document.getElementById("rendernothing").selected) {
     document.getElementById("renderonly").disabled = true;
@@ -450,7 +451,7 @@ function updateControlPanel() {
     }
   }
   else document.getElementById("renderonly").disabled = false;
-
+*/
   // GO! button
   for (var i=0; i<NUMINPUTS; i++) {
     if (i==AUDIO && document.getElementById("noaudio").checked) continue;
@@ -510,25 +511,10 @@ function checkAudioDir(checkOnly) {
 var MessageWin;
 var Osis2HtmlInterval;
 function wordDVD() {
-  if (document.getElementById("rendernothing").selected) {stop(); return;}
-  jsdump("Checking Inputs...");
-  for (var i=0; i<NUMINPUTS; i++) {
-    if (!UIfile[i]) {
-      window.alert("STOPPING!: Not all input directories are set.");
-      quit(true);
-      return;
-    }
-  }
-  if (!UIfile[INDIR].exists()) {
-    window.alert("STOPPING!: Project directory does not exist.");
-    quit(true);
-    return;
-  }
-  if (!document.getElementById("noaudio").checked && checkAudioDir(true)) {
-    window.alert("STOPPING!: Audio not found. Check \"no audio\", or change the audio path.");
-    quit(true);
-    return;
-  }
+  // Create LocaleFile var
+  LocaleFile = UIfile[INDIR].clone();
+  LocaleFile.append(LOCALEFILE);
+  LocaleFile = readFile(LocaleFile);
   
   // Check output directory and clean if needed
   if (!UIfile[OUTDIR].path.match(OUTFILERE)) {
@@ -544,62 +530,6 @@ function wordDVD() {
     } catch (er) {}
   }
   document.getElementById("cleanOutDir").checked = false;
-  
-  // Create backup directory
-  BackupDir = Components.classes["@mozilla.org/file/local;1"].createInstance(Components.interfaces.nsILocalFile);
-  BackupDir.initWithPath(UIfile[OUTDIR].path + "/" + BACKUP);
-  if (!BackupDir.exists()) BackupDir.create(BackupDir.DIRECTORY_TYPE, 0777);
-  
-  // Log File
-  DBLogFile = UIfile[OUTDIR].clone();
-  DBLogFile.append(DBLOGFILE);
-  if (DBLogFile.exists()) DBLogFile = moveToBackup(DBLogFile);
-
-  logmsg("Starting Word-DVD imager at " + StartDate.toTimeString() + " " + StartDate.toDateString());
-  logmsg("Word-DVD Version: " + (ExtVersion ? ExtVersion:"undreadable"));
-  
-  // BACKUP XPI AND VERSION NUMBERS
-  var test = BackupDir.clone();
-  test.append("extension");
-  if (test.exists()) test.remove(true);
-  test.create(test.DIRECTORY_TYPE, 0777);
-  test.append(ExtFile.leafName);
-  ExtFile.copyTo(test.parent, null);
-  var process = Components.classes["@mozilla.org/process/util;1"]
-                      .createInstance(Components.interfaces.nsIProcess);
-  var appInfo = Components.classes["@mozilla.org/xre/app-info;1"]
-                    .getService(Components.interfaces.nsIXULAppInfo);
-  
-  var vscript = "#!/bin/sh\n";
-  vscript += "echo >> " + DBLogFile.path + "\n";
-  vscript += "echo ========= FIREFOX VERSION INFO ============== >> " + DBLogFile.path + "\n";
-  vscript += "echo firefox version " + appInfo.version + " >> " + DBLogFile.path + "\n";
-  vscript += "echo firefox extension backup: " + getPathOrRelativePath(test, UIfile[OUTDIR], UIfile[OUTDIR]) + " >> " + DBLogFile.path + "\n";
-  vscript += "echo >> " + DBLogFile.path + "\n";
-  vscript += "echo ========= MPLEX VERSION INFO ============== >> " + DBLogFile.path + "\n";
-  vscript += "echo \\$mplex -E >> " + DBLogFile.path + "\n";
-  vscript += "mplex -E" + " 2>> " + DBLogFile.path + "\n";
-  vscript += "echo >> " + DBLogFile.path + "\n";
-  vscript += "echo ========= FFMPEG VERSION INFO ============== >> " + DBLogFile.path + "\n";
-  vscript += "echo \\$ffmpeg -version >> " + DBLogFile.path + "\n";
-  vscript += "ffmpeg -version " + " >> " + DBLogFile.path + "\n";
-  vscript += "echo >> " + DBLogFile.path + "\n";
-  vscript += "echo ========= DVDAUTHOR VERSION INFO ============== >> " + DBLogFile.path + "\n";
-  vscript += "echo \\$dvdauthor >> " + DBLogFile.path + "\n";
-  vscript += "dvdauthor " + " 2>> " + DBLogFile.path + "\n";
-  vscript += "exit\n";
-  var tmpscript = Components.classes["@mozilla.org/file/directory_service;1"].
-			    getService(Components.interfaces.nsIProperties).
-			    get("TmpD", Components.interfaces.nsIFile);	
-  tmpscript.append("tmpscript.sh");
-  if (tmpscript.exists()) tmpscript.remove(false);
-  write2File(tmpscript, vscript, false);
-  process.init(tmpscript);
-  var args = [];
-  process.run(true, args, args.length);
-
-  logmsg("\nInitializing run environment");
-  if (document.getElementById("cleanOutDir").checked) logmsg("Cleaned OUTPUT directory:" + UIfile[OUTDIR].path + "...");
 
   // COPY RESOURCES AND BUILD-CODE TO INDIR
   exportDir(RESOURCE, UIfile[INDIR].path, document.getElementById("restoreDefaults").checked);
@@ -608,44 +538,6 @@ function wordDVD() {
   exportDir(HTMLDIR, UIfile[INDIR].path, false);
   exportFile(LOCALEFILE, UIfile[INDIR].path, false);
   exportFile(PAGETIMING, UIfile[INDIR].path, false);
-  
-  // READ LOCALE FILE
-  LocaleFile = UIfile[INDIR].clone();
-  LocaleFile.append(LOCALEFILE);
-  LocaleFile = readFile(LocaleFile);
-  logmsg("\nconfig.txt entries:");
-  var entries = getLocaleLiterals();
-  for (var i=0; i<entries.length; i++) {logmsg(entries[i]);}
-  
-  logmsg("\nChecking/Creating directories...");  
-  // IMAGE DIRECTORY
-  var imgdir = UIfile[OUTDIR].clone();
-  imgdir.append(IMGDIR);
-  if (!imgdir.exists()) imgdir.create(imgdir.DIRECTORY_TYPE, 0777);
-
-  // LISTING DIRECTORY
-  var listdir = UIfile[OUTDIR].clone();
-  listdir.append(LISTING);
-  if (listdir.exists()) {    
-    if (!document.getElementById("startbk").selected) {
-      listdir = moveToBackup(listdir);
-      listdir.create(listdir.DIRECTORY_TYPE, 0777);
-    }
-  }
-  else listdir.create(listdir.DIRECTORY_TYPE, 0777);
-  
-  // TIMING STATISTICS FILES
-  StatsFile = UIfile[OUTDIR].clone();
-  StatsFile.append(LISTING);
-  
-  // TRANSITION LISTING FILE
-  TransFile = UIfile[OUTDIR].clone();
-  TransFile.append(LISTING);
-
-  // AUTOGENERATE ALL RUN SCRIPTS
-  writeRunScripts();
-  
-  // COPY CSS to HTML DIRECTORY AND RELOAD CAPTURE WINDOW
   CssFile = exportFile(STYLESHEET, UIfile[INDIR].path, document.getElementById("restoreDefaults").checked);
   document.getElementById("restoreDefaults").checked = false; // clear only after final time restoreDefaults is referenced!!
   
@@ -663,35 +555,16 @@ function wordDVD() {
     var args = [];
     process.run(false, args, args.length);
     Osis2HtmlInterval = window.setInterval("checkOSISConverion();", 500);
-    document.getElementById("osis2html").checked = false;
   }
   else {
     logmsg("Skipped HTML generation.");
     readHtmlFiles();
   }
-}  
-
-function checkOSISConverion() {
-  MessageWin.focus();
-  var cf = UIfile[OUTDIR].clone();
-  cf.append(CONVERSIONDONE);
-  if (cf.exists()) {
-    window.clearInterval(Osis2HtmlInterval);
-    MessageWin.close();
-    cf.remove(false);
-    readHtmlFiles();
-  }
-  else {
-    var pf = UIfile[OUTDIR].clone();
-    pf.append(OSISPROGRESS);
-    if (pf.exists() && MessageWin) {
-      var percent = readFile(pf);
-      if (percent && percent > 3) MessageWin.setProgress(percent);
-    }
-  }
 }
 
 function readHtmlFiles() {
+  document.getElementById("osis2html").checked = false;
+    
   // Read HTML books, maxchapters, and maxverses
   var htmlFiles = UIfile[INDIR].clone();
   htmlFiles.append(HTMLDIR);
@@ -767,15 +640,149 @@ function readHtmlFiles() {
     }
   }
   Book = Book.sort(booksort);
+  
+  wordDVD2();
+}
 
+function wordDVD2() {
+  if (document.getElementById("rendernothing").selected) {stop(); return;}
+    
+  jsdump("Checking Inputs...");
+  for (var i=0; i<NUMINPUTS; i++) {
+    if (!UIfile[i]) {
+      window.alert("STOPPING!: Not all input directories are set.");
+      quit(true);
+      return;
+    }
+  }
+  if (!UIfile[INDIR].exists()) {
+    window.alert("STOPPING!: Project directory does not exist.");
+    quit(true);
+    return;
+  }
+  if (!document.getElementById("noaudio").checked && checkAudioDir(true)) {
+    window.alert("STOPPING!: Audio not found. Check \"no audio\", or change the audio path.");
+    quit(true);
+    return;
+  }
+
+  // Create backup directory
+  BackupDir = Components.classes["@mozilla.org/file/local;1"].createInstance(Components.interfaces.nsILocalFile);
+  BackupDir.initWithPath(UIfile[OUTDIR].path + "/" + BACKUP);
+  if (!BackupDir.exists()) BackupDir.create(BackupDir.DIRECTORY_TYPE, 0777);
+  
+  // Log File
+  DBLogFile = UIfile[OUTDIR].clone();
+  DBLogFile.append(DBLOGFILE);
+  if (DBLogFile.exists()) DBLogFile = moveToBackup(DBLogFile);
+
+  logmsg("Starting Word-DVD imager at " + StartDate.toTimeString() + " " + StartDate.toDateString());
+  logmsg("Word-DVD Version: " + (ExtVersion ? ExtVersion:"undreadable"));
+  
+  // BACKUP XPI AND VERSION NUMBERS
+  var test = BackupDir.clone();
+  test.append("extension");
+  if (test.exists()) test.remove(true);
+  test.create(test.DIRECTORY_TYPE, 0777);
+  test.append(ExtFile.leafName);
+  ExtFile.copyTo(test.parent, null);
+  var process = Components.classes["@mozilla.org/process/util;1"]
+                      .createInstance(Components.interfaces.nsIProcess);
+  var appInfo = Components.classes["@mozilla.org/xre/app-info;1"]
+                    .getService(Components.interfaces.nsIXULAppInfo);
+  
+  var vscript = "#!/bin/sh\n";
+  vscript += "echo >> " + DBLogFile.path + "\n";
+  vscript += "echo ========= FIREFOX VERSION INFO ============== >> " + DBLogFile.path + "\n";
+  vscript += "echo firefox version " + appInfo.version + " >> " + DBLogFile.path + "\n";
+  vscript += "echo firefox extension backup: " + getPathOrRelativePath(test, UIfile[OUTDIR], UIfile[OUTDIR]) + " >> " + DBLogFile.path + "\n";
+  vscript += "echo >> " + DBLogFile.path + "\n";
+  vscript += "echo ========= MPLEX VERSION INFO ============== >> " + DBLogFile.path + "\n";
+  vscript += "echo \\$mplex -E >> " + DBLogFile.path + "\n";
+  vscript += "mplex -E" + " 2>> " + DBLogFile.path + "\n";
+  vscript += "echo >> " + DBLogFile.path + "\n";
+  vscript += "echo ========= FFMPEG VERSION INFO ============== >> " + DBLogFile.path + "\n";
+  vscript += "echo \\$ffmpeg -version >> " + DBLogFile.path + "\n";
+  vscript += "ffmpeg -version " + " >> " + DBLogFile.path + "\n";
+  vscript += "echo >> " + DBLogFile.path + "\n";
+  vscript += "echo ========= DVDAUTHOR VERSION INFO ============== >> " + DBLogFile.path + "\n";
+  vscript += "echo \\$dvdauthor >> " + DBLogFile.path + "\n";
+  vscript += "dvdauthor " + " 2>> " + DBLogFile.path + "\n";
+  vscript += "exit\n";
+  var tmpscript = Components.classes["@mozilla.org/file/directory_service;1"].
+			    getService(Components.interfaces.nsIProperties).
+			    get("TmpD", Components.interfaces.nsIFile);	
+  tmpscript.append("tmpscript.sh");
+  if (tmpscript.exists()) tmpscript.remove(false);
+  write2File(tmpscript, vscript, false);
+  process.init(tmpscript);
+  var args = [];
+  process.run(true, args, args.length);
+
+  logmsg("\nInitializing run environment");
+  if (document.getElementById("cleanOutDir").checked) logmsg("Cleaned OUTPUT directory:" + UIfile[OUTDIR].path + "...");
+  
+  // LOG LOCALE FILE
+  logmsg("\nconfig.txt entries:");
+  var entries = getLocaleLiterals();
+  for (var i=0; i<entries.length; i++) {logmsg(entries[i]);}
+  
+  logmsg("\nChecking/Creating directories...");  
+  // IMAGE DIRECTORY
+  var imgdir = UIfile[OUTDIR].clone();
+  imgdir.append(IMGDIR);
+  if (!imgdir.exists()) imgdir.create(imgdir.DIRECTORY_TYPE, 0777);
+
+  // LISTING DIRECTORY
+  var listdir = UIfile[OUTDIR].clone();
+  listdir.append(LISTING);
+  if (listdir.exists()) {    
+    if (!document.getElementById("startbk").selected) {
+      listdir = moveToBackup(listdir);
+      listdir.create(listdir.DIRECTORY_TYPE, 0777);
+    }
+  }
+  else listdir.create(listdir.DIRECTORY_TYPE, 0777);
+  
+  // TIMING STATISTICS FILES
+  StatsFile = UIfile[OUTDIR].clone();
+  StatsFile.append(LISTING);
+  
+  // TRANSITION LISTING FILE
+  TransFile = UIfile[OUTDIR].clone();
+  TransFile.append(LISTING);
+
+  // AUTOGENERATE ALL RUN SCRIPTS
+  writeRunScripts();
+  
   StartingBindex = 0;
   if (document.getElementById("singlebk").selected) 
-    if (!prompForSingleBook()) {quit(); return;}
+      if (!prompForSingleBook()) {quit(); return;}
   if (document.getElementById("startbk").selected) 
-  if (!prompForStartBook()) {quit(); return;}
+      if (!prompForStartBook()) {quit(); return;}
   
   RenderWin = window.open("chrome://word-dvd/content/render.xul", "render-win", "chrome=yes,alwaysRaised=yes");
   RenderWin.focus();
+}  
+
+function checkOSISConverion() {
+  MessageWin.focus();
+  var cf = UIfile[OUTDIR].clone();
+  cf.append(CONVERSIONDONE);
+  if (cf.exists()) {
+    window.clearInterval(Osis2HtmlInterval);
+    MessageWin.close();
+    cf.remove(false);
+    readHtmlFiles();
+  }
+  else {
+    var pf = UIfile[OUTDIR].clone();
+    pf.append(OSISPROGRESS);
+    if (pf.exists() && MessageWin) {
+      var percent = readFile(pf);
+      if (percent && percent > 3) MessageWin.setProgress(percent);
+    }
+  }
 }
 
 // extdir the partial path of a directory within the extension
@@ -944,7 +951,8 @@ function writeRunScripts() {
    "audio.pl", "imgs2mpeg.pl", "navbuttons.pl", 
    "menus.pl", "mpeg2vob.pl", "lencalc.pl", 
    "timeAnalysis.pl", "createiso.pl", "audacity.pl", 
-   "transitions.pl", "burnverify.sh", "imgs2web.pl"];
+   "transitions.pl", "burnverify.sh", "imgs2web.pl",
+   FIXEDTRANSITIONS];
   
   // MAKE OUTPUT SCRIPT DIR
   var file = Components.classes["@mozilla.org/file/local;1"].createInstance(Components.interfaces.nsILocalFile);
@@ -1050,6 +1058,15 @@ function stop() {
   }
   if (unUtilizedAudio) logmsg("Unutilized audio file(s):\n" + unUtilizedAudio);
   if (RenderWin) RenderWin.close();
+  
+  // remove fixed timing values from pageTiming.txt if they exist
+  var process = Components.classes["@mozilla.org/process/util;1"]
+                    .createInstance(Components.interfaces.nsIProcess);                        
+  var tmpscript = getTempRunScript(FIXEDTRANSITIONS);
+  process.init(tmpscript);
+  var args = [];
+  process.run(true, args, args.length);
+  
   var hasErrors = false;
   if (DBLogFile) {
     var logf = readFile(DBLogFile);
@@ -1081,6 +1098,8 @@ function stop() {
     if (hasErrors) window.alert("Image rendering has completed, but WITH ERRORS!");
     else window.alert("Image rendering has completed without errors.");
   }
+  else window.alert("Skipping image rendering.");
+  
   resetGo(); 
 }
 

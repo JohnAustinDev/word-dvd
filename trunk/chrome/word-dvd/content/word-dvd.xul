@@ -66,7 +66,7 @@
         <checkbox id="cleanOutDir" label="Clean Output Dir"     tooltiptext="Wipe output directory and start from scratch." />
         <checkbox id="osis2html"   label="Convert OSIS to HTML" tooltiptext="Run the OSIS to HTML converter to generate new HTML. This command is disabled unless there is an 'osis.xml' file located in the Project Directory above." />
         <radiogroup orient="vertical">
-          <radio id="renderonly"   label="Render images only"   tooltiptext="Render images, but don't create video/DVD files." />
+          <radio id="renderonly"   label="Render only"          tooltiptext="Render images, but don't create video/DVD files." />
           <radio id="runword-dvd"  label="Create DVD"           tooltiptext="Create final DVD files." selected="true" />
           <radio id="runvideo"     label="Create Video Files"   tooltiptext="Create separate video files for internet etc. Requires audio, so 'no audio' be must un-checked." />
         </radiogroup>

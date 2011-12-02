@@ -40,9 +40,10 @@ ChapterEndGap     = 1   # typical dead time at the end of each chapter
 # both absolute page transition timings, as well as text-locative 
 # timings. Absolute page transition timings will be exact until the 
 # pages are re-rendered with the addition of artwork or a change in 
-# font-size etc. After this, these exact transitions MUST BE DELETED 
-# (or else all transitions will be very wrong!) However, NEVER DELETE 
-# THE TEXT-LOCATIVE TIMINGS because they will continue to provide 
-# excellent transition accuracy even if the layout is changed 
-# dramatically.
+# font-size etc. After this, these absolute transitions will be 
+# automatically commented out (otherwise these transitions would be very
+# wrong!) However, text-locative timings will always be correct and 
+# should continue to provide excellent transition accuracy (although 
+# not perfect as with absolute values), even after the layout is 
+# changed dramatically.
 

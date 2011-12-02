@@ -149,6 +149,8 @@ sub readDataFiles() {
         $framesRND = sprintf("%i", $f);
         $correctPageChap{$order."-".$bk."-".$ch."-".$pg."-".$type} = ($framesRND/$framesPS);    
       }
+      
+      # Produced by transitions.sh
       elsif ($_ =~ /([^-]+)-(\d+)-(\d+)\s*=\s*(.*?)$/) {
         $bk = $1;
         $ch = $2;
@@ -267,6 +269,7 @@ sub readPageInformation {
       $numtitles = $6;
       $abstime = &unformatTime($8, "noFrameCheck");
       
+      # insure maximum of 2 verse timings per page
       $cnt = 1;
       if (exists($manualVT{$book."-".$ch."-".$pg})) {
         if ($cnt == 2) {print "ERROR: More than two manual verse timings on one page \"$book-$ch-$pg\"\n";} 
@@ -274,6 +277,7 @@ sub readPageInformation {
       }
       $manualVT{$book."-".$ch."-".$pg}++;
       
+      # save everything
       $type = "absVerseTime";      
       $f = $framesPS*$abstime;
       $f = sprintf("%i", $f);
@@ -452,10 +456,14 @@ sub roundToNearestFrame($) {
   return ($s/$framesPS);
 }
 
-#CONVERT SECONDS INTO HR:MN:SC.SS FORMAT
+#CONVERT SECONDS INTO (-)HR:MN:SC.SS FORMAT
 sub formatTime($$) {
   my $t = shift;
   my $format = shift;
+  
+  my $sign = "";
+  if ($t < 0) {$t = (-1*$t); $sign = "-";}
+  
   if (($t*$framesPS) =~ /\./) {die "formatTime $t is not a frame multiple.";}
   my $tsave = $t;
   my $hr = sprintf("%i", ($t/3600));
@@ -469,7 +477,7 @@ sub formatTime($$) {
     else {$timef = sprintf("%02d:%02d:%02.2f", $hr, $min, $t);}
   }
   if ($timef eq "") {die "Could not format time $tsave";}
-  return $timef;
+  return $sign.$timef;
 }
 
 sub unformatTime($$) {
@@ -477,17 +485,18 @@ sub unformatTime($$) {
   my $type = shift;
 
   my $tsave = $timef;
-  if ($timef =~ /((\d+):)?(\d+):([\d\.]+)/) {
-    my $hr = (1*$2);
-    my $min = (1*$3);
-    my $ts = (1*$4);
+  if ($timef =~ /(-?)((\d+):)?(\d+):([\d\.]+)/) {
+    my $sign = $1;
+    my $hr = (1*$3);
+    my $min = (1*$4);
+    my $ts = (1*$5);
 
     my $sec = 0;
     if ($hr > 0)  {$sec = ($hr*3600);}
     if ($min > 0) {$sec = ($sec + ($min*60));}
     $sec = ($sec + $ts);
     if ($type ne "noFrameCheck" && ($sec*$framesPS) =~ /\./) {die "unformatTime $timef=$sec is not a frame multiple.";}
-    return $sec;
+    return ($sign eq "-" ? (-1*$sec):$sec);
   }
   else {die "ERROR(unformatTime) $bk-$ch-$pg: Could not convert \"$timef\" to seconds!";}
 }
@@ -510,6 +519,40 @@ sub makeSilentSlide($$) {
   `mplex -v $Verbosity -V -f 8 $videodir/videotmp/$leaf.m2v $resourcedir/blankaudio.ac3 -o $videodir/$subdir$leaf.mpg`
 }
 
+# converts internal chapter to real chapter number
+# if internal chapter is still (non-audio), -1 is returned (indeterminate)
+sub internalChapter2Real($$$) {
+  my $bk = shift;
+  my $ic = shift;
+  my $quiet = shift;
+
+  my $res = -1;
+  if ($haveAudio{"$bk-$ic"} =~ /^[^-]+-([^-]+)-(\d+)[-:].*?\.ac3$/i) {
+    $res = (1*$2);
+    my $i = ($ic-1);
+    while ($i >= 1 && $haveAudio{"$bk-$i"} eq $haveAudio{"$bk-$ic"}) {
+      $i--; 
+      $res++; 
+    }
+  }
+  if (!$quiet && $ret == -1) {print "ERROR: internalChapter2Real, indeterminate chapter for $bk $ic.\n";}
+
+  return $res;
+}
+
+sub realChapter2Internal($$) {
+  my $bk = shift;
+  my $rc = shift;
+ 
+  my $ret = -1;
+  my $ic;
+  for ($ic=1; $ic<=$lastChapter{$bk}; $ic++) {
+    if (&internalChapter2Real($bk, $ic, 1) == $rc) {$ret = $ic; last;}
+  }
+
+  return $ic;
+}
+
 # returns 1 only if book and chapter has a multi-chapter audio file
 sub isMultiChapter($$) {
   my $bk = shift;
@@ -524,8 +567,8 @@ sub isMultiChapter($$) {
 }
 
 # returns time offset of an internal chapter within its audio file
-# returns 0 for non-multi-chapter audio files
-sub multiChapOffset($$) {
+# returns 0 unless a multi-chapter audio file is associated with the chapter
+sub multiChapTimeOffset($$) {
   my $bk = shift;
   my $ch = shift;
   
@@ -536,8 +579,9 @@ sub multiChapOffset($$) {
     my $cs = (1*$1);
     my $ce = (1*$2);
     
-    # convert audio file name chapters to real chapters
-    my $chos = &realChapterOffset($haveAudio{"$bk-$ch"});
+    # convert audio file name chapters to internal chapters
+    my $chos = (&audioFileInternalFirstChapter($haveAudio{"$bk-$ch"}) - $cs);
+
     $cs = ($cs+$chos);
     $ce = ($ce+$chos);
   
@@ -556,25 +600,45 @@ sub multiChapOffset($$) {
   return $os;
 }
 
-# returns chapter offset to real chapter from audio file name
-# returns -1 if it cannot be determined from the file name
-sub realChapterOffset($) {
+# returns the first internal chapter of an audio file
+# returns -1 if the passed "filename" is not a valid audio file name
+sub audioFileInternalFirstChapter($$) {
   my $f = shift;
+  my $quiet = shift;
   
   my $ret = -1;
   if ($f =~ /^[^-]+-([^-]+)-(\d+)[-:].*?\.ac3$/i) {
     my $bk = $1;
     my $cs = (1*$2);
 
-	my $c;
+    my $c;
     for ($c=1; $c<=$lastChapter{$bk}; $c++) {
-      if ($haveAudio{"$bk-$c"} && $haveAudio{"$bk-$c"} eq $f) {last;}
+      if ($haveAudio{"$bk-$c"} && $haveAudio{"$bk-$c"} eq $f) {$ret = $c; last;}
     }
-    if ($c <= $lastChapter{$bk}) {$ret = $c - $cs;}
   }
   
-  if ($ret == -1) {print "ERROR: Indeterminate chapter offset \"$f\".\n";}
+  if (!$quiet && $f eq "still") {print "NOTE: Asking chapter offset of non-audio chapter.\n";}
+  if (!$quiet && $ret == -1) {print "ERROR: Indeterminate chapter offset \"$f\".\n";}
   
+  return $ret;
+}
+
+# returns the last internal chapter of an audio file
+# returns -1 if the passed "filename" is not a valid audio file name
+sub audioFileInternalLastChapter($$) {
+  my $f = shift;
+  my $quiet = shift;
+  
+  my $ret = &audioFileInternalFirstChapter($f, $quiet);
+  if ($ret == -1) {return $ret;}
+   
+  if ($f =~ /^[^-]+-[^-]+-(\d+)-(\d+)\.ac3$/i ||
+      $f =~ /^[^-]+-[^-]+-(\d+):\d+-(\d+):\d+\.ac3$/i) {
+    my $cs = (1*$1);
+    my $ce = (1*$2);
+    $ret = $ret + ($ce-$cs);
+  }
+
   return $ret;
 }
 

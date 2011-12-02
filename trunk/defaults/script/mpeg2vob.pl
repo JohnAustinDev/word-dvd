@@ -596,7 +596,8 @@ for ($vts=1; $vts<=$LASTVTS; $vts++) {
   print XML "\t\t\t\t<pre>\n";
   print XML "\t\t\t\t\t{\n";
   if ($FOOTNOTES_IN_OWN_VTS eq "true") {
-    if (exists($RELtextVTS{$vts})) {print XML "\t\t\t\t\t\tif ( ".$gTYPE." eq 1 ) jump vmgm menu entry title;\n";}
+    if (!$MAXFNVTS) {print XML "\t\t\t\t\t\tif ( ".$gTYPE." eq 1 ) { ".$gTYPE."=0; jump vmgm menu entry title; }\n";}
+    elsif (exists($RELtextVTS{$vts})) {print XML "\t\t\t\t\t\tif ( ".$gTYPE." eq 1 ) jump vmgm menu entry title;\n";}
     else {print XML "\t\t\t\t\t\tif ( ".$gTYPE." eq 1 ) jump menu ".$FNVTSentryMenu.";\n";}
   }
   print XML "\t\t\t\t\t\tif ( ".$gJSTI." lt ".$STITLE{$vts}." ) jump vmgm menu entry title;\n";

@@ -32,8 +32,8 @@ function init() {
   catch (er) {window.setTimeout("window.setTimeout('RenderDone = true;',0);", MainWin.WAIT);}
 }
 
-function fitScreen(book, chapter, aPage, skipPage1, skipPage2) {
-MainWin.jsdump("Chapter=" + chapter + ", Pagenumber=" + aPage.pagenumber);
+function fitScreen(book, chapter, subchapters, aPage, skipPage1, skipPage2) {
+MainWin.jsdump("Chapter=" + Number(chapter+subchapters) + ", Pagenumber=" + aPage.pagenumber);
   DisplayBook = book;
   DisplayChapter = chapter;
   
