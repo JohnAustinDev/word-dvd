@@ -22,7 +22,7 @@ function init() {
   PageElem2 = document.getElementById("text-page2");
   Body = document.getElementById("body");
   if (!MainWin.document.getElementById("runvideo").selected) 
-    document.getElementById("text-controls").setAttribute("src", "file://" + MainWin.UIfile[MainWin.INDIR].path + "/" + MainWin.RESOURCE + "/control-buttons.png");
+    RenderWin.setImgSrc(document.getElementById("text-controls"), "file://" + MainWin.UIfile[MainWin.INDIR].path + "/" + MainWin.RESOURCE + "/control-buttons.png");
   
   // firefox 3- needs a fallback waitRender method (simple delay) so test and do if needed
   try {
@@ -627,8 +627,8 @@ function formatPage(elem, page, widowCheck) {
   
   //build page header
   var ch = (DisplayChapter==0 ?  
-    MainWin.getLocaleString("IntroLink"):
-    MainWin.getLocaleString("Chaptext", DisplayChapter, DisplayBook));
+      MainWin.getLocaleString("IntroLink"):
+      MainWin.getLocaleString("Chaptext", [DisplayBook, DisplayChapter]));
   if (ch==0) ch = "";
   var bklocale = MainWin.getLocaleString(DisplayBook);
   var myid = "text-header-" + (isLeftPage ? "left":"right");

@@ -48,7 +48,7 @@ function loadedRender() {
   RenderFrame.style.height = String(MainWin.PAL.H + 16) + "px";
   window.setTimeout("postLoad1();", 1);
 } function postLoad1() {
-  initWaitRenderDone(false, false);
+  initWaitRenderDone(false);
   
   window.resizeTo(RenderFrame.boxObject.width, document.getElementById("body").boxObject.height);
 
@@ -102,7 +102,7 @@ function startMenuGeneration() {
 function startTextGeneration() {
 MainWin.logmsg("startTextGeneration");
   // switch from menu to text background
-  initWaitRenderDone(true, true);
+  initWaitRenderDone(true);
   
   RenderFrame.contentDocument.defaultView.location.assign("chrome://word-dvd/content/web/text.html");
   
@@ -172,6 +172,8 @@ function renderMenuSection() {
     var arrayL = [];
     var arrayR = [];
     var haveart = getSubFilePath(MainWin.UIfile[MainWin.INDIR], MainWin.ARTWORK + "/" + Basename + "-m" + MenuNumber + ".png");
+    
+    // check for UI locale entries corresponding to chapter menu entries
     var doneLeft = false;
     var doneRight = false;
     for (var r=1; r<=16; r++) {
@@ -192,16 +194,22 @@ function renderMenuSection() {
       else if (r > 8 && doneRight) arrayR.push(nobj);
     }
     if (doneLeft && haveart) MainWin.logmsg("Error: artwork/button conflict on " + Basename + "-m" + MenuNumber);
+    
+    // prepare next menu's button list
     var pagedone = false;
     for (var r=1; r<=16; r++) {
       if (r == 9) pagedone=false;
       if (r <= 8 && doneLeft || r > 8 && doneRight) continue;
       if (haveart && r <= 8 || pagedone || !MenuEntries[MenuEntryIndex]) continue;
+      
+      // save next menu entry to menu
       if (r <= 8) arrayL.push(MenuEntries[MenuEntryIndex]);
       else arrayR.push(MenuEntries[MenuEntryIndex]);
       if (MenuEntries[MenuEntryIndex] && MainWin.getLocaleString(MenuType + String(MenuNumber) + (r <= 8 ? "left":"right") + "last")==MenuEntries[MenuEntryIndex].label) pagedone = true;
       MenuEntryIndex++;
     }
+    
+    // create a new menu
     renderMenu(Basename, MenuNumber, arrayL, arrayR, (MenuNumber==1), (MenuEntryIndex>=MenuEntries.length), "renderMenuSection();");
   }
   else window.setTimeout("renderChapterMenus();", 0);
@@ -218,12 +226,13 @@ function renderChapterMenus() {
         
         var scs = getSubChapterInfo(Book[Bindex], c);
         
-        MenuEntries.push(new Object());
-        if (c>0) MenuEntries[MenuEntries.length-1].label = MainWin.getLocaleString("Chaptext", c, Book[Bindex].shortName);
-        else MenuEntries[MenuEntries.length-1].label = MainWin.getLocaleString("IntroLink");
-        MenuEntries[MenuEntries.length-1].target = Book[Bindex].shortName + "-" + Number(c + SubChapters);
+        var entry = new Object();
+        if (c>0) entry.label = MainWin.getLocaleString("Chaptext", [Book[Bindex].shortName, c]);
+        else entry.label = MainWin.getLocaleString("IntroLink");
+        entry.target = Book[Bindex].shortName + "-" + Number(c + SubChapters);
         var hasAudio = (scs.length > 1 ? scs[1].hasAudio:getAudioFile(Book[Bindex].shortName, c, 0));
-        MenuEntries[MenuEntries.length-1].className = (hasAudio ? "hasAudio":"");
+        entry.className = (hasAudio ? "hasAudio":"");
+        MenuEntries.push(entry);
  
         // subchapters are shown as follows:
         // - normal chapter item is first (allready done above)
@@ -232,10 +241,11 @@ function renderChapterMenus() {
           for (var sc=2; sc<scs.length; sc++) {
             SubChapters++;
             if (!scs[sc].hasAudio) continue;
-            MenuEntries.push(new Object());
-            MenuEntries[MenuEntries.length-1].label = MainWin.getLocaleString("SubChaptext", c, Book[Bindex].shortName, scs[sc].vs);
-            MenuEntries[MenuEntries.length-1].target = Book[Bindex].shortName + "-" + Number(c + SubChapters);
-            MenuEntries[MenuEntries.length-1].className = (scs[sc].hasAudio ? "hasAudio":"");
+            entry = new Object();
+            entry.label = MainWin.getLocaleString("SubChaptext", [Book[Bindex].shortName, c, scs[sc].vs, scs[sc].ve]);
+            entry.target = Book[Bindex].shortName + "-" + Number(c + SubChapters);
+            entry.className = (scs[sc].hasAudio ? "hasAudio":"");
+            MenuEntries.push(entry);
           }
         }
       }
@@ -295,11 +305,14 @@ function renderMenu(menubase, menunumber, listArrayL, listArrayR, isFirstMenu, i
   mdoc.getElementById("menu-image-left").style.visibility = "hidden";
   if (listArrayL.length) writeButtonList(listArrayL, menuname, true, mdoc);
   else {
-    for (var i=0; i<8; i++) {mdoc.getElementById("p1b" + String(i+1)).innerHTML = "";}
+    for (var i=0; i<8; i++) {
+      mdoc.getElementById("p1b" + String(i+1)).innerHTML = "";
+      mdoc.getElementById("p1b" + String(i+1)).className = "button"; // not hasAudio!
+    }
     var artwork = getSubFilePath(MainWin.UIfile[MainWin.INDIR], MainWin.ARTWORK + "/" + menubase + "-m" + menunumber + ".png");
     if (artwork) {
-      mdoc.getElementById("menu-image-left").src = "File://" + artwork;
       mdoc.getElementById("menu-image-left").style.visibility = "visible";
+      setImgSrc(mdoc.getElementById("menu-image-left"), "File://" + artwork);
     }
   }
   
@@ -307,6 +320,7 @@ function renderMenu(menubase, menunumber, listArrayL, listArrayR, isFirstMenu, i
   mdoc.getElementById("menu-footer-left").innerHTML = names[BL];
   var btype = (names[BL] && targets[BL] ? "underline":"normal");
   mdoc.getElementById("menu-button-left").style.visibility = (btype=="normal" && targets[BL] ? "visible":"hidden");  
+  
   MainWin.write2File(MenusFile, formatMenuString(menuname, 8, true, targets[BL], btype), true);  
   
   // page 2 button list
@@ -319,7 +333,7 @@ function renderMenu(menubase, menunumber, listArrayL, listArrayR, isFirstMenu, i
   
   MainWin.write2File(MenusFile, formatMenuString(menuname, 8, false, targets[BR], btype), true); 
 
-  initWaitRenderDone(false, false);
+  initWaitRenderDone(false);
 
   if (MainWin.Aborted) return;
   else if (!MainWin.Paused) waitRenderDoneThenDo("captureImage('" + menuname + "', " + ISMENUIMAGE + ", '" + returnFun + "');");
@@ -341,8 +355,6 @@ function writeButtonList(listArray, menuname, isLeft, doc) {
     var id = (isLeft ? "p1b":"p2b");
     doc.getElementById(id + String(i+1)).className = aClass;
     doc.getElementById(id + String(i+1)).innerHTML = aLabel;
-    //if (doc.getElementById(id + String(i+1)).className.search(/(^|\s)hasAudio(\s|$)/)!=-1)
-          //doc.getElementById(id + String(i+1)).innerHTML += "<img src=\"file://" + MainWin.UIfile[MainWin.INDIR].path + "/" + MainWin.RESOURCE + "/" + MainWin.AUDIOICON + "\" style=\"-moz-margin-start:12px;\" >";
     MainWin.write2File(MenusFile, formatMenuString(menuname, i, isLeft, aTarget), true);
   }
 }
@@ -432,13 +444,13 @@ function renderNewScreen() {
     artwork = getSubFilePath(MainWin.UIfile[MainWin.INDIR], MainWin.ARTWORK + "/" + Book[Bindex].shortName + "-1" + ".png");
   if (artwork) {
     skipPage1 = true;
-    mdoc.getElementById("text-image-left").src = "File://" + artwork;
     mdoc.getElementById("text-image-left").style.visibility = "visible";
+    setImgSrc(mdoc.getElementById("text-image-left"), "File://" + artwork);
   }
   var tstyle = mdoc.defaultView.getComputedStyle(mdoc.getElementById("text-page2"), null);
   var skipPage2 = (tstyle.visibility == "hidden"); // this allows single column display by setting text-page2 visibility=hidden
   
-  initWaitRenderDone(false, true);
+  initWaitRenderDone(true);
   
   RenderFrame.contentDocument.defaultView.fitScreen(Book[Bindex].shortName, Chapter, SubChapters, Page, skipPage1, skipPage2);
     
@@ -1277,7 +1289,7 @@ function renderNewFNScreen() {
     Page.passage += PageWithFootnotes[FootnoteIndex].html;
   }
   
-  initWaitRenderDone(false, true);
+  initWaitRenderDone(true);
 
   var tstart = Page.end;
   RenderFrame.contentDocument.defaultView.fitScreen(Book[Bindex].shortName, Chapter, 0, Page, false, false);
@@ -1352,22 +1364,20 @@ var PaintCheckInterval;  // works with firefox 4+
 var DrawInterval;
 var RenderDoneTO;
 // set skipFallback if fallback init is handled elsewhere
-function initWaitRenderDone(dontWaitForImages, skipFallback) {
+function initWaitRenderDone(skipFallback) {
   // prepare for waitRenderDoneThenDo
   RenderFrame.contentDocument.defaultView.RenderDone = false;
   try {
     if (UseRenderDoneFallback || window.mozPaintCount===undefined) throw true;
     PaintCount = window.mozPaintCount;
     if (PaintCheckInterval) clearInterval(PaintCheckInterval);
-    if (!dontWaitForImages) setLoadingImages();
     else LoadingImages = 0;
-    var func  = "if (window.mozPaintCount > PaintCount) { ";
-        func +=   "if (LoadingImages > 0) {PaintCount = window.mozPaintCount;} ";
-        func +=   "else { ";
-        func +=     "window.clearInterval(PaintCheckInterval); ";
-        func +=     "RenderFrame.contentDocument.defaultView.RenderDone = true;";
-        func +=   "}";
-        func += "}";
+    
+    // wait until mozPaintCount has incremented and LoadingImages is 0, then set RenderDone
+    var func  = "if (RenderFrame.contentDocument.defaultView.LoadingImages == 0 && window.mozPaintCount > PaintCount) { ";
+        func +=    "window.clearInterval(PaintCheckInterval); ";
+        func +=    "RenderFrame.contentDocument.defaultView.RenderDone = true;";
+        func += "} ";
     PaintCheckInterval = window.setInterval(func, 10);
   }
   catch (er) {
@@ -1379,27 +1389,15 @@ function initWaitRenderDone(dontWaitForImages, skipFallback) {
   }
 }
 
-// Get all images, and wait for certain images to load before waiting for a final redraw.
-// The following criteria are intended to choose images which will force the redraw:
-//    src is not empty
-//    image is not hidden
-//    src is different than it was previously
-var LoadingImages = 0;
-var ImageSrc = {};
-var Imgid = 0;
-function setLoadingImages() {
-  LoadingImages = 0;
-  var imgs = RenderFrame.contentDocument.getElementsByTagName("img");
-  for (var i=0; i<imgs.length; i++) {
-    if (!imgs[i].src || imgs[i].src.indexOf(".html")!=-1) continue; // empty src's show page's URL (why?)
-    if (imgs[i].style.visibility == "hidden") continue;
-    if (!imgs[i].id || !ImageSrc[imgs[i].id] || imgs[i].src != ImageSrc[imgs[i].id]) {
-      LoadingImages++;
-      imgs[i].onload = new Function("LoadingImages--;");
-      imgs[i].src = imgs[i].src;
-    }
-    if (!imgs[i].id) imgs[i].id = "img" + Imgid++;
-    ImageSrc[imgs[i].id] = imgs[i].src;
+// set's SRC of image, but only if it is changing.
+// also increments LoadingImages such that only after the new src
+// has loaded will LoadingImages again be zero.
+function setImgSrc(img, src) {
+  var osrc = img.getAttribute("src");
+  if (!osrc || osrc != src) {
+    // can't use "RenderFrame" here because it may not be set yet
+    document.getElementById("render").contentDocument.defaultView.LoadingImages++;
+    img.setAttribute("src", src);
   }
 }
 

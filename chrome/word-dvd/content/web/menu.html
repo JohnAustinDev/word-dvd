@@ -33,8 +33,10 @@
         <div class="navbutton" id="menu-footer-right" style="height:30px; margin-top:36px;"></div>
       </div>
     </div>
-    <img id="menu-image-left" src="" />
-    <img id="menu-button-left" src="" />
-    <img id="menu-button-right" src="" />     
+    
+    <script>var LoadingImages = 0;</script>
+    <img id="menu-image-left" onload="window.setTimeout('LoadingImages--', 1);" />
+    <img id="menu-button-left" onload="window.setTimeout('LoadingImages--', 1);" />
+    <img id="menu-button-right" onload="window.setTimeout('LoadingImages--', 1);" />     
   </body>
 </html>
