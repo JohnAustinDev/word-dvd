@@ -157,9 +157,17 @@ var prefs = Components.classes["@mozilla.org/preferences-service;1"].
                     getService(Components.interfaces.nsIPrefService);  
 prefs = prefs.getBranch("wordDVD.");
 
-function getLocaleString(name, chapnum, book, verse) {
-  if (name=="Chaptext" || name=="PsalmTerm") return getChaptext(name, chapnum, book);
-  else if (name=="SubChaptext") return getChaptextVariant("SubChaptext", chapnum, verse);
+function getLocaleString(name, params) {
+  var v0 = (params && params[0] ? params[0]:null); // book
+  var v1 = (params && params[1] ? params[1]:null); // chapter
+  var v2 = (params && params[2] ? params[2]:null); // verse
+  var v3 = (params && params[3] ? params[3]:null); // verse2
+  
+  // handle chapter menu strings
+  if (name=="Chaptext" || name=="PsalmTerm") return getChaptext(name, v1, v0);
+  else if (name=="SubChaptext") return getChaptextVariant("SubChaptext", v1, v2, v3);
+  
+  // handle other strings
   return getLocaleLiteral(name);
 }
   
@@ -170,7 +178,7 @@ function getChaptext(name, chapnum, book) {
   return loctext;
 }
 
-function getChaptextVariant(name, chapnum, verse) {
+function getChaptextVariant(name, chapnum, verse, verse2) {
   if (!verse) verse = 1;
   chapnum = String(chapnum);
   var loctext = getLocaleLiteral(name + "-" + chapnum);
@@ -178,6 +186,7 @@ function getChaptextVariant(name, chapnum, verse) {
   if (!loctext) loctext = getLocaleLiteral(name);
   if (loctext) loctext = loctext.replace("%1$S", chapnum);
   if (loctext) loctext = loctext.replace("%2$S", verse);
+  if (loctext) loctext = loctext.replace("%3$S", verse2);
   return loctext;
 }
 

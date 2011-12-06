@@ -12,6 +12,6 @@ if (MainWin.CssFile) {
 }
 function init() {
 	var path = MainWin.UIfile[MainWin.INDIR].path + "/" + MainWin.RESOURCE;
-	document.getElementById("menu-button-left").setAttribute("src", "File://" + path + "/menuButtonLeft.png");
-	document.getElementById("menu-button-right").setAttribute("src", "File://" + path + "/menuButtonRight.png");
+	RenderWin.setImgSrc(document.getElementById("menu-button-left"), "File://" + path + "/menuButtonLeft.png");
+	RenderWin.setImgSrc(document.getElementById("menu-button-right"), "File://" + path + "/menuButtonRight.png");
 }

@@ -11,8 +11,10 @@
       <div id="text-page1" class="page"></div> 
       <div id="text-page2" class="page"></div>
     </div>
-    <img id="text-image-left"  src="">
-    <img id="text-image-right" src="">
-    <img id="text-controls" src="">
+    
+    <script>var LoadingImages = 0;</script>
+    <img id="text-image-left" onload="window.setTimeout('LoadingImages--', 1);">
+    <img id="text-image-right" onload="window.setTimeout('LoadingImages--', 1);">
+    <img id="text-controls" onload="window.setTimeout('LoadingImages--', 1);">
   </body>
 </html>
