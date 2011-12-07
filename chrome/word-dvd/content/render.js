@@ -226,23 +226,44 @@ function renderChapterMenus() {
         
         var scs = getSubChapterInfo(Book[Bindex], c);
         
-        var entry = new Object();
-        if (c>0) entry.label = MainWin.getLocaleString("Chaptext", [Book[Bindex].shortName, c]);
-        else entry.label = MainWin.getLocaleString("IntroLink");
-        entry.target = Book[Bindex].shortName + "-" + Number(c + SubChapters);
-        var hasAudio = (scs.length > 1 ? scs[1].hasAudio:getAudioFile(Book[Bindex].shortName, c, 0));
-        entry.className = (hasAudio ? "hasAudio":"");
-        MenuEntries.push(entry);
- 
+        // get chapter menu presentation settings
+        var subChapShowAll = MainWin.getLocaleString("SubChapShowAll");
+        var subChapNoHeading = MainWin.getLocaleString("SubChapNoHeading");
+        var subChapNoHeadingButton = MainWin.getLocaleString("SubChapNoHeadingButton");
+        
+        subChapShowAll = (subChapShowAll && subChapShowAll.toLowerCase() == "true");
+        subChapNoHeading = (subChapNoHeading && subChapNoHeading.toLowerCase() == "true");
+        subChapNoHeadingButton = (subChapNoHeadingButton && subChapNoHeadingButton.toLowerCase() == "true");
+        
+        if (scs.length == 1 || !subChapNoHeading) {
+          var entry = new Object();
+          if (c>0) entry.label = MainWin.getLocaleString("Chaptext", [Book[Bindex].shortName, c]);
+          else entry.label = MainWin.getLocaleString("IntroLink");
+          
+          if (scs.length > 1 && subChapNoHeadingButton) {
+            entry.target = null;
+            entry.className = "";
+          }
+          else {
+            entry.target = Book[Bindex].shortName + "-" + Number(c + SubChapters);
+            var hasAudio = (scs.length > 1 ? scs[1].hasAudio:getAudioFile(Book[Bindex].shortName, c, 0));
+            entry.className = (hasAudio ? "hasAudio":"");
+          }
+          
+          MenuEntries.push(entry);
+        }
+        
         // subchapters are shown as follows:
         // - normal chapter item is first (allready done above)
-        // - followed by any other audio subchapters (using the subchapter UI)        
-        if (c > 0 && scs.length > 2) {
-          for (var sc=2; sc<scs.length; sc++) {
-            SubChapters++;
-            if (!scs[sc].hasAudio) continue;
+        // - followed by any other audio subchapters (using the subchapter UI)      
+        if (scs.length > 1) {
+          for (var sc=(subChapNoHeading || subChapNoHeadingButton ? 1:2); sc<scs.length; sc++) {
+            if (sc > 1) SubChapters++;
+            if (!subChapShowAll && !scs[sc].hasAudio) continue;
             entry = new Object();
-            entry.label = MainWin.getLocaleString("SubChaptext", [Book[Bindex].shortName, c, scs[sc].vs, scs[sc].ve]);
+            var ve = scs[sc].ve;
+            if (ve == -1) ve = Book[Bindex]["ch" + c + "MaxVerse"];
+            entry.label = MainWin.getLocaleString("SubChaptext", [Book[Bindex].shortName, c, scs[sc].vs, ve]);
             entry.target = Book[Bindex].shortName + "-" + Number(c + SubChapters);
             entry.className = (scs[sc].hasAudio ? "hasAudio":"");
             MenuEntries.push(entry);
@@ -355,7 +376,8 @@ function writeButtonList(listArray, menuname, isLeft, doc) {
     var id = (isLeft ? "p1b":"p2b");
     doc.getElementById(id + String(i+1)).className = aClass;
     doc.getElementById(id + String(i+1)).innerHTML = aLabel;
-    MainWin.write2File(MenusFile, formatMenuString(menuname, i, isLeft, aTarget), true);
+    
+    if (aTarget) MainWin.write2File(MenusFile, formatMenuString(menuname, i, isLeft, aTarget), true);
   }
 }
 
@@ -734,7 +756,7 @@ function getAudioFile(book, chapter, index) {
             else insertAudioSubInCh(audiofile.bk, ch, file.leafName);
           }
           else if (ch == audiofile.che) {
-            if (audiofile.ve == -1) recordFileAs(audiofile.bk, ch, 0, file.leafName);
+            if (audiofile.ve == bkobj["ch" + audiofile.che + "MaxVerse"]) recordFileAs(audiofile.bk, ch, 0, file.leafName);
             else insertAudioSubInCh(audiofile.bk, ch, file.leafName);          
           }
           else recordFileAs(audiofile.bk, ch, 0, file.leafName);
@@ -826,8 +848,6 @@ function getAudioFileCoverage(filename) {
 
 //for (var m in ret) {MainWin.logmsg("ret." + m + " = " + ret[m]);} 
   
-  // if final verse is last verse, use -1
-  if (ret.ve == bkobj["ch" + ret.che + "MaxVerse"]) ret.ve = -1;
   return ret;
 }
 
@@ -1359,8 +1379,7 @@ function getSubFilePath(parent, subpath) {
 
 // call initWaitRenderDone, then redraw window, then call waitRenderDoneThenDo
 var UseRenderDoneFallback = false;
-var PaintCount;
-var PaintCheckInterval;  // works with firefox 4+
+var Paint = {count:null, check:null, numcheck:0, interval:null, tinterval:10, tstable:50};
 var DrawInterval;
 var RenderDoneTO;
 // set skipFallback if fallback init is handled elsewhere
@@ -1369,16 +1388,24 @@ function initWaitRenderDone(skipFallback) {
   RenderFrame.contentDocument.defaultView.RenderDone = false;
   try {
     if (UseRenderDoneFallback || window.mozPaintCount===undefined) throw true;
-    PaintCount = window.mozPaintCount;
-    if (PaintCheckInterval) clearInterval(PaintCheckInterval);
-    else LoadingImages = 0;
+    Paint.count = window.mozPaintCount;
+    if (Paint.interval) clearInterval(Paint.interval);
     
-    // wait until mozPaintCount has incremented and LoadingImages is 0, then set RenderDone
-    var func  = "if (RenderFrame.contentDocument.defaultView.LoadingImages == 0 && window.mozPaintCount > PaintCount) { ";
-        func +=    "window.clearInterval(PaintCheckInterval); ";
-        func +=    "RenderFrame.contentDocument.defaultView.RenderDone = true;";
+    // this function waits until:
+    //    mozPaintCount has incremented, 
+    //    and LoadingImages is 0,
+    //    then mozPaintCount must be stable for tstable milliseconds after that.
+    // then it sets RenderDone = true
+    var func  = "if (RenderFrame.contentDocument.defaultView.LoadingImages == 0 && window.mozPaintCount > Paint.count) { ";
+        func += "  if (Paint.numcheck == 0 || window.mozPaintCount != Paint.check) {Paint.numcheck = 1; Paint.check = window.mozPaintCount;} ";
+        func += "  else if (Paint.numcheck == Math.floor(Paint.tstable/Paint.tinterval)) { ";
+        func += "     window.clearInterval(Paint.interval); ";
+        func += "     RenderFrame.contentDocument.defaultView.RenderDone = true; ";
+        func += "   } ";
+        func += "  else Paint.numcheck++; ";
         func += "} ";
-    PaintCheckInterval = window.setInterval(func, 10);
+        func += "else Paint.numcheck = 0; ";
+    Paint.interval = window.setInterval(func, Paint.tinterval);
   }
   catch (er) {
     // skip the firefox 3- fallback method if RenderDone is handled somewhere else
