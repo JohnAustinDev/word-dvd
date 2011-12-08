@@ -226,7 +226,7 @@ function renderChapterMenus() {
         
         var scs = getSubChapterInfo(Book[Bindex], c);
         
-        // get chapter menu presentation settings
+        // get sub-chapter presentation settings
         var subChapShowAll = MainWin.getLocaleString("SubChapShowAll");
         var subChapNoHeading = MainWin.getLocaleString("SubChapNoHeading");
         var subChapNoHeadingButton = MainWin.getLocaleString("SubChapNoHeadingButton");
@@ -253,7 +253,7 @@ function renderChapterMenus() {
           MenuEntries.push(entry);
         }
         
-        // subchapters are shown as follows:
+        // by default, subchapters are shown as follows:
         // - normal chapter item is first (allready done above)
         // - followed by any other audio subchapters (using the subchapter UI)      
         if (scs.length > 1) {
@@ -434,14 +434,14 @@ function renderAllPages() {
   else ContinueFunc = "renderNewScreen();";
 }
 
-function initBookGlobals(skipIntroduction) {
+function initBookGlobals(skipExistingIntroduction) {
   Page = {passage:"", beg:0, end:0, complete:false, pagenumber:1, isNotes:false, topSplitTag:null, bottomSplitTag:null, matchTransition:null};
   ILastPage = 0;
   
   SubChapters = 0;
   SubChap = 0;
   var intro = getPassage(Book[Bindex].shortName, true);
-  if (!intro || skipIntroduction) {
+  if (!intro || skipExistingIntroduction) {
     Chapter = 1;
     Page.passage = getPassage(Book[Bindex].shortName);
   }
@@ -449,7 +449,7 @@ function initBookGlobals(skipIntroduction) {
     Chapter = 0;
     Page.passage = intro;
   }
-  Book[Bindex].overwriteStats = true;
+  if (!skipExistingIntroduction) Book[Bindex].overwriteStats = true;
   MainWin.logmsg("Rendering Pages for Book:" + Book[Bindex].shortName + "...");
 }
 
@@ -547,7 +547,7 @@ function saveScreenImage(bkobj, chapter, subchap, pagenumber, subchapters, scree
   var isAudio = false;
   
   // process this screen as a series of "text-blocks", each of which 
-  // may have data and an (identical) image associated with it
+  // have different data but an identical image associated with it
   var tblock = {passage:screentext, beg:-1, end:0, inc:0, endtype:-1, hasAudio:null, chapter:chapter, subchap:subchap, subchapters:subchapters, pagenumber:pagenumber};
   
   var tblocks = [];
@@ -555,7 +555,7 @@ function saveScreenImage(bkobj, chapter, subchap, pagenumber, subchapters, scree
 		tblock.beg = tblock.end+tblock.inc;
 		setTextBlock(tblock, tblock.chapter, tblock.subchap, bkobj, (ILastPage == 0 && tblock.beg == 0));
  
-    // copy and save tblock for another loop (so we can know the future there)
+    // copy and save this tblock for another loop (so we can know the future there)
     var copy = {};
     for (var m in tblock) {copy[m] = tblock[m];}
     tblocks.push(copy);
