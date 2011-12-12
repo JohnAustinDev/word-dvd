@@ -527,7 +527,7 @@ sub internalChapter2Real($$$) {
   my $quiet = shift;
 
   my $res = -1;
-  if ($haveAudio{"$bk-$ic"} =~ /^[^-]+-([^-]+)-(\d+)[-:].*?\.ac3$/i) {
+  if ($haveAudio{"$bk-$ic"} =~ /^[^-]+-([^-]+)-(\d+)/i) {
     $res = (1*$2);
     my $i = ($ic-1);
     while ($i >= 1 && $haveAudio{"$bk-$i"} eq $haveAudio{"$bk-$ic"}) {
@@ -535,7 +535,7 @@ sub internalChapter2Real($$$) {
       $res++; 
     }
   }
-  if (!$quiet && $ret == -1) {print "ERROR: internalChapter2Real, indeterminate chapter for $bk $ic.\n";}
+  if (!$quiet && $res == -1) {print "ERROR: internalChapter2Real, indeterminate chapter for $bk $ic.\n";}
 
   return $res;
 }
@@ -543,14 +543,14 @@ sub internalChapter2Real($$$) {
 sub realChapter2Internal($$) {
   my $bk = shift;
   my $rc = shift;
- 
+
   my $ret = -1;
   my $ic;
   for ($ic=1; $ic<=$lastChapter{$bk}; $ic++) {
     if (&internalChapter2Real($bk, $ic, 1) == $rc) {$ret = $ic; last;}
   }
 
-  return $ic;
+  return $ret;
 }
 
 # returns 1 only if book and chapter has a multi-chapter audio file
