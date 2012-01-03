@@ -16,6 +16,7 @@ $webdir = "$outdir/web";
 $imagedir = "$outdir/images";
 $listdir = "$outdir/listing";
 $dvddir = "$outdir/dvd";
+$backupdir = "$outdir/backup";
 
 $MENUSFILE = "MENU_BUTTONS.csv";
 
