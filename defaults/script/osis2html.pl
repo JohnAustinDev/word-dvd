@@ -34,6 +34,7 @@ $INDENT = "<span class=\"paragraph-start\"></span>";
 $PARAGRAPH = "<br>$INDENT";
 $NEWCHAPTER = "<span name=\"chapter.";
 $TITLES = "title-1|title-2|book-title|chapter-title|text-header|menu-header"; 
+$NONCANONTYPE = "x-Synodal-non-canonical";
 
 &progress(0);
 open (LOGF, ">>$outdir/logfile.txt");
@@ -57,6 +58,9 @@ while(<INF>) {
   utf8::upgrade($_);
   $ThisPercent = int((100*($line/$TotalLines))*0.8);
   if ($ThisPercent >= $Percent) {&progress($ThisPercent); $Percent += 5;}
+  
+  # Skip non-canonical stuff
+  if ($_ =~ /^\s*<div type="\Q$NONCANONTYPE\E">/) {next;}
   
   # Preverse Titles
   $preVerseTitle = $preVerseTitle . title2HTML(\$_, "preverse", "(<title [^>]*subType=\"x-preverse\"[^>]*>)(.*?)<\/title>");

@@ -84,7 +84,7 @@ if (!exists($books{$MBK})) {
 print "\nRUNNING transitions.pl $MBK $firstChapter\n";
 
 # backup our pageTiming.txt file
-&sys("cp -f \"$indir/pageTiming.txt\" \"$outaudiodir/pageTiming.txt\"");
+&sys("cp -f \"$indir/pageTiming.txt\" \"$backupdir/pageTiming.txt\"");
 
 # remove ffmpeg time file so it doesn't mess initial time up
 if (-e "$outaudiodir/audiotmp") {&sys("rm \"$outaudiodir/audiotmp\"");}
