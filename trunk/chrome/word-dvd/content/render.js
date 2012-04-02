@@ -1430,7 +1430,8 @@ function setImgSrc(img, src) {
 
 function waitRenderDoneThenDo(funcString) {
   if (DrawInterval) window.clearInterval(DrawInterval);
-  DrawInterval = window.setInterval("if (RenderFrame.contentDocument.defaultView.RenderDone) {window.clearInterval(DrawInterval); " + funcString + ";}", 10);
+  //DrawInterval = window.setInterval("if (RenderFrame.contentDocument.defaultView.RenderDone) {window.clearInterval(DrawInterval); " + funcString + ";}", 10);
+  window.setTimeout(funcString, MainWin.WAIT);
 }
 
 function unloadedRender() {
