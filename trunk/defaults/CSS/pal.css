@@ -293,7 +293,7 @@ the desired width. */
 
 .fnsymbol:after {
   content: "\00D7 ";
-  vertical-align:super;
+  vertical-align:top;
   font-size-adjust:0.35 !important;
   color:rgb(200,0,0);
 }
