@@ -280,7 +280,9 @@ the desired width. */
   text-indent:-1em;
   padding-left:1em;
 }
-
+sup {
+  vertical-align:top;
+}
 
 /********************/
 /* FOOTNOTE RELATED */
