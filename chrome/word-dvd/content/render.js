@@ -800,21 +800,45 @@ function getAudioFileCoverage(filename) {
   if (!bkobj) return null; // skip this audio file if its book is not being run
 
   var type, ret;
-  if (parts[0] == 2) {
-    parts[3] = Number(parts[3]);
-    parts[5] = Number(parts[5]);
-    parts[6] = Number(parts[6]);
-    parts[7] = Number(parts[7]);
+  if (parts[0] == 2) { // AudioFileRE2
+    parts[3] = Number(parts[3]); // starting chapter
+    parts[5] = Number(parts[5]); // ending chapter (?)
+    parts[6] = Number(parts[6]); // starting verse (?)
+    parts[7] = Number(parts[7]); // ending verse (?)
     if (!ret && !parts[4]) 
-      ret = {type:"chapter", ap:parts[1], bk:parts[2], chs:parts[3], che:parts[3], vs:bkobj["ch" + parts[3] + "MinVerse"], ve:bkobj["ch" + parts[3] + "MaxVerse"]};
+      ret = {
+        type:"chapter", 
+        ap:parts[1], 
+        bk:parts[2], 
+        chs:parts[3], 
+        che:parts[3], 
+        vs:bkobj["ch" + parts[3] + "MinVerse"], 
+        ve:bkobj["ch" + parts[3] + "MaxVerse"]
+      };
       
     if (!ret && parts[5])  
-      ret = {type:"multi-chapter", ap:parts[1], bk:parts[2], chs:parts[3], che:parts[5], vs:bkobj["ch" + parts[3] + "MinVerse"], ve:bkobj["ch" + parts[5] + "MaxVerse"]};
+      ret = {
+        type:"multi-chapter", 
+        ap:parts[1], 
+        bk:parts[2], 
+        chs:parts[3], 
+        che:parts[5], 
+        vs:bkobj["ch" + parts[3] + "MinVerse"], 
+        ve:bkobj["ch" + parts[5] + "MaxVerse"]
+      };
     
     if (!ret) {
       type = "sub-chapter";
       if (parts[6] == bkobj["ch" + parts[3] + "MinVerse"] && parts[7] == bkobj["ch" + parts[3] + "MaxVerse"]) type = "chapter";
-      ret = {type:type, ap:parts[1], bk:parts[2], chs:parts[3], che:parts[3], vs:parts[6], ve:parts[7]};
+      ret = {
+        type:type, 
+        ap:parts[1], 
+        bk:parts[2], 
+        chs:parts[3], 
+        che:parts[3], 
+        vs:parts[6], 
+        ve:parts[7]
+      };
     }
   }
  
@@ -1001,7 +1025,7 @@ function captureImage(imageName, imageType, returnFun) {
                     .createInstance(Components.interfaces.nsIProcess);
   // Capture image...
   process.init(capture);
-  var args = [imgfile.path, "-window render-win", "-crop " + MainWin.PAL.W + "x" + MainWin.PAL.H + "+0+0"];
+  var args = ["-window render-win", "-crop " + MainWin.PAL.W + "x" + MainWin.PAL.H + "+0+0", imgfile.path, MainWin.DBLogFile.path];
   process.run(true, args, args.length);
   
   if (returnFun) window.setTimeout(returnFun, 0);

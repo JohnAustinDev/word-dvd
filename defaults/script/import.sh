@@ -16,6 +16,5 @@
 #   You should have received a copy of the GNU General Public License
 #   along with Word-DVD.  If not, see <http://www.gnu.org/licenses/>.
 
-outfile=$1
-shift
-import $1 $2 $outfile
+import $1 $2 "$3" >> "$4"
+

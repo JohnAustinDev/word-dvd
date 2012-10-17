@@ -113,14 +113,14 @@ the desired width. */
   top:-2px;
 }
 
-.hasAudio:after {
-  content: url(../resource/audio-icon.png);
-  margin-left:7px;
-}
-
 .hasAudio {
   position:relative;
   left:12px; /* approx (width-of-audio-icon.png + margin-left)/2 */
+}
+
+.hasAudio:after {
+  content: url(../resource/audio-icon.png);
+  margin-left:7px;
 }
 
 .custombutton {

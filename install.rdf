@@ -11,14 +11,14 @@
         <!-- firefox -->
         <em:id>{ec8030f7-c20a-464f-9b0e-13a3a9e97384}</em:id>
         <em:minVersion>2.*</em:minVersion>
-        <em:maxVersion>14.*</em:maxVersion>
+        <em:maxVersion>20.*</em:maxVersion>
         <em:targetPlatform>Linux</em:targetPlatform>
       </Description>
     </em:targetApplication>
 
     <em:id>{f597ab2a-3a14-11de-a792-e68e56d89593}</em:id>
     <em:name>Word-DVD</em:name>
-    <em:version>1.5.7</em:version>
+    <em:version>1.5.8</em:version>
     <em:description>Turns books into DVDs</em:description>
     <em:creator>Dale Potter</em:creator>
   </Description>

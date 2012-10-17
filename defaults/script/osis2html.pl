@@ -140,16 +140,21 @@ if (-e $htmldir) {`rm -r -f "$htmldir"`;}
 `mkdir "$htmldir"`;
 
 # Write the html files...
-$htmlheader = "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\"><html><head><meta http-equiv=\"content-type\" content=\"text/html; charset=utf-8\">";
-$htmlheader .= "<link rel=\"stylesheet\" type=\"text/css\" href=\"".$CSSFILE."\" /></head>";
-$htmlheader .= "<body class=\"text\">";
-$htmlheader .= "<div class=\"usable\">";
-$htmlheader .= "<div id=\"text-page1\" class=\"page\" style=\"overflow:visible\">";
-# NOTE everything up to first \n is stripped off by Word-DVD!
-$htmlheader .= "<div id=\"text-header-left\" class=\"text-header\" style=\"max-width:999px; width:100%;\">THISBK</div>\n";
-
-$htmlfooter = "</div></div></body>";
-$htmlfooter = $htmlfooter."</html>";
+$htmlheader  = "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\">";
+$htmlheader .= "<html>";
+$htmlheader .=   "<head>";
+$htmlheader .=     "<meta http-equiv=\"content-type\" content=\"text/html; charset=utf-8\">";
+$htmlheader .=     "<link rel=\"stylesheet\" type=\"text/css\" href=\"".$CSSFILE."\" />";
+$htmlheader .=   "</head>";
+$htmlheader .=   "<body class=\"text\">";
+$htmlheader .=     "<div class=\"usable\">";
+$htmlheader .=       "<div id=\"text-page1\" class=\"page\" style=\"overflow:visible\">";
+# NOTE everything up to first \n is stripped off by Word-DVD screen text parser!
+$htmlheader .=          "<div id=\"text-header-left\" class=\"text-header\" style=\"max-width:999px; width:100%;\">THISBK</div>\n";
+$htmlfooter  =       "</div>";
+$htmlfooter .=     "</div>";
+$htmlfooter .=   "</body>";
+$htmlfooter .= "</html>";
 
 $Percent = 80;
 $numbooks = 0;
