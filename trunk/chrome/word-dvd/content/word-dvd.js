@@ -644,6 +644,10 @@ function readHtmlFiles() {
         minv = minv[1];
         Book[Book.length-1]["ch" + chn + "MinVerse"] = Number(minv);       
       }
+      else {
+        Book[Book.length-1]["ch" + chn + "MinVerse"] = 1;
+        Book[Book.length-1]["ch" + chn + "MaxVerse"] = 1;
+      }
       
       chstart = chend;
     }
@@ -701,22 +705,22 @@ function wordDVD2() {
                     .getService(Components.interfaces.nsIXULAppInfo);
   
   var vscript = "#!/bin/sh\n";
-  vscript += "echo >> " + DBLogFile.path + "\n";
-  vscript += "echo ========= FIREFOX VERSION INFO ============== >> " + DBLogFile.path + "\n";
-  vscript += "echo firefox version " + appInfo.version + " >> " + DBLogFile.path + "\n";
-  vscript += "echo firefox extension backup: " + getPathOrRelativePath(test, UIfile[OUTDIR], UIfile[OUTDIR]) + " >> " + DBLogFile.path + "\n";
-  vscript += "echo >> " + DBLogFile.path + "\n";
-  vscript += "echo ========= MPLEX VERSION INFO ============== >> " + DBLogFile.path + "\n";
-  vscript += "echo \\$mplex -E >> " + DBLogFile.path + "\n";
-  vscript += "mplex -E" + " 2>> " + DBLogFile.path + "\n";
-  vscript += "echo >> " + DBLogFile.path + "\n";
-  vscript += "echo ========= FFMPEG VERSION INFO ============== >> " + DBLogFile.path + "\n";
-  vscript += "echo \\$ffmpeg -version >> " + DBLogFile.path + "\n";
-  vscript += "ffmpeg -version " + " >> " + DBLogFile.path + "\n";
-  vscript += "echo >> " + DBLogFile.path + "\n";
-  vscript += "echo ========= DVDAUTHOR VERSION INFO ============== >> " + DBLogFile.path + "\n";
-  vscript += "echo \\$dvdauthor >> " + DBLogFile.path + "\n";
-  vscript += "dvdauthor " + " 2>> " + DBLogFile.path + "\n";
+  vscript += "echo >> \"" + DBLogFile.path + "\"\n";
+  vscript += "echo ========= FIREFOX VERSION INFO ============== >> \"" + DBLogFile.path + "\"\n";
+  vscript += "echo firefox version " + appInfo.version + " >> \"" + DBLogFile.path + "\"\n";
+  vscript += "echo firefox extension backup: " + getPathOrRelativePath(test, UIfile[OUTDIR], UIfile[OUTDIR]) + " >> \"" + DBLogFile.path + "\"\n";
+  vscript += "echo >> \"" + DBLogFile.path + "\"\n";
+  vscript += "echo ========= MPLEX VERSION INFO ============== >> \"" + DBLogFile.path + "\"\n";
+  vscript += "echo \\$mplex -E >> \"" + DBLogFile.path + "\"\n";
+  vscript += "mplex -E" + " 2>> \"" + DBLogFile.path + "\"\n";
+  vscript += "echo >> \"" + DBLogFile.path + "\"\n";
+  vscript += "echo ========= FFMPEG VERSION INFO ============== >> \"" + DBLogFile.path + "\"\n";
+  vscript += "echo \\$ffmpeg -version >> \"" + DBLogFile.path + "\"\n";
+  vscript += "ffmpeg -version " + " >> \"" + DBLogFile.path + "\"\n";
+  vscript += "echo >> \"" + DBLogFile.path + "\"\n";
+  vscript += "echo ========= DVDAUTHOR VERSION INFO ============== >> \"" + DBLogFile.path + "\"\n";
+  vscript += "echo \\$dvdauthor >> \"" + DBLogFile.path + "\"\n";
+  vscript += "dvdauthor " + " 2>> \"" + DBLogFile.path + "\"\n";
   vscript += "exit\n";
   var tmpscript = Components.classes["@mozilla.org/file/directory_service;1"].
 			    getService(Components.interfaces.nsIProperties).
