@@ -1229,7 +1229,8 @@ function saveFootnotes(book, pagename, screentext) {
     i = i + NOTETXT.length;
     var fnum = Number(screentext.substring(i).match(/^(\d+)(\D|$)/)[1]);
     var fn = new  RegExp("(" + NOTELST + fnum + "\".*)\n", "im");
-    html += getPassage(book, false, true).match(fn)[1];
+    var passage = getPassage(book, false, true);
+    html += (passage ? passage.match(fn)[1]:"");
     i = screentext.indexOf(NOTETXT, i);
   }
   

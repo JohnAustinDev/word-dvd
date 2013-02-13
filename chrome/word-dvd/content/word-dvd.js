@@ -203,7 +203,7 @@ function getLocaleLiteral(name) {
 function getLocaleLiterals() {
   var re = new RegExp("^\\s*(.*?)\\s*=[\t ]*([^\\n\\r]*)[\t ]*[\\n\\r]", "gm");
   var loctext = LocaleFile.match(re);
-  for (var i=0; i<loctext.length; i++) {
+  for (var i=0; loctext && i<loctext.length; i++) {
     loctext[i] = loctext[i].replace(/[\n\r]/g, "");
     loctext[i] = loctext[i].replace(/\s*\#.*$/, "");
     if (loctext[i].match(/^\s*$/)) {
@@ -548,6 +548,10 @@ function wordDVD() {
   exportFile(LOCALEFILE, UIfile[INDIR].path, false);
   exportFile(PAGETIMING, UIfile[INDIR].path, false);
   CssFile = exportFile(STYLESHEET, UIfile[INDIR].path, document.getElementById("restoreDefaults").checked);
+  var artwork = UIfile[INDIR].clone();
+  artwork.append(ARTWORK);
+  if (!artwork.exists()) artwork.create(UIfile[OUTDIR].DIRECTORY_TYPE, 0777);
+  
   document.getElementById("restoreDefaults").checked = false; // clear only after final time restoreDefaults is referenced!!
   
   // START OSIS CONVERTER SCRIPT
@@ -738,7 +742,7 @@ function wordDVD2() {
   // LOG LOCALE FILE
   logmsg("\nconfig.txt entries:");
   var entries = getLocaleLiterals();
-  for (var i=0; i<entries.length; i++) {logmsg(entries[i]);}
+  for (var i=0; entries && i<entries.length; i++) {logmsg(entries[i]);}
   
   logmsg("\nChecking/Creating directories...");  
   // IMAGE DIRECTORY
