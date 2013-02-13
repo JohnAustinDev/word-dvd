@@ -318,7 +318,7 @@ sub convert2HTML(\$) {
   $$xin =~ s/(<br>\s*)+/ <br>/g;
 
   # Page break
-  $$xin =~ s/<milestone type="x-pagebreak" \/>/<span class="pagebreak"><\/span>/ig;
+  $$xin =~ s/<milestone type="x-pagebreak"\s*\/>/<span class="pagebreak"><\/span>/ig;
 }
 
 sub convertMajorQuotes(\$\$$$\$) {

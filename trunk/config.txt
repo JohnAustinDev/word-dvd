@@ -75,6 +75,6 @@ book2     = Second Book
 # BOOK ORDER:
 #-------------
 # The order of books in the TOC menu follows these values.
-book1     = 0
-book2     = 1
+book1i     = 0
+book2i     = 1
 
