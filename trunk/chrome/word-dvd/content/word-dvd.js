@@ -145,7 +145,7 @@ function write2File(aFile, string, append) {
   aFile = aFile.QueryInterface(Components.interfaces.nsILocalFile);
   //if (!aFile.exists() && append) append=false;
   var foStream = Components.classes["@mozilla.org/network/file-output-stream;1"].createInstance(Components.interfaces.nsIFileOutputStream);
-  foStream.init(aFile, 0x02 | 0x08 | (append ? 0x10:0x20), 0777, 0);
+  foStream.init(aFile, 0x02 | 0x08 | (append ? 0x10:0x20), 511, 0);
   
   var converter = Components.classes["@mozilla.org/intl/converter-output-stream;1"].createInstance(Components.interfaces.nsIConverterOutputStream);
   converter.init(foStream, "UTF-8", 0, 0);
@@ -157,37 +157,46 @@ var prefs = Components.classes["@mozilla.org/preferences-service;1"].
                     getService(Components.interfaces.nsIPrefService);  
 prefs = prefs.getBranch("wordDVD.");
 
+// Looks for a string labeled by name in config.txt file. If the name is
+// not there, a less specific version of the name is sought. Runtime
+// values can be inserted into any string, when getLocaleString is called
+// with params, by using %1$S codes in config.txt strings.
 function getLocaleString(name, params) {
-  var v0 = (params && params[0] ? params[0]:null); // book
-  var v1 = (params && params[1] ? params[1]:null); // chapter
-  var v2 = (params && params[2] ? params[2]:null); // verse
-  var v3 = (params && params[3] ? params[3]:null); // verse2
-  
-  // handle chapter menu strings
-  if (name=="Chaptext" || name=="PsalmTerm") return getChaptext(name, v1, v0);
-  else if (name=="SubChaptext") return getChaptextVariant("SubChaptext", v1, v2, v3);
-  
-  // handle other strings
-  return getLocaleLiteral(name);
-}
-  
-function getChaptext(name, chapnum, book) {
-  var loctext = null;
-  if (name=="PsalmTerm" || (book && book=="Ps")) loctext = getChaptextVariant("PsalmTerm", chapnum);
-  if (!loctext) loctext = getChaptextVariant("Chaptext", chapnum);
-  return loctext;
-}
 
-function getChaptextVariant(name, chapnum, verse, verse2) {
-  if (!verse) verse = 1;
-  chapnum = String(chapnum);
-  var loctext = getLocaleLiteral(name + "-" + chapnum);
-  if (!loctext) loctext = getLocaleLiteral(name + "-" + chapnum.substr(chapnum.length-1,1));
-  if (!loctext) loctext = getLocaleLiteral(name);
-  if (loctext) loctext = loctext.replace("%1$S", chapnum);
-  if (loctext) loctext = loctext.replace("%2$S", verse);
-  if (loctext) loctext = loctext.replace("%3$S", verse2);
-  return loctext;
+  // handle special PsalmTerm case
+  if (params && params.length && params[0] && params[0] == "Ps") {
+      name = name.replace(/^ChapName/, "PsalmTerm");
+  }
+  
+  // search for the most specific match
+  var done = false;
+  var result = getLocaleLiteral(name);
+  while (result === null) {
+    var lessSpecific = name.replace(/\-[^\-]*$/, "");
+    
+    // if we can't get more specific, then remove any trailing ":" and stop looping
+    if (lessSpecific == name) {
+      done = true;
+      lessSpecific = lessSpecific.replace(/\:.*$/, "");
+    }
+    
+    name = lessSpecific;
+    result = getLocaleLiteral(name);
+    
+    if (done) break;
+  }
+  
+  // replace any runtime params in the string
+  if (params && params.length && result !== null) {
+    for (var i=0; i<params.length; i++) {
+      if (params[i] === null) continue;
+      var rtre = new RegExp("\\%" + i + "\\$S", "g");
+      result = result.replace(rtre, params[i]);
+    }
+  }
+  
+
+  return result;
 }
 
 function getLocaleLiteral(name) {
@@ -197,7 +206,7 @@ function getLocaleLiteral(name) {
     loctext = loctext[1];
     loctext = loctext.replace(/\s*\#.*$/, "");  
   }
-  return (loctext ? loctext:0);
+  return loctext;
 }
 
 function getLocaleLiterals() {
@@ -313,7 +322,7 @@ function updateAction(elem) {
     return;
     }
     if (kFilePicker.show() != kFilePickerIID.returnCancel) {
-      if (!kFilePicker.file) return false;
+      if (!kFilePicker.file) return;
     }
     else return;
     document.getElementById("browse-1").disabled = false;
@@ -531,11 +540,11 @@ function wordDVD() {
     quit(true);
     return;
   }
-  if (!UIfile[OUTDIR].exists()) UIfile[OUTDIR].create(UIfile[OUTDIR].DIRECTORY_TYPE, 0777);
+  if (!UIfile[OUTDIR].exists()) UIfile[OUTDIR].create(UIfile[OUTDIR].DIRECTORY_TYPE, 511);
   else if (document.getElementById("cleanOutDir").checked) {
     try {
       UIfile[OUTDIR].remove(true);
-      UIfile[OUTDIR].create(UIfile[OUTDIR].DIRECTORY_TYPE, 0777);
+      UIfile[OUTDIR].create(UIfile[OUTDIR].DIRECTORY_TYPE, 511);
     } catch (er) {}
   }
   document.getElementById("cleanOutDir").checked = false;
@@ -550,7 +559,7 @@ function wordDVD() {
   CssFile = exportFile(STYLESHEET, UIfile[INDIR].path, document.getElementById("restoreDefaults").checked);
   var artwork = UIfile[INDIR].clone();
   artwork.append(ARTWORK);
-  if (!artwork.exists()) artwork.create(UIfile[OUTDIR].DIRECTORY_TYPE, 0777);
+  if (!artwork.exists()) artwork.create(UIfile[OUTDIR].DIRECTORY_TYPE, 511);
   
   document.getElementById("restoreDefaults").checked = false; // clear only after final time restoreDefaults is referenced!!
   
@@ -658,6 +667,8 @@ function readHtmlFiles() {
   }
   Book = Book.sort(booksort);
   
+//for (var b in Book) {logmsg(uneval(Book[b]));}
+  
   wordDVD2();
 }
 
@@ -686,7 +697,7 @@ function wordDVD2() {
   // Create backup directory
   BackupDir = Components.classes["@mozilla.org/file/local;1"].createInstance(Components.interfaces.nsILocalFile);
   BackupDir.initWithPath(UIfile[OUTDIR].path + "/" + BACKUP);
-  if (!BackupDir.exists()) BackupDir.create(BackupDir.DIRECTORY_TYPE, 0777);
+  if (!BackupDir.exists()) BackupDir.create(BackupDir.DIRECTORY_TYPE, 511);
   
   // Log File
   DBLogFile = UIfile[OUTDIR].clone();
@@ -700,7 +711,7 @@ function wordDVD2() {
   var test = BackupDir.clone();
   test.append("extension");
   if (test.exists()) test.remove(true);
-  test.create(test.DIRECTORY_TYPE, 0777);
+  test.create(test.DIRECTORY_TYPE, 511);
   test.append(ExtFile.leafName);
   ExtFile.copyTo(test.parent, null);
   var process = Components.classes["@mozilla.org/process/util;1"]
@@ -748,7 +759,7 @@ function wordDVD2() {
   // IMAGE DIRECTORY
   var imgdir = UIfile[OUTDIR].clone();
   imgdir.append(IMGDIR);
-  if (!imgdir.exists()) imgdir.create(imgdir.DIRECTORY_TYPE, 0777);
+  if (!imgdir.exists()) imgdir.create(imgdir.DIRECTORY_TYPE, 511);
 
   // LISTING DIRECTORY
   var listdir = UIfile[OUTDIR].clone();
@@ -756,10 +767,10 @@ function wordDVD2() {
   if (listdir.exists()) {    
     if (!document.getElementById("startbk").selected) {
       listdir = moveToBackup(listdir);
-      listdir.create(listdir.DIRECTORY_TYPE, 0777);
+      listdir.create(listdir.DIRECTORY_TYPE, 511);
     }
   }
-  else listdir.create(listdir.DIRECTORY_TYPE, 0777);
+  else listdir.create(listdir.DIRECTORY_TYPE, 511);
   
   // TIMING STATISTICS FILES
   StatsFile = UIfile[OUTDIR].clone();
@@ -777,10 +788,12 @@ function wordDVD2() {
       if (!prompForSingleBook()) {quit(); return;}
   if (document.getElementById("startbk").selected) 
       if (!prompForStartBook()) {quit(); return;}
-  
+      
+//for (var b in Book) {logmsg(uneval(Book[b]));}
+ 
   RenderWin = window.open("chrome://word-dvd/content/render.xul", "render-win", "chrome=yes,alwaysRaised=yes");
   RenderWin.focus();
-}  
+}
 
 function checkOSISConverion() {
   MessageWin.focus();
@@ -815,7 +828,7 @@ function exportDir(extdir, outDirPath, overwrite) {
     else return to;
   }
   var toP = to.parent;
-  if (!toP.exists()) toP.create(toP.DIRECTORY_TYPE, 0777);
+  if (!toP.exists()) toP.create(toP.DIRECTORY_TYPE, 511);
   if (ExtFile.isDirectory()) {
     var from = Components.classes["@mozilla.org/file/local;1"].createInstance(Components.interfaces.nsILocalFile);
     from.initWithPath(ExtFile.path + "/" + extdir);
@@ -849,7 +862,7 @@ function exportDir(extdir, outDirPath, overwrite) {
       catch (er) {logmsg(er + "\nError (exportDir): Getting zip directory entry " + entry + ". " + er); continue;}
       var newfile = Components.classes["@mozilla.org/file/local;1"].createInstance(Components.interfaces.nsILocalFile);
       newfile.initWithPath(outDirPath + "/" + entry);
-      if (entryObj && entryObj.isDirectory && !newfile.exists()) newfile.create(newfile.DIRECTORY_TYPE, 0777);
+      if (entryObj && entryObj.isDirectory && !newfile.exists()) newfile.create(newfile.DIRECTORY_TYPE, 511);
     }
     // create output files	
     var entries = zReader.findEntries(null);
@@ -883,7 +896,7 @@ function exportFile(extfile, outDirPath, overwrite) {
     else return to;
   }
   var toP = to.parent;
-  if (!toP.exists()) toP.create(toP.DIRECTORY_TYPE, 0777);
+  if (!toP.exists()) toP.create(toP.DIRECTORY_TYPE, 511);
   if (ExtFile.isDirectory()) {
     var from = Components.classes["@mozilla.org/file/local;1"].createInstance(Components.interfaces.nsILocalFile);
     from.initWithPath(ExtFile.path + "/" + extfile);
@@ -924,8 +937,8 @@ function moveToBackup(aFile) {
 }
 
 function booksort(a, b) {
-  var ai = Number(getLocaleString(a.shortName + "i"));
-  var bi = Number(getLocaleString(b.shortName + "i"));
+  var ai = Number(getLocaleString("BookOrder:" + a.shortName));
+  var bi = Number(getLocaleString("BookOrder:" + b.shortName));
   if (ai > bi) return 1;
   if (ai < bi) return -1;
   return 0;
@@ -974,7 +987,7 @@ function writeRunScripts() {
   // MAKE OUTPUT SCRIPT DIR
   var file = Components.classes["@mozilla.org/file/local;1"].createInstance(Components.interfaces.nsILocalFile);
   file.initWithPath(UIfile[OUTDIR].path + "/" + SCRIPT);
-  if (!file.exists()) file.create(file.DIRECTORY_TYPE, 0777);
+  if (!file.exists()) file.create(file.DIRECTORY_TYPE, 511);
   
   var scriptdir = Components.classes["@mozilla.org/file/local;1"].createInstance(Components.interfaces.nsILocalFile);
   scriptdir.initWithPath(UIfile[INDIR].path + "/" + CODE);

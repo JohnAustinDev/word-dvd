@@ -76,7 +76,8 @@ function startMenuGeneration() {
       }
       // save new menu entry
       MenuEntries.push(new Object());
-      MenuEntries[MenuEntries.length-1].label = MainWin.getLocaleString(Book[b].shortName);
+      MenuEntries[MenuEntries.length-1].label = MainWin.getLocaleString("BookName:" + Book[b].shortName, [Book[b].shortName]);
+      if (MenuEntries[MenuEntries.length-1].label === null) MenuEntries[MenuEntries.length-1].label = "";
       MenuEntries[MenuEntries.length-1].className = (hasAudio ? "hasAudio":"");
       if (Book[b].maxChapter>1 || getPassage(Book[b].shortName, true)) {
         MenuEntries[MenuEntries.length-1].target = Book[b].shortName + "-m1";
@@ -85,11 +86,12 @@ function startMenuGeneration() {
         MenuEntries[MenuEntries.length-1].target = Book[b].shortName + "-1";
       }
     }
+    
     MenuEntryIndex = 0;
-    MenuNumber = 0;
+    SectionMenuNumber = 0;
     Bindex = 0;
     MenuType="TOC";
-    Basename = "toc";
+    Basename = "toc"; // is toc here, but is Book.x.shortName for submenus
     MainWin.logmsg("Rendering TOC Menu(s)...");
     window.setTimeout("renderMenuSection();", 0);
   }
@@ -165,52 +167,47 @@ function readPageTiming() {
   }  
 }
 
-var MenuEntries, MenuEntryIndex, MenuNumber, MenuType, Basename;
+var MenuEntries, MenuEntryIndex, SectionMenuNumber, MenuType, Basename;
 function renderMenuSection() {
-  if (MenuEntryIndex<MenuEntries.length) {
-    MenuNumber++;
+  if (MenuEntryIndex < MenuEntries.length) {
+    SectionMenuNumber++; // first menu is number 1 (not zero)
     var arrayL = [];
     var arrayR = [];
-    var haveart = getSubFilePath(MainWin.UIfile[MainWin.INDIR], MainWin.ARTWORK + "/" + Basename + "-m" + MenuNumber + ".png");
-    
-    // check for UI locale entries corresponding to chapter menu entries
-    var doneLeft = false;
-    var doneRight = false;
-    for (var r=1; r<=16; r++) {
-      if (!MainWin.getLocaleString(MenuType + String(MenuNumber) + "button" + r)) continue;
-      if (r <= 8) doneLeft = true;
-      else doneRight = true;
-    }
-    for (var r=1; r<=16; r++) {
-      var label = MainWin.getLocaleString(MenuType + String(MenuNumber) + "button" + r); 
-      var target = MainWin.getLocaleString(MenuType + String(MenuNumber) + "button" + r + "T");
-      if (label && !target || !label && target) {
-        MainWin.logmsg("ERROR: Skipping button " + label + ", no label or target found!");
-        label = "";
-        target = "";
-      } 
-      var nobj = {label:label, target:target, className:"custombutton"};
-      if (r <= 8 && doneLeft) arrayL.push(nobj);
-      else if (r > 8 && doneRight) arrayR.push(nobj);
-    }
-    if (doneLeft && haveart) MainWin.logmsg("Error: artwork/button conflict on " + Basename + "-m" + MenuNumber);
+    var haveart = getSubFilePath(MainWin.UIfile[MainWin.INDIR], MainWin.ARTWORK + "/" + Basename + "-m" + SectionMenuNumber + ".png");
     
     // prepare next menu's button list
     var pagedone = false;
     for (var r=1; r<=16; r++) {
-      if (r == 9) pagedone=false;
-      if (r <= 8 && doneLeft || r > 8 && doneRight) continue;
+      if (r == 9) pagedone = false;
       if (haveart && r <= 8 || pagedone || !MenuEntries[MenuEntryIndex]) continue;
+      
+      // Chapter submenus may have ChapName specified, so handle that now
+      if (MenuType == "CHP") {
+        // check for UI locale entries corresponding to chapter menu entries
+        var label = MainWin.getLocaleString("ChapName:" + Book[Bindex-1].shortName + "-" + MenuEntryIndex+1, [Book[Bindex-1].shortName, MenuEntryIndex+1]);
+        if (label !== null) {
+          MenuEntries[MenuEntryIndex].label = label;
+          MenuEntries[MenuEntryIndex].className = "custombutton";
+        }
+        
+        var target = MainWin.getLocaleString("ChapName:" + Book[Bindex-1].shortName + "-" + MenuEntryIndex+1 + "T", [Book[Bindex-1].shortName, MenuEntryIndex+1]);
+        if (target !== null) MenuEntries[MenuEntryIndex].target = target;
+      }
       
       // save next menu entry to menu
       if (r <= 8) arrayL.push(MenuEntries[MenuEntryIndex]);
       else arrayR.push(MenuEntries[MenuEntryIndex]);
-      if (MenuEntries[MenuEntryIndex] && MainWin.getLocaleString(MenuType + String(MenuNumber) + (r <= 8 ? "left":"right") + "last")==MenuEntries[MenuEntryIndex].label) pagedone = true;
+      
+      var mel = MainWin.getLocaleString(MenuType + String(SectionMenuNumber) + (r <= 8 ? "left":"right") + "last");
+      if (MenuEntries[MenuEntryIndex] && mel && mel == MenuEntries[MenuEntryIndex].label) {
+        pagedone = true;
+      }
+      
       MenuEntryIndex++;
     }
     
     // create a new menu
-    renderMenu(Basename, MenuNumber, arrayL, arrayR, (MenuNumber==1), (MenuEntryIndex>=MenuEntries.length), "renderMenuSection();");
+    renderMenu(Basename, SectionMenuNumber, arrayL, arrayR, (SectionMenuNumber==1), (MenuEntryIndex>=MenuEntries.length), "renderMenuSection();");
   }
   else window.setTimeout("renderChapterMenus();", 0);
 }
@@ -219,12 +216,14 @@ function renderChapterMenus() {
   if (Bindex < Book.length) {
     SubChapters = 0;
     var intro = getPassage(Book[Bindex].shortName, true);
-    if (Book[Bindex].maxChapter>1 || intro) {
+    if (Book[Bindex].maxChapter > 1 || intro) {
       MenuEntries = [];
       for (var c=0; c<=Book[Bindex].maxChapter; c++) {
         if (c==0 && !intro) continue;
         
         var scs = getSubChapterInfo(Book[Bindex], c);
+        
+//for (var m=0; m<scs.length; m++) {MainWin.logmsg("scs[" + m + "] = " + (scs[m] ? uneval(scs[m]):"null"));}
         
         // get sub-chapter presentation settings
         var subChapShowAll = MainWin.getLocaleString("SubChapShowAll");
@@ -237,7 +236,7 @@ function renderChapterMenus() {
         
         if (scs.length == 1 || !subChapNoHeading) {
           var entry = new Object();
-          if (c>0) entry.label = MainWin.getLocaleString("Chaptext", [Book[Bindex].shortName, c]);
+          if (c>0) entry.label = MainWin.getLocaleString("ChapName:" + Book[Bindex].shortName + "-" + c, [Book[Bindex].shortName, c]);
           else entry.label = MainWin.getLocaleString("IntroLink");
           
           if (scs.length > 1 && subChapNoHeadingButton) {
@@ -263,15 +262,18 @@ function renderChapterMenus() {
             entry = new Object();
             var ve = scs[sc].ve;
             if (ve == -1) ve = Book[Bindex]["ch" + c + "MaxVerse"];
-            entry.label = MainWin.getLocaleString("SubChaptext", [Book[Bindex].shortName, c, scs[sc].vs, ve]);
+            entry.label = MainWin.getLocaleString("SubChaptext:" + Book[Bindex].shortName + "-" + c, [Book[Bindex].shortName, c, scs[sc].vs, ve]);
             entry.target = Book[Bindex].shortName + "-" + Number(c + SubChapters);
             entry.className = (scs[sc].hasAudio ? "hasAudio":"");
             MenuEntries.push(entry);
           }
         }
       }
+      
+//for (var m=0; m<MenuEntries.length; m++) {MainWin.logmsg("MenuEntries[" + m + "] = " + uneval(MenuEntries[m]));}
+
       MenuEntryIndex = 0;
-      MenuNumber = 0;
+      SectionMenuNumber = 0;
       MenuType = "CHP";
       Basename = Book[Bindex].shortName;
       MainWin.logmsg("Rendering Chapter Menu(s):" + Basename + "...");
@@ -280,7 +282,7 @@ function renderChapterMenus() {
     }
     else {
       Bindex++;
-      window.setTimeout("renderMenuSection();", 0);
+      window.setTimeout("renderChapterMenus();", 0);
     }
   }
   else window.setTimeout("startTextGeneration();", 0);
@@ -303,18 +305,15 @@ function renderMenu(menubase, menunumber, listArrayL, listArrayR, isFirstMenu, i
   var names = [null, null, null, null];
   var targets = [null, null, (isLastMenu ? "":nextmenu), (isFirstMenu ? (menubase=="toc" ? "":"toc-1"):prevmenu)];
   for (var i=0; i<locnames.length; i++) {
-    var val;
-    val = MainWin.getLocaleString(MenuType + locnames[i]);
-    if (val!==0) names[i] = val;
-    val = MainWin.getLocaleString(MenuType + String(menunumber) + locnames[i]);
-    if (val!==0) names[i] = val;
-    val = MainWin.getLocaleString(MenuType + locnamesT[i]);
-    if (val!==0) targets[i] = val;
-    val = MainWin.getLocaleString(MenuType + String(menunumber) + locnamesT[i]);
-    if (val!==0) targets[i] = val;
+  
+    var bk = (MenuType == "CHP" ? MainWin.getLocaleString("BookName:" + Book[Bindex-1].shortName, [Book[Bindex-1].shortName]):null);
+
+    var name = MainWin.getLocaleString(MenuType + locnames[i] + ":" + String(menunumber), [bk, null, null, null]);
+    if (name !== null) names[i] = name;
     
-    var bk = MainWin.getLocaleString(menubase);
-    if (bk && names[i]) names[i] = names[i].replace("%BOOK%", bk, "g");
+    var target = MainWin.getLocaleString(MenuType + locnames[i] + ":" + String(menunumber));
+    if (target) targets[i] = target;
+
   }
   
   // page 1 & 2 headers
@@ -1017,7 +1016,7 @@ function captureImage(imageName, imageType, returnFun) {
   imgfile.append(MainWin.IMGDIR);
   if (subfolder) {
    imgfile.append(subfolder);
-   if (!imgfile.exists()) imgfile.create(imgfile.DIRECTORY_TYPE, 0777);
+   if (!imgfile.exists()) imgfile.create(imgfile.DIRECTORY_TYPE, 511);
   }
   imgfile.append(imageName);
   
@@ -1251,7 +1250,7 @@ function writeFootnotesToFile(book) {
   var fffile = MainWin.UIfile[MainWin.OUTDIR].clone();
   fffile.append(MainWin.LISTING);
   fffile.append("tmp");
-  if (!fffile.exists()) fffile.create(fffile.DIRECTORY_TYPE, 0777);
+  if (!fffile.exists()) fffile.create(fffile.DIRECTORY_TYPE, 511);
   fffile.append(book + ".fn.txt");
   if (fffile.exists()) fffile.remove(false);
   for (var i=0; i<PageWithFootnotes.length; i++) {

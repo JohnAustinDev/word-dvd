@@ -1,6 +1,6 @@
 # DEFAULT config file (1.4.3)
 
-# WORD-DVD SETTINGS:
+# WORD-DVD BUILD SETTINGS:
 #-------------------
 AudioPrefix       = en      # audio files begin with this optional prefix
 LangCode          = en      # DVD language code.
@@ -32,49 +32,42 @@ Hyphen         = [bcdfghjklmnpqrstvwxyz][aeiou]
 
 # DVD AUTOMATED MENU GENERATOR SETTINGS:
 #---------------------------------------
-# The main DVD menu is designated TOC1 and can be multiple pages: TOC[page]
-# Chaper submenu's are designated by CHP.
-# Parameters below are comprised of a menu designation prefix followed by a suffix.
-# Prefix is TOC[page] for main-menu pages (if page is left out, value applies to all TOC pages)
-# Prefix is CHP for chapter-menu pages (in which case special value %BOOK% will be replaced by a chapter number)
-# Suffix can be topleft, topright, bottomleft, bottomright, or button[n].
-# TOC[page] suffix can also be leftlast or rightlast: A page break is forced after such a value.
-# Suffix button[n] corresponds to the nth button on the menu, and this allows over-riding of any default button name.
-# Suffixes beginning with "bottom" or "button" and ending with "T" are menu targets which override the default target.
-# Values for terms enging in "T" must be found in the menus.txt file.
-#TOC1bottomleft  = About this DVD 
-#TOC1bottomleftT = more-m1
-TOC1topleft     = WORD-DVD
-TOC1topright    = Table of Contents
-CHPtopleft      = %BOOK%
-CHPtopright     = %BOOK%
+# The following have the form: PrefixSuffix[:<page-number>]
+# Prefix is TOC for main-menu pages
+# Prefix is CHP for submenu pages
+# Suffix can be either: topleft, topright, bottomleft or bottomright.
+# TOC suffix can also be leftlast or rightlast to force a page break after such a value.
+# Suffixes ending with "T" are menu targets which override the default target.
+# Note: All UI strings may include special codes which will be replaced by values at runtime:
+#   %0$S = becomes current book
+#   %1$S = becomes current chapter
+#   %2$S = becomes current verse
+#   %3$S = becomes current last-verse
+
+#TOCbottomleft:1  = About this DVD 
+#TOCbottomleftT:1 = more-m1
+TOCtopleft:1      = WORD-DVD
+TOCtopright:1     = Table of Contents
+CHPtopleft        = %0$S
+CHPtopright       = %0$S
 
 
 USER INTERFACE PHRASES:
 -----------------------
 IntroLink  = Introduction    # phrase designating introductions
 
-# Chaptext[-n] designates the name of each chapter number n. 
-# If -n is included then value applies to a specific chapter, otherwise it applies to all chapters.
-# Any occurences of special symbols like %1$S will be replaced by a number at run time.
-# PsalmTerm is like Chaptext but only applies to the book of Psalms.
-# SubChaptext is used for sub-chapter titles which are created when a chapter has partial audio.
-Chaptext    = Chapter %1$S
-Chaptext-5  = Conclusion
-SubChaptext = Chapter %1$s verse %2$s
+# BookName:<book-filename> designates a book name (<book-filename> is the name of a file in the HTML directory)
+# ChapName[:<book-filename>[-<chapter-number>]] designates the chapter name.
+# PsalmTerm is like ChapName but only applies to the book of Psalms.
+# SubChaptext designates sub-chapter titles which are automatically created if a chapter has partial audio.
+# BookOrder:<book-filename> must be provided to specify the order books should appear in the TOC menu.
+# Occurences of special codes like %1$S are used to insert values at run time.
 
-
-# BOOK NAMES:
-#-------------
-# Parameters on the left correspond to file names in the HTML directory.
-# Values on the right correspond with book names to display in the DVD.
-book1     = First Book
-book2     = Second Book
-
-
-# BOOK ORDER:
-#-------------
-# The order of books in the TOC menu follows these values.
-book1i     = 0
-book2i     = 1
+BookName:book1   = First Book
+BookName:book2   = Second Book
+ChapName         = Chapter %1$S
+ChapName:5       = Conclusion
+SubChaptext      = Chapter %1$S verse %2$S
+BookOrder:book1  = 0
+BookOrder:book2  = 1
 
