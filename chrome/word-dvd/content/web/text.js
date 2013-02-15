@@ -628,9 +628,9 @@ function formatPage(elem, page, widowCheck) {
   //build page header
   var ch = (DisplayChapter==0 ?  
       MainWin.getLocaleString("IntroLink"):
-      MainWin.getLocaleString("Chaptext", [DisplayBook, DisplayChapter]));
-  if (ch==0) ch = "";
-  var bklocale = MainWin.getLocaleString(DisplayBook);
+      MainWin.getLocaleString("ChapName:" + DisplayBook + "-" + DisplayChapter, [DisplayBook, DisplayChapter]));
+  if (!ch) ch = "";
+  var bklocale = MainWin.getLocaleString("BookName:" + DisplayBook, [DisplayBook]);
   var myid = "text-header-" + (isLeftPage ? "left":"right");
   elem.innerHTML = "<div id=\"" + myid + "\" class=\"text-header\"></div>";
   var header;
