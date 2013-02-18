@@ -17,4 +17,5 @@ The HTML markup for the above files must follow some special rules which are nec
  * The `<head>...</head>` and `<body>` tags should all be included on line 1 of the file.
  * All other tags within any single line of the HTML file must be closed. So you can't start a `<div>` on one line and end the `</div>` on a later line. Both open and close tags are always on the same line. The last line is the only exception.
  * Only one level of nesting is allowed. You can have a `<div>` containing a stylised `<span>`, but the span cannot itself contain its own child tags.
+ * Page breaks which are added during the rendering process only occur at spaces (at ASCII 32). This means that for proper page breaks to be placed in all cases, there must be a space before and/or after each HTML tag.
  * Download the [http://code.google.com/p/word-dvd/downloads/detail?name=Example-1.4.3.zip&can=2&q= Example], and see the HTML input files as a starting point. Your HTML should utilise the project [http://code.google.com/p/word-dvd/source/browse/trunk/defaults/CSS/pal.css CSS] file.
