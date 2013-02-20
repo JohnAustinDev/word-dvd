@@ -92,8 +92,8 @@ function startMenuGeneration() {
     SectionMenuNumber = 0;
     Bindex = 0;
     MenuType="TOC";
-    Basename = "toc"; // is toc here, but is Book.x.shortName for submenus
-    RenderFrame.contentDocument.getElementsByTagName("body")[0].setAttribute("menuType", MenuType);
+    Basename = "toc"; // is toc here, but is Book[x].shortName for submenus
+    RenderFrame.contentDocument.getElementsByTagName("body")[0].setAttribute("pageType", MenuType);
     MainWin.logmsg("Rendering TOC Menu(s)...");
     window.setTimeout("renderMenuSection();", 0);
   }
@@ -278,7 +278,7 @@ function renderChapterMenus() {
       SectionMenuNumber = 0;
       MenuType = "CHP";
       Basename = Book[Bindex].shortName;
-      RenderFrame.contentDocument.getElementsByTagName("body")[0].setAttribute("menuType", MenuType);
+      RenderFrame.contentDocument.getElementsByTagName("body")[0].setAttribute("pageType", MenuType);
       MainWin.logmsg("Rendering Chapter Menu(s):" + Basename + "...");
       window.setTimeout("renderMenuSection();", 0);
       Bindex++;
@@ -293,6 +293,9 @@ function renderChapterMenus() {
 
 var MenuHeaders = {};
 function renderMenu(menubase, menunumber, listArrayL, listArrayR, isFirstMenu, isLastMenu, returnFun) {
+
+  RenderFrame.contentDocument.getElementsByTagName("body")[0].setAttribute("pageName", menubase + "-" + menunumber);
+
   if (listArrayL.length>8 || listArrayR.length>8) {
     MainWin.jsdump("ERROR: Too many headings for menu page: " + menuname);
     return;
@@ -431,6 +434,7 @@ function renderAllPages() {
   // Open a window to render to
   Bindex = StartingBindex;
   initBookGlobals();
+  RenderFrame.contentDocument.getElementsByTagName("body")[0].setAttribute("pageType", "text");
   if (MainWin.Aborted) return;
   else if (!MainWin.Paused) renderNewScreen();
   else ContinueFunc = "renderNewScreen();";
@@ -477,6 +481,8 @@ function renderNewScreen() {
   initWaitRenderDone(true);
   
   Page.pagebreakboth = false;
+  var pageName = Book[Bindex].shortName + (Chapter==0 ? ".intr":"") + "-" + Number(Chapter+SubChapters) + "-" + Page.pagenumber;
+  RenderFrame.contentDocument.getElementsByTagName("body")[0].setAttribute("pageName", pageName);
   RenderFrame.contentDocument.defaultView.fitScreen(Book[Bindex].shortName, Chapter, SubChapters, Page, skipPage1, skipPage2);
     
   waitRenderDoneThenDo("screenDrawComplete()");
@@ -1054,7 +1060,13 @@ function getStats(pagename, textblock, hasAudio) {
   if (info.len>=1) {
     if (textblock.search("class=\"majorquote\"") != -1) MainWin.logmsg("Found class=\"majorquote\" on " + pagename);
 
-    // find transition text to be added to transition file
+    // Find transition text to be added to the transition file. The transition
+    // file is only needed by transitions.pl so that if transitions are
+    // manually recorded, a text-locative entry can be made in pageTiming.txt.
+    // After text-locative entries are added to pageTiming.txt, then while the
+    // project is being re-rendered, these entries are reported in the -trans 
+    // file, along with the usual data. This allows correlation of real 
+    // times to their calculated times, thus greatly improving accuracy.
     var lastVerse = textblock;
     var lvi = lastVerse.lastIndexOf("<sup>");
     if (lvi != -1) {
@@ -1288,6 +1300,7 @@ function initFootnotes() {
   Prepender = "";
   ContinueFunc = "renderNewFNScreen();";
   LastBindex=0;
+  RenderFrame.contentDocument.getElementsByTagName("body")[0].setAttribute("pageType", "footnote");
   if (PageWithFootnotes[FootnoteIndex])
       MainWin.logmsg("Rendering Footnotes for page:" + PageWithFootnotes[FootnoteIndex].name + "...");
 }
@@ -1341,6 +1354,7 @@ function renderNewFNScreen() {
 
   var tstart = Page.end;
   Page.pagebreakboth = false;
+  RenderFrame.contentDocument.getElementsByTagName("body")[0].setAttribute("pageName", Book[Bindex].shortName + ".fn-" + Chapter + "-" + Page.pagenumber);
   RenderFrame.contentDocument.defaultView.fitScreen(Book[Bindex].shortName, Chapter, 0, Page, false, false);
 
   // couldn't fit this last page, so start new page with it...

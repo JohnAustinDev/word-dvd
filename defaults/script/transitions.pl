@@ -17,6 +17,17 @@
 #   along with Word-DVD.  If not, see <http://www.gnu.org/licenses/>.
 
 #usage transitions.pl scriptDir inputDir outputDir audioDir book [args...]
+# NOTE: this script requires the following are installed:
+#
+# Perl Extensions:
+#   Term::ReadKey
+#
+# Linux programs:
+#   wmctrl
+#   ffmpeg (to get ffplay)
+
+use Term::ReadKey;
+
 $debug = 0;
 
 $prepage = 10;
@@ -89,7 +100,6 @@ print "\nRUNNING transitions.pl $MBK $firstChapter\n";
 # remove ffmpeg time file so it doesn't mess initial time up
 if (-e "$outaudiodir/audiotmp") {&sys("rm \"$outaudiodir/audiotmp\"");}
 
-use Term::ReadKey;
 ReadMode 4;
 
 $quit = "false";

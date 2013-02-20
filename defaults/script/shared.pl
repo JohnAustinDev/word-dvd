@@ -78,7 +78,7 @@ sub readDataFiles() {
     $maxbooknum=0;
     foreach $book (keys %books) {
       $maxbooknum++;
-      $books{$book} = $localeFile{$book."i"};
+      $books{$book} = $localeFile{"BookOrder:".$book};
     }
   }
   
