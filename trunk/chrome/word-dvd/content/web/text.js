@@ -69,7 +69,9 @@ MainWin.jsdump("Chapter=" + Number(chapter+subchapters) + ", Pagenumber=" + aPag
     PageElem2.innerHTML = PageElem1.innerHTML;
     formatPage(PageElem1, null, false);
   }
-  else if (skipPage2) formatPage(PageElem2, null, false);
+  else if (skipPage2 || aPage.pagebreakboth) {
+    formatPage(PageElem2, null, false);
+  }
   else {
     fitPage(PageElem2, book, chapter, aPage, SPACE, matchTransition);
     // page.end < page.beg may occur if a text-locative transition could not be matched on this page, so
@@ -120,6 +122,10 @@ function fitPage(elem, book, chapter, page, sep, matchTransition) {
     if (matchTransition && matchTransition.preservingTransition && page.end > matchTransition.transition) {
       matchTransition.preserved = true;
       MainWin.logmsg("WARNING " + book + "-" + chapter + "-" + page.pagenumber + ": Preserving transition by truncating page.");
+      break;
+    }
+    if (page.passage.substring(page.beg, page.end).search(RenderWin.PAGEBREAKBOTH)!=-1) {
+      goodpage.pagebreakboth = true;
       break;
     }
     if (page.passage.substring(page.beg, page.end).search(RenderWin.PAGEBREAK)!=-1) break;
@@ -442,6 +448,7 @@ function findParEnd(passage, starting) {
   var end = passage.indexOf("<", starting);
   while (end != -1) {
     if (passage.substr(end, MainWin.NEWCHAPTER.length) == MainWin.NEWCHAPTER) break;
+    if (passage.substr(end, RenderWin.PAGEBREAKBOTH.length) == RenderWin.PAGEBREAKBOTH) break;
     if (passage.substr(end, RenderWin.PAGEBREAK.length) == RenderWin.PAGEBREAK) break;
     if (passage.substr(end,2)=="</" || passage.substr(end,6).search(/^<(span|sup)/i)!=-1) {
       end = passage.indexOf("<", end+1);
