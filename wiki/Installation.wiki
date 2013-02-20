@@ -10,12 +10,13 @@
   * firefox
   * perl
   * !ImageMagick
-  * genisoimage (1.1.9 and eariler versions result in ISOs which are incompatible with Windows XP)
+  * genisoimage
   * growisofs
 
 === Word-DVD utilities and debugging features need these packages installed ===
-  * ecasound
-  * libaudio-ecasound-perl
+  * Perl's Term::!ReadKey
+  * wmctrl
+  * ffmpeg
   * dvbsnoop
   * eyeD3
   * sox (some features require compilation with mp3 support)
