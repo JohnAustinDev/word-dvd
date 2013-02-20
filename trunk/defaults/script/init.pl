@@ -41,6 +41,51 @@ if (-e $locale) {
   close(LOC);
 }
 
+# Looks for a string labeled by $name in config.txt file. If $name is
+# not there, a less specific version is sought. Runtime values can be 
+# inserted into any string, when &getLocaleString is called with params, 
+# by using %1$S codes in config.txt strings. This function has a 
+# Javascript implementation in word-dvd.js
+sub getLocaleString($\@) {
+  my $name = shift;
+  my $paramsP = shift;
+  
+  # handle special PsalmTerm case
+  if ($paramsP && @{$paramsP}[0] eq "Ps") {
+    $name =~ s/^ChapName/PsalmTerm/;
+  }
+  
+  # search for the most specific match
+  my $done = 0;
+  my $result = $localeFile{$name};
+  while (!defined($localeFile{$name})) {
+    my $lessSpecific = $name;
+    $name =~ s/\-[^\-]*$//;
+    
+    # if we can't get more specific, then remove any trailing ":" and stop looping
+    if ($lessSpecific eq $name) {
+      $done = 1;
+      $lessSpecific =~ s/\:.*$//;
+    }
+    
+    $name = $lessSpecific;
+    $result = $localeFile{$name};
+    
+    if ($done) {last;}
+  }
+  
+  # replace any runtime params in the string
+  if ($paramsP && length(@{$paramsP}) && $result) {
+    for (my $i=0; $i < length(@{$paramsP}); $i++) {
+      my $thisp = @{$paramsP}[$i];
+      if ($thisp eq "") {next;}
+      $result =~ s/\%$i\$S/$thisp/ig;
+    }
+  }
+  
+  return $result;
+}
+
 $Verbosity = 0;
 if (exists($localeFile{"LogFileVerbosity"})) {$Verbosity = $localeFile{"LogFileVerbosity"};}
 

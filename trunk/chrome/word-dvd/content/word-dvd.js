@@ -160,7 +160,8 @@ prefs = prefs.getBranch("wordDVD.");
 // Looks for a string labeled by name in config.txt file. If the name is
 // not there, a less specific version of the name is sought. Runtime
 // values can be inserted into any string, when getLocaleString is called
-// with params, by using %1$S codes in config.txt strings.
+// with params, by using %1$S codes in config.txt strings. This function
+// has a Perl implementation in init.pl
 function getLocaleString(name, params) {
 
   // handle special PsalmTerm case
@@ -190,7 +191,7 @@ function getLocaleString(name, params) {
   if (params && params.length && result !== null) {
     for (var i=0; i<params.length; i++) {
       if (params[i] === null) continue;
-      var rtre = new RegExp("\\%" + i + "\\$S", "g");
+      var rtre = new RegExp("\\%" + i + "\\$S", "ig");
       result = result.replace(rtre, params[i]);
     }
   }

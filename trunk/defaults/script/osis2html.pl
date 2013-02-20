@@ -165,7 +165,7 @@ foreach $bk (sort keys %book) {
   open (OUTF, ">$htmldir/$bk.html") || &finish("Could not open outfile $htmldir/$bk.html\n");
   $booklocal = decode("utf8", $bk);
   utf8::upgrade($booklocal);
-  $booklocal = $localeFile{$booklocal};
+  $booklocal = $localeFile{"BookName:".$booklocal};
 
   my $hdr = $htmlheader;
   $hdr =~ s/THISBK/$booklocal/;
@@ -180,18 +180,8 @@ foreach $bk (sort keys %book) {
     
     if ($ch > 0) {
       if ($AddChapterNumbers eq "true") {
-        $chaplocal = "";
-        if ($bk eq "Ps") {
-          $chaplocal = decode("utf8", "PsalmTerm");
-          utf8::upgrade($chaplocal);
-          $chaplocal = $localeFile{$chaplocal};
-        }
-        if (!$chaplocal) {
-          $chaplocal = decode("utf8", "Chaptext");
-          utf8::upgrade($chaplocal);
-          $chaplocal = $localeFile{$chaplocal};
-        }
-        $chaplocal =~ s/\%1\$S/$ch/;
+        my @params = ($bk, $ch);
+        $chaplocal = &getLocaleString("ChapName", \@params);
         $print =  $print . "<div class=\"chapter-title\">$chaplocal</div>";
       }
     }
@@ -235,7 +225,7 @@ foreach $bk (sort keys %book) {
   open (OUTF, ">$htmldir/$bk.fn.html") || &finish("Could not open outfile $htmldir/$bk.fn.html\n");
   my $bkl = decode("utf8", $bk);
   utf8::upgrade($bkl);
-  $bkl = $localeFile{$bkl};
+  $bkl = $localeFile{"BookName:".$bkl};
   my $fhdr = $htmlheader;
   $fhdr =~ s/THISBK/$bkl/;
   &Write($fhdr);

@@ -1,3 +1,5 @@
+/*@import "my-project-specific.css";*/
+
 /******************/
 /* GENERAL LAYOUT */
 /******************/
@@ -27,6 +29,23 @@ body {
   padding-top:12px;
   padding-bottom:12px;
 }
+
+/* make pagebreaks visible when viewed directly in browser */
+body:not([pageType]) .pagebreak,
+body:not([pageType]) .pagebreak-both {
+  display:block;
+  clear:both;
+  width:calc(100% - 60px);
+  height:50px;
+  margin:0px 30px 50px 30px;
+  border-bottom:2px dashed green;
+}
+body:not([pageType]) .pagebreak-both {
+  width:100%;
+  margin:0px 00px 50px 00px;
+  border-bottom:2px dashed red;
+}
+
 
 
 /******************/
@@ -257,12 +276,14 @@ the desired width. */
   text-align:center;
   margin-top:1em;
   margin-bottom:1em;
+  clear:both;
 }
 
 .title-2 {
   color:rgb(100,0,0);
   text-align:left;
   margin-top:1em;
+  clear:both;
 }
 
 .majorquote {

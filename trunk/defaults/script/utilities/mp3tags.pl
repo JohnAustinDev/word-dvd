@@ -1,26 +1,12 @@
 #!/usr/bin/perl
 
-#usage mp3tags.pl config.txt audioDirFullPath removeAllTags
+#usage mp3tags.pl indir outdir audiodir removeAllTags
 
-# Reads the locale file and add mp3 tags to audio files
+# Read the locale file and add mp3 tags to audio files
 
 use Encode;
-
-$locfile = shift;
-$indir = shift;
-$removeall = shift;
-
-# LOCALIZATION
-if (-e $locfile) {
-  open (LOC, "<$locfile");
-  while (<LOC>) {
-    $_ = decode("utf8", $_);
-    utf8::upgrade($_);
-    if ($_ =~ /^\s*(.*?)\s*=\s*(.*?)\s*$/) {$localeFile{$1} = $2;}
-  }
-  close(LOC);
-}
-else {die "Could not open locale file $locfile.\n";}
+require "$scriptdir/init.pl";
+$removeall = @ARGV[3];
 
 opendir(IND, "$indir");
 @files = readdir(IND);
@@ -35,9 +21,10 @@ foreach $file (@files) {
     
     $filename = "$indir/$file";
     $filename =~ s/ /\\ /g;
-    $album = "\"".encode("utf8", $localeFile{$book})."\"";
-    $artist = "\"".encode("utf8", $localeFile{$book})."\"";
-    $track = "\"".encode("utf8", $localeFile{$book}.", ".&getChapterLocale("Chaptext", $ch))."\"";
+    $album = "\"".encode("utf8", $localeFile{"BookName:".$book})."\"";
+    $artist = "\"".encode("utf8", $localeFile{"BookName:".$book})."\"";
+    my @params = ($book, $ch);
+    $track = "\"".encode("utf8", $localeFile{"BookName:".$book}.", ".&getLocaleString("ChapName", \@params)."\"";
     $num = $ch;
     $genre = "Speech";
     $pub = "\"Институт перевода Библии\"";
@@ -53,16 +40,4 @@ foreach $file (@files) {
     `$com`;
   }
   else {print "Could not parse filename $file.\n";}
-}
-
-sub getChapterLocale($$) {
-  my $name = shift;
-  my $chf = shift;
-  
-  $chd = ($chf%10);
-  if (exists($localeFile{$name."-".$chf})) {$res = $localeFile{$name."-".$chf};}
-  elsif (exists($localeFile{$name."-".$chd})) {$res = $localeFile{$name."-".$chd};}
-  else {$res = $localeFile{$name};}
-  $res =~ s/%1\$S/$chf/;
-  return $res;
 }
