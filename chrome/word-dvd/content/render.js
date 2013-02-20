@@ -27,6 +27,7 @@ const NOTESTART = "<div class=\"footnote\">";
 const NOTEREF  = "<span class=\"verseref\"";
 const NOTESYMBOL = "<span class=\"fnsymbol\"";
 const PAGEBREAK = "<span class=\"pagebreak\"></span>";
+const PAGEBREAKBOTH = "<span class=\"pagebreak-both\"></span>";
 const SPLITABLEDIVS = "majorquote|list1|list2|list3|footnote|canonical|x-list-1|x-list-2|x-enumlist-1|x-enumlist-2|x-enumlist-3";
 const TITLES = "title-1|title-2|book-title|chapter-title|text-header|menu-header";
 const ISMENUIMAGE = 0, ISTEXTIMAGE = 1, ISFOOTNOTEIMAGE = 2;
@@ -92,6 +93,7 @@ function startMenuGeneration() {
     Bindex = 0;
     MenuType="TOC";
     Basename = "toc"; // is toc here, but is Book.x.shortName for submenus
+    RenderFrame.contentDocument.getElementsByTagName("body")[0].setAttribute("menuType", MenuType);
     MainWin.logmsg("Rendering TOC Menu(s)...");
     window.setTimeout("renderMenuSection();", 0);
   }
@@ -198,7 +200,7 @@ function renderMenuSection() {
       if (r <= 8) arrayL.push(MenuEntries[MenuEntryIndex]);
       else arrayR.push(MenuEntries[MenuEntryIndex]);
       
-      var mel = MainWin.getLocaleString(MenuType + String(SectionMenuNumber) + (r <= 8 ? "left":"right") + "last");
+      var mel = MainWin.getLocaleString(MenuType + (r <= 8 ? "left":"right") + "last:" + String(SectionMenuNumber));
       if (MenuEntries[MenuEntryIndex] && mel && mel == MenuEntries[MenuEntryIndex].label) {
         pagedone = true;
       }
@@ -276,6 +278,7 @@ function renderChapterMenus() {
       SectionMenuNumber = 0;
       MenuType = "CHP";
       Basename = Book[Bindex].shortName;
+      RenderFrame.contentDocument.getElementsByTagName("body")[0].setAttribute("menuType", MenuType);
       MainWin.logmsg("Rendering Chapter Menu(s):" + Basename + "...");
       window.setTimeout("renderMenuSection();", 0);
       Bindex++;
@@ -473,6 +476,7 @@ function renderNewScreen() {
   
   initWaitRenderDone(true);
   
+  Page.pagebreakboth = false;
   RenderFrame.contentDocument.defaultView.fitScreen(Book[Bindex].shortName, Chapter, SubChapters, Page, skipPage1, skipPage2);
     
   waitRenderDoneThenDo("screenDrawComplete()");
@@ -1336,6 +1340,7 @@ function renderNewFNScreen() {
   initWaitRenderDone(true);
 
   var tstart = Page.end;
+  Page.pagebreakboth = false;
   RenderFrame.contentDocument.defaultView.fitScreen(Book[Bindex].shortName, Chapter, 0, Page, false, false);
 
   // couldn't fit this last page, so start new page with it...
