@@ -143,7 +143,6 @@ jsdump("Reading file:" + nsIFile.path);
 
 function write2File(aFile, string, append) {
   aFile = aFile.QueryInterface(Components.interfaces.nsILocalFile);
-  //if (!aFile.exists() && append) append=false;
   var foStream = Components.classes["@mozilla.org/network/file-output-stream;1"].createInstance(Components.interfaces.nsIFileOutputStream);
   foStream.init(aFile, 0x02 | 0x08 | (append ? 0x10:0x20), 511, 0);
   
@@ -564,6 +563,11 @@ function wordDVD() {
   
   document.getElementById("restoreDefaults").checked = false; // clear only after final time restoreDefaults is referenced!!
   
+  // CREATE OUTPUT AUDIO DIR IF NEEDED
+  var outaudio = UIfile[OUTDIR].clone();
+  outaudio.append(OUTAUDIODIR);
+  if (!outaudio.exists()) outaudio.create(outaudio.DIRECTORY_TYPE, 511);
+  
   // START OSIS CONVERTER SCRIPT
   if (document.getElementById("osis2html").checked) {
     var cf = UIfile[OUTDIR].clone();
@@ -938,8 +942,8 @@ function moveToBackup(aFile) {
 }
 
 function booksort(a, b) {
-  var ai = Number(getLocaleString("BookOrder:" + a.shortName));
-  var bi = Number(getLocaleString("BookOrder:" + b.shortName));
+  var ai = Number(getLocaleString("FileOrder:" + a.shortName));
+  var bi = Number(getLocaleString("FileOrder:" + b.shortName));
   if (ai > bi) return 1;
   if (ai < bi) return -1;
   return 0;
@@ -1078,12 +1082,12 @@ function stop() {
       if (files.match(/^\s*$/)) {continue;}
       unUtilizedAudio += files + "\n";
     }
-    for (var vt in RenderWin.VerseTiming) {
-      var keep = false;
-      for (var i=0; i<Book.length; i++) {if (vt.indexOf("vt_" + Book[i].shortName + "_") === 0) keep = true;}
-      if (!keep) continue;
-      for (var i=0; i<RenderWin.VerseTiming[vt].length; i++) {
-        if (RenderWin.VerseTiming[vt][i]) logmsg("WARNING: Did not calculate " + PAGETIMING + " data: " + RenderWin.VerseTiming[vt][i].entry);
+    // report any unused TransitionTiming entries
+    for (var vt in RenderWin.TransitionTiming) {
+      for (var i=0; i<RenderWin.TransitionTiming[vt].length; i++) {
+        if (RenderWin.TransitionTiming[vt][i]) {
+          logmsg("WARNING: Did not apply " + PAGETIMING + " TransitionTiming: \"" + RenderWin.TransitionTiming[vt][i].entry + "\"");
+        }
       }
     }
   }

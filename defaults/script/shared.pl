@@ -35,7 +35,6 @@ sub readDataFiles() {
   undef(%mpgIsMultiPage);
   undef(%totalTitles);
   undef(%pageTitles);
-  undef(%manualVT);
   undef(%correctPageChap);
   undef(%pageTimingEntry); 
 
@@ -78,7 +77,7 @@ sub readDataFiles() {
     $maxbooknum=0;
     foreach $book (keys %books) {
       $maxbooknum++;
-      $books{$book} = $localeFile{"BookOrder:".$book};
+      $books{$book} = $localeFile{"FileOrder:".$book};
     }
   }
   
@@ -122,7 +121,7 @@ sub readDataFiles() {
         $t = &unformatTime($3, "noFrameCheck");
         $multiChapTiming{$bk."-".$ch} = $t;
       }
-      elsif ($_ =~ /([^-]+)-(\d+):(\d+)\s*=\s*(.*?)$/) {
+      elsif ($_ =~ /([^-]+)-(\d+)-i(\d+)\s*=\s*(.*?)$/) {
         # Ignore these lines now. These lines should have already been processed 
         # by word-dvd.js during the page image capture phase, and a corresponding 
         # entry should have been recorded in the listing/<book>.csv file
@@ -259,30 +258,24 @@ sub readPageInformation {
     
       #print "Read:$_";
     }
-    #Titus-1:5, 0.211183, en-Titus-01.ac3, 1, 457, 1:07
-    elsif ($_ =~ /^\s*(.*)-(\d+):(\d+)\s*,\s*([\d\.]+)\s*,\s*(\S+)\s*,\s*(\d+)\s*,\s*(\d+)\s*,\s*(.*?)\s*$/) {
-      if ($1 ne $book) {print "ERROR: Improperly recorded entry \"$book\" in \"$_\"\n";}
-      if ($2 ne $ch) {print "ERROR: Improperly recorded entry \"$ch\" in \"$_\"\n";}
-      $vs = $3;
+    #Titus-1-4a, 0.211183, en-Titus-01.ac3, 1, 457, 1:07
+    elsif ($_ =~ /^\s*(.*)-(\d+)-(\d+)[ab]\s*,\s*([\-\d\.]+)\s*,\s*(\S+)\s*,\s*(\d+)\s*,\s*(\d+)\s*,\s*(.*?)\s*$/) {
+      my $bkt = $1;
+      my $cht = $2;
+      my $pgt = $3;
       $res = $4;
-      if ($5 ne $audio) {print "ERROR: Improperly recorded entry \"$audio\" in \"$_\"\n";}
+      my $audiot = $5;
       $numtitles = $6;
       $abstime = &unformatTime($8, "noFrameCheck");
-      
-      # insure maximum of 2 verse timings per page
-      $cnt = 1;
-      if (exists($manualVT{$book."-".$ch."-".$pg})) {
-        if ($cnt == 2) {print "ERROR: More than two manual verse timings on one page \"$book-$ch-$pg\"\n";} 
-        $cnt = 2;
-      }
-      $manualVT{$book."-".$ch."-".$pg}++;
       
       # save everything
       $type = "absVerseTime";      
       $f = $framesPS*$abstime;
       $f = sprintf("%i", $f);
-      $abstime = ($f/$framesPS);    
-      $correctPageChap{$order."-".$book."-".$ch."-".$pg."-".$type} = "$res,$numtitles,$abstime,$cnt";
+      $abstime = ($f/$framesPS);
+      if ($res) { # res=0 is an error condition
+        $correctPageChap{$order."-".$bkt."-".$cht."-".$pgt."-".$type} = "$res,$numtitles,$abstime";
+      }
     }
     elsif ($_ =~ /^\s*(.*?)-maxChapter=(\d+)\s*$/) {
       # This entry is only used for shorter than single page, final chapters,

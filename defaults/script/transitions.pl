@@ -497,11 +497,13 @@ sub saveTime($$) {
 
   open(INF, ">>$indir/pageTiming.txt") || &DIE("Could not open $indir/pageTiming.txt\n");
   if (!defined($hasRT)) {print INF "\n"; $hasRT = "true";}     
-  if (exists($transitionVerse{"$MBK-$MCH-$MPG"})) {
-    my $trans = $transitionVerse{"$MBK-$MCH-$MPG"};
-    $trans =~ s/ValuE/$pos/;
-    print INF "$trans\n";
-    print sprintf(">> %.64s...\n", $trans);
+  if (exists($transitionIndex{"$MBK-$MCH-$MPG"})) {
+    my $ptentry = "$MBK-$MCH-i".$transitionIndex{"$MBK-$MCH-$MPG"}." = $pos";
+    if (defined($transitionRepair{"$MBK-$MCH-$MPG"})) {
+      $ptentry .= " {".$transitionRepair{"$MBK-$MCH-$MPG"}."}";
+    }
+    print INF "$ptentry\n";
+    print sprintf(">> %.64s...\n", $ptentry);
   }
   elsif ($MPG > 0 && $MPG < $lastPage{"$MBK-$MCH"}) {print "\nWARNING!! No verse data available for \"$MBK-$MCH-$MPG\"\n\n";}
   print INF "$entry\n";
@@ -538,14 +540,18 @@ sub readTransitionInformation() {
       my $line = 0;
       while (<INF>) {
         $line++;
-        if    ($_ =~ /^unknown$/) {next;}
-        elsif ($_ =~ /^\s*\#/) {next;}
-        elsif ($_ =~ /^last_page$/) {next;}
-        elsif ($_ !~ /^\s*([^,]+)\s*,\s*([^,]+)\s*,\s*(\{.*?\})/) {print "WARNING: Bad translation listing line $line, $listdir/$entry, \"$_\"\n"; next;}
+        if ($_ =~ /^\s*\#/) {next;}
+        elsif ($_ !~ /^\s*([^,]+)\s*,\s*([^,]+)(,\s*\{(.*)\})?\s*$/) {
+          print "WARNING: Bad translation listing line $line, $listdir/$entry, \"$_\"\n"; 
+          next;
+        }
         my $page = $1;
-        my $verse = $2;
-        my $trans = $3;
-        $transitionVerse{$page} = $verse." = ValuE ".$trans;
+        my $index = $2;
+        my $repair = $4;
+        $transitionIndex{$page} = $index;
+        if ($repair) {
+          $transitionRepair{$page} = $repair;
+        }
       }
       close(INF);
     }

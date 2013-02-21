@@ -62,11 +62,10 @@ if (-e "$indir/pageTiming.txt") {
       $error = $correctPageChap{$page};
     }
     elsif ($type eq "absVerseTime") {
-      if ($correctPageChap{$page} !~ /([\d\.]+),(\d+),([\d\.]+),(\d+)/) {print "ERROR: Could not parse verse timing information for \"$page\".\n"; next;}
+      if ($correctPageChap{$page} !~ /([\d\.]+),(\d+),([\d\.]+)/) {print "ERROR: Could not parse verse timing information for \"$page\".\n"; next;}
       $res = (1*$1);
       $numtitles = (1*$2);
       $abstime = (1*$3);
-      $cnt = (1*$4);
       
       if ($pg == 1 && $numtitles >=1 && $pageTimingEntry{"TitlesAreRead"} ne "true") {$numtitles--;}
       $res = &addTitles($res, $numtitles, $bk, $ch);

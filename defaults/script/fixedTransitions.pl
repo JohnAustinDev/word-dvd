@@ -42,10 +42,12 @@ foreach my $k (keys %correctPageChap) {
   
   if ($type ne "absVerseTime") {next;}
   
-  $correctPageChap{$k} =~ /^[^,]+,[^,]+,([^,]+),[^,]+$/;  # "$res,$numtitles,$abstime,$cnt"
-  my $v = $1;
-print "DEBUG1: $bk-$ch-$v\n";
-  $verseTimings{"$bk-$ch-$v"}++;
+  if ($correctPageChap{$k} !~ /^[^,]+,[^,]+,([^,]+)$/) {next;}  # "$res,$numtitles,$abstime"
+  
+  my $val = $1;
+  
+#print "DEBUG1: $bk-$ch-$val\n";
+  $verseTimings{"$bk-$ch-$val"}++;
 }
 
 # now comment out fixed timing values which correspond to text-locative ones...
@@ -57,16 +59,16 @@ while(<INF>) {
     my $bk = $1;
     my $ch = $2;
     my $pg = $3;
-    my $v = $4;
+    my $val = $4;
     
     # mimic the way time value was handled when saving correctPageChap...
-    $v = &unformatTime($v, "noFrameCheck");
-    my $f = $framesPS*$v;
+    $val = &unformatTime($val, "noFrameCheck");
+    my $f = $framesPS*$val;
     $f = sprintf("%i", $f);
-    $v = ($f/$framesPS);
+    $val = ($f/$framesPS);
     
-print "DEBUG2: $bk-$ch-$pg-$v\n";   
-    if (exists($verseTimings{"$bk-$ch-$v"})) {$_ = "#$_";}
+#print "DEBUG2: $bk-$ch-$pg-$val\n";   
+    if ($verseTimings{"$bk-$ch-$val"}) {$_ = "#$_";}
   }
   
   print OUTF $_;

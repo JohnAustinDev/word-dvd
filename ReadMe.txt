@@ -96,18 +96,18 @@ but can contain more than one chapter (even a whole book).
 
 -Audio files need one of these naming patterns:
 
- 1) AudioPrefix-book-chapter.ac3
+ 1) AudioPrefix-FileName-chapter.ac3
  
- 2) AudioPrefix-book-chapter1-chapter2.ac3
+ 2) AudioPrefix-FileName-chapter1-chapter2.ac3
  
- 3) AudioPrefix-book-chapter:verse1-verse2.ac3
+ 3) AudioPrefix-FileName-chapter:verse1-verse2.ac3
  
- 4) AudioPrefix-book-chapter1:verse1-chapter2:verse2.ac3
+ 4) AudioPrefix-FileName-chapter1:verse1-chapter2:verse2.ac3
  
  A single chapter may have multiple audio files for it. But audio
  recordings must never overlap one another.
 
-- AudioPrefix and BookName must appear in the appropriate place in
+- AudioPrefix and FileName must appear in the appropriate place in
 the config.txt.
 
 

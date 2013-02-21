@@ -21,10 +21,10 @@ foreach $file (@files) {
     
     $filename = "$indir/$file";
     $filename =~ s/ /\\ /g;
-    $album = "\"".encode("utf8", $localeFile{"BookName:".$book})."\"";
-    $artist = "\"".encode("utf8", $localeFile{"BookName:".$book})."\"";
+    $album = "\"".encode("utf8", $localeFile{"FileName:".$book})."\"";
+    $artist = "\"".encode("utf8", $localeFile{"FileName:".$book})."\"";
     my @params = ($book, $ch);
-    $track = "\"".encode("utf8", $localeFile{"BookName:".$book}.", ".&getLocaleString("ChapName", \@params)."\"";
+    $track = "\"".encode("utf8", $localeFile{"FileName:".$book}.", ".&getLocaleString("ChapName", \@params)."\"";
     $num = $ch;
     $genre = "Speech";
     $pub = "\"Институт перевода Библии\"";
