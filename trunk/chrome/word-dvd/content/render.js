@@ -31,6 +31,7 @@ const PAGEBREAKBOTH = "<span class=\"pagebreak-both\"></span>";
 const SPLITABLEDIVS = "majorquote|list1|list2|list3|footnote|canonical|x-list-1|x-list-2|x-enumlist-1|x-enumlist-2|x-enumlist-3";
 const TITLES = "title-1|title-2|book-title|chapter-title|text-header|menu-header";
 const ISMENUIMAGE = 0, ISTEXTIMAGE = 1, ISFOOTNOTEIMAGE = 2;
+const REPAIRLEN = 64; // length of TransitionTiming repair string should be longer than pagebreak tags
 
 var RenderFrame, MainWin;
 var ILastPage;
@@ -77,7 +78,7 @@ function startMenuGeneration() {
       }
       // save new menu entry
       MenuEntries.push(new Object());
-      MenuEntries[MenuEntries.length-1].label = MainWin.getLocaleString("BookName:" + Book[b].shortName, [Book[b].shortName]);
+      MenuEntries[MenuEntries.length-1].label = MainWin.getLocaleString("FileName:" + Book[b].shortName, [Book[b].shortName]);
       if (MenuEntries[MenuEntries.length-1].label === null) MenuEntries[MenuEntries.length-1].label = "";
       MenuEntries[MenuEntries.length-1].className = (hasAudio ? "hasAudio":"");
       if (Book[b].maxChapter>1 || getPassage(Book[b].shortName, true)) {
@@ -145,7 +146,7 @@ function startFootnotes() {
   else MainWin.stop();
 }
 
-var VerseTiming = {};
+var TransitionTiming = {};
 var PageTiming;
 function readPageTiming() {
   var ptf = MainWin.UIfile[MainWin.INDIR].clone();
@@ -153,20 +154,28 @@ function readPageTiming() {
   if (ptf.exists()) {
     PageTiming = MainWin.readFile(ptf);
     if (!PageTiming) return;
-    var res  = new RegExp("(^\\s*[^-#]+-\\d+:\\d+\\s*=\\s*[^\{]+?( \{.*?\})?\\s*$)", "gm");
-    var res2 = new RegExp("^\\s*([^-#]+)-(\\d+):(\\d+)\\s*=\\s*([^\{]+?)(\\s\{(.*?)\})?\\s*$");
+    //chapter2-3-i2279 = 00:00:55.88 {tand? </p><n><p>The students say, “Yes, Ms}
+    var res  = new RegExp("^\\s*[^\\-\\#]+-\\d+-i\\d+\\s*=.*\\s*$", "gm");
+    var res2 = new RegExp("^\\s*(([^\\-\\#]+)-(\\d+)-i(\\d+)\\s*=\\s*([\\:\\.\\d]+)\\s*(\\{(.*)\\})?)\\s*$");
     res = PageTiming.match(res);
+
     if (!res) return;
     for (var i=0; i<res.length; i++) {
-      var parts = res[i].match(res2);
-      var en = parts[0]; var bk = parts[1]; var ch = parts[2]; var vs = parts[3]; var tm = parts[4]; var trans = parts[6];
-      var prop = "vt_" + bk + "_" + ch;
-      if (!VerseTiming[prop]) VerseTiming[prop] = [];
-      en = en.replace(/(^\s*|\s*$)/g, "");
-      var thobj = {entry:en, book:bk, chapter:ch, verse:vs, realtime:tm, trans:trans};
-      VerseTiming[prop].push(thobj);
+      var p = res[i].match(res2);
+      var trans = { 
+        entry:p[1], 
+        book:p[2], 
+        chapter:p[3], 
+        index:p[4], 
+        realtime:p[5],
+        repair:(p[7] ? p[7].replace(/<n>/g, "\n"):"")
+      };
+      
+      var prop = "vt_" + trans.book + "_" + trans.chapter;
+      if (!TransitionTiming[prop]) TransitionTiming[prop] = [];
+      TransitionTiming[prop].push(trans);
     }
-  }  
+  }
 }
 
 var MenuEntries, MenuEntryIndex, SectionMenuNumber, MenuType, Basename;
@@ -312,7 +321,7 @@ function renderMenu(menubase, menunumber, listArrayL, listArrayR, isFirstMenu, i
   var targets = [null, null, (isLastMenu ? "":nextmenu), (isFirstMenu ? (menubase=="toc" ? "":"toc-1"):prevmenu)];
   for (var i=0; i<locnames.length; i++) {
   
-    var bk = (MenuType == "CHP" ? MainWin.getLocaleString("BookName:" + Book[Bindex-1].shortName, [Book[Bindex-1].shortName]):null);
+    var bk = (MenuType == "CHP" ? MainWin.getLocaleString("FileName:" + Book[Bindex-1].shortName, [Book[Bindex-1].shortName]):null);
 
     var name = MainWin.getLocaleString(MenuType + locnames[i] + ":" + String(menunumber), [bk, null, null, null]);
     if (name !== null) names[i] = name;
@@ -492,7 +501,7 @@ function renderNewScreen() {
 }
 
 function screenDrawComplete() {
-  var imginfo = saveScreenImage(Book[Bindex], Chapter, SubChap, Page.pagenumber, SubChapters, Page.passage.substring(ILastPage, Page.end), Page.complete);
+  var imginfo = saveScreenImages(Book[Bindex], Chapter, SubChap, SubChapters, Page, ILastPage);
   ILastPage = Page.end;
   SubChapters = imginfo.subchapters;
   if (imginfo.chapter != Chapter) { 
@@ -550,21 +559,32 @@ function stripHeaderFooter(html) {
 // Footnotes for an entire screen need to be saved only once.
 var ReportedAudioFiles = {};
 var ChapterStats = [];
-function saveScreenImage(bkobj, chapter, subchap, pagenumber, subchapters, screentext, pagecomplete) {
+function saveScreenImages(bkobj, chapter, subchap, subchapters, page, ilastPage) {
   var book = bkobj.shortName;
   var renderImages = !MainWin.document.getElementById("images").checked;
   var isAudio = false;
   
   // process this screen as a series of "text-blocks", each of which 
-  // have different data but an identical image associated with it
-  var tblock = {passage:screentext, beg:-1, end:0, inc:0, endtype:-1, hasAudio:null, chapter:chapter, subchap:subchap, subchapters:subchapters, pagenumber:pagenumber};
+  // has different data but an identical image associated with it
+  var tblock = {
+    passage:page.passage.substring(ilastPage, page.end), 
+    beg:-1, // for all but the first tblock, beg is the-actual-beg+1, to prevent duplication
+    end:0, 
+    inc:0, 
+    endtype:-1, 
+    hasAudio:null, 
+    chapter:chapter, 
+    subchap:subchap, 
+    subchapters:subchapters, 
+    pagenumber:page.pagenumber
+  };
   
   var tblocks = [];
   while (tblock.endtype != "screen-end") {
 		tblock.beg = tblock.end+tblock.inc;
-		setTextBlock(tblock, tblock.chapter, tblock.subchap, bkobj, (ILastPage == 0 && tblock.beg == 0));
+		setTextBlock(tblock, bkobj, (ilastPage == 0 && tblock.beg == 0));
  
-    // copy and save this tblock for another loop (so we can know the future there)
+    // copy and save this tblock for a later loop (so we can know the future there)
     var copy = {};
     for (var m in tblock) {copy[m] = tblock[m];}
     tblocks.push(copy);
@@ -598,7 +618,8 @@ function saveScreenImage(bkobj, chapter, subchap, pagenumber, subchapters, scree
                 tblocks[i].pagenumber == 1); // NEW way
                 
 		if (keepold ? keep1:keep2) {
-      // report audio file usage
+      
+      // report any audio file usage
       if (tblocks[i].hasAudio && !ReportedAudioFiles[tblocks[i].hasAudio]) {
         MainWin.logmsg("Utilizing audio file: " + tblocks[i].hasAudio);
         ReportedAudioFiles[tblocks[i].hasAudio] = true;
@@ -608,7 +629,10 @@ function saveScreenImage(bkobj, chapter, subchap, pagenumber, subchapters, scree
       }
       
       // save the page's info and image for this text block
-      var info = getStats(pagename, screentext.substring(tblocks[i].beg-1, tblocks[i].end), tblocks[i].hasAudio);
+      var tbbeg = (ilastPage+tblocks[i].beg);
+      if (tblocks[i].beg > 0) tbbeg--; // all tblocks but the first need this to get to the actual beginning
+      var tbend = (ilastPage+tblocks[i].end);
+      var info = getStats(pagename, page, tbbeg, tbend, tblocks[i].hasAudio);
 //var t = "info\n"; for (var m in info) {t += m + "=" + info[m] + "\n";} MainWin.logmsg(t);
 
       if (info) {
@@ -617,13 +641,14 @@ function saveScreenImage(bkobj, chapter, subchap, pagenumber, subchapters, scree
           if (!imgfile) imgfile = captureImage(pagename, ISTEXTIMAGE);
           else imgfile.copyTo(null, pagename + "." + imgfile.leafName.match(/\.(.*)$/)[1]);
         }
-        if (!footNotesSaved) saveFootnotes(book, pagename, screentext);
+        if (!footNotesSaved) saveFootnotes(book, pagename, page.passage.substring(ilastPage, page.end));
         footNotesSaved = true;
       }
+      
 		}
     
     // save previous chapter info anytime a chapter is finished
-		if (tblocks[i].endtype == "chapter" || tblocks[i].endtype == "subchap"  || (tblocks[i].endtype == "screen-end" && pagecomplete)) {
+		if (tblocks[i].endtype == "chapter" || tblocks[i].endtype == "subchap"  || (tblocks[i].endtype == "screen-end" && page.complete)) {
 			writeStats(book, ChapterStats, bkobj.overwriteStats);
       ChapterStats = [];
       bkobj.overwriteStats = false;
@@ -633,7 +658,11 @@ function saveScreenImage(bkobj, chapter, subchap, pagenumber, subchapters, scree
   return {chapter:tblock.chapter, subchap:tblock.subchap, subchapters:tblock.subchapters};
 }
 
-function setTextBlock(tblock, ch, subch, bkobj, skipFirstChtag) {
+// Sets the .hasAudio, .end, and .endType parameters of the passed tblock.
+function setTextBlock(tblock, bkobj, skipFirstChtag) {
+  var ch = tblock.chapter;
+  var subch = tblock.subchap;
+  
   // does a new chapter start on this page?
   var nch = tblock.passage.substr(tblock.beg).indexOf(MainWin.NEWCHAPTER);
   if (nch != -1) nch += tblock.beg;
@@ -1044,7 +1073,9 @@ function captureImage(imageName, imageType, returnFun) {
 // Returns listing file and transition file information for each page.
 // AFTER a chapter is completed, writeStats is called so that all information 
 // for that chapter is recorded into the listing and transitions files.
-function getStats(pagename, textblock, hasAudio) {
+function getStats(pagename, page, beg, end, hasAudio) {
+  var textblock = page.passage.substring(beg, end);
+  
   var parts = pagename.split("-");
   var book = parts[0];
   var chapter = Number(parts[1]);
@@ -1057,8 +1088,8 @@ function getStats(pagename, textblock, hasAudio) {
   
   calculateReadingLength(info, textblock, MainWin.getLocaleString("LangCode"), book, chapter);
   
-  if (info.len>=1) {
-    if (textblock.search("class=\"majorquote\"") != -1) MainWin.logmsg("Found class=\"majorquote\" on " + pagename);
+  if (info.len >= 1) {
+    if (textblock.search("class=\"majorquote\"") != -1) MainWin.logmsg("INFO: Found class=\"majorquote\" on " + pagename);
 
     // Find transition text to be added to the transition file. The transition
     // file is only needed by transitions.pl so that if transitions are
@@ -1066,26 +1097,38 @@ function getStats(pagename, textblock, hasAudio) {
     // After text-locative entries are added to pageTiming.txt, then while the
     // project is being re-rendered, these entries are reported in the -trans 
     // file, along with the usual data. This allows correlation of real 
-    // times to their calculated times, thus greatly improving accuracy.
-    var lastVerse = textblock;
-    var lvi = lastVerse.lastIndexOf("<sup>");
-    if (lvi != -1) {
-      lastVerse = lastVerse.substr(lvi);
-      var re = new RegExp("<sup>\\s*(\\d+)([\\s-]+\\d+)?\\s*<\/sup>(.*)");
-      if (lastVerse) lastVerse = lastVerse.match(re);
-      if (!lastVerse) {
-        MainWin.logmsg("WARNING: Could not add transition to listing \"" + pagename + "\"");
-        info["trans"] = "unknown\n";
-      }
-      else info["trans"] = pagename + "," + book + "-" + chapter + ":" + lastVerse[1] + ",{" + lastVerse[3] + "}\n";
-    }
-    else info["trans"] = "last_page\n";
+    // times to calculated times, thus greatly improving calculation accuracy.
+    info["trans"] = pagename + "," + end + ",{" + page.passage.substring((end-REPAIRLEN < 0 ? 0:end-REPAIRLEN), end).replace(/\n/g, "<n>") + "}\n";
     
-    // find pageTiming.txt text-locative timings assocaited with this page to be added to listing file
+    // find pageTiming.txt text-locative timings associated with this page (later to be added to listing file)
     var prop = "vt_" + book + "_" + chapter;
-    if (hasAudio && VerseTiming[prop]) {
-      for (var i=0; i<VerseTiming[prop].length; i++) {
-        if (VerseTiming[prop][i]) appendVerseTimingInfo(i, textblock, info, VerseTiming[prop]);        
+    if (hasAudio && TransitionTiming[prop]) {
+      for (var i=0; i<TransitionTiming[prop].length; i++) {
+        var vt = TransitionTiming[prop][i];
+        if (!vt || vt.failed) continue;
+        
+        // check and repair (if needed) this TransitionTiming index
+        vt.failed = (checkAndRepairTransitionTiming(vt, page, false) === null ? true:false);
+
+        // skip if this TransitionTiming index does not apply to the current page
+        if (vt.index <= beg || vt.index > end) continue;
+        
+        var ni = {};
+        calculateReadingLength(ni, page.passage.substring(beg, vt.index), MainWin.getLocaleString("LangCode"), vt.book, vt.chapter);
+        
+        // the transition calculator only allows two TransitionTiming entries per page
+        var a = "a";                                              
+        if (info[a]) a = "b";
+        
+        // save all our data for later writing to the listing file
+        info[a] = {};                                           
+        info[a].name = pagename + a;  
+        info[a].realtime = vt.realtime;          
+        info[a].numtitles = ni.numtitles;                  
+        info[a].len = (vt.failed ? 0:ni.len); // 0 is error condition so entry will be ignored in calculations
+        info[a].hasAudio = info.hasAudio; 
+        
+        TransitionTiming[prop][i] = null;    
       }
     }
   }
@@ -1093,6 +1136,39 @@ function getStats(pagename, textblock, hasAudio) {
   return (info.len ? info:null);
 }
 
+// Checks the TransitionTiming entry to see if the index is correct. If not,
+// it tries to correct it. The TransitionTiming index is returned, or -1 if 
+// the correct TransitionTiming index is known to no longer exist or cannot   
+// be reliably determined.
+function checkAndRepairTransitionTiming(vt, page, nolog) {
+  var fail = false;
+  
+  if (!vt.repair) {
+    if (!nolog) MainWin.logmsg("WARNING: Unable to verify TransitionTiming index. This TransitionTiming entry may help, or may hurt, transition accuracy: \"" + vt.entry + "\"");
+  }
+  else if (page.passage.substring((vt.index-REPAIRLEN < 0 ? 0:vt.index-REPAIRLEN), vt.index) != vt.repair) {
+    
+    var repair = new RegExp("(" + MainWin.escapeRE(vt.repair) + ")", "gm");
+    var m = page.passage.match(repair);
+
+    if (!m) {
+      if (!nolog) MainWin.logmsg("WARNING: TransitionTiming index has changed and could not be located and repaired. This TransitionTiming entry will be skipped: \"" + vt.entry + "\"");
+      fail = true;
+    }
+    else if (m.length > 1) {
+      if (!nolog) MainWin.logmsg("WARNING: TransitionTiming index has changed and could not be repaired. This TransitionTiming entry will be skipped: \"" + vt.entry + "\"");
+      fail = true;
+    }
+    else {
+      vt.index = page.passage.indexOf(vt.repair) + vt.repair.length;
+      if (!nolog) MainWin.logmsg("INFO: TransitionTiming index needed repairing but it was repaired: \"" + vt.entry + "\"");
+    }
+  }
+  //else {MainWin.logmsg("INFO: TransitionTiming was found at original index: \"" + vt.entry + "\"");}
+  
+  return (!fail ? vt.index:null);
+}
+        
 function writeStats(book, chapterstats, overwrite) {
   // get chapter totals
   var total = 0;
@@ -1112,54 +1188,21 @@ function writeStats(book, chapterstats, overwrite) {
   // write the book's listing file
 	var file = MainWin.StatsFile.clone();
 	file.append(book + ".csv");
-	if (!file.exists()) MainWin.write2File(file, "#Page,Chapter Fraction,Audio File,Number of Titles,Absolute Length,Absolute Time\n", true);
-	else if (file.exists() && overwrite) { //(chapter == 0 || (chapter == 1 && !getPassage(book, true)))) {
-		file.remove(false);
-		MainWin.write2File(file, "#Page,Chapter Fraction,Audio File,Number of Titles,Absolute Length,Absolute Time\n", true);
-	}
-	MainWin.write2File(file, statstring, true);
+  if (file.exists() && overwrite) file.remove(false);
+  if (!file.exists()) MainWin.write2File(file, "#Page,Calculated_Chapter_Fraction,Audio_File,Number_of_Titles,Calculated_Total_Length,Absolute_Time\n", false);
+  MainWin.write2File(file, statstring, true);
 	
   // write the book's transitions file
 	file = MainWin.TransFile.clone();
 	file.append(book + "-trans.csv");
-	if (!file.exists()) MainWin.write2File(file, "#Page,Verse,Transition Location\n", true);
-	if (file.exists() && overwrite) { //(chapter == 0 || (chapter == 1 && !getPassage(book, true)))) {
-		file.remove(false);
-		MainWin.write2File(file, "#Page,Verse,Transition Location\n", true);
-	}
+  if (file.exists() && overwrite) file.remove(false);
+  if (!file.exists()) MainWin.write2File(file, "#Page,Transition_Index,{Repair_String}\n", false);
 	MainWin.write2File(file, transtring, true);
 }
 
 function formatStatString(s, total) {
   var rellen = Number(Math.round(10000000*s.len/total)/10000000);
   return s.name + ", " + rellen + ", " + s.hasAudio + ", " + s.numtitles + ", " + s.len + (s.realtime ? ", " + s.realtime:"") + "\n"; 
-}
-
-// looks for the verse tag of instance "i" from "vt" and if it's found 
-// then the reading length is calculated and saved from the
-// begining of the text block to the place specified in instance "i" from "vt"
-function appendVerseTimingInfo(i, stxt, info, vt) {
-  var se = "</sup>";
-  var re = new RegExp("<sup>\\s*" + vt[i].verse + "\\s*[-<]", "im");
-  var iverse = stxt.search(re);
-  if (iverse != -1 && vt[i].trans) {
-    stxt = stxt.substring(0, stxt.indexOf(se, iverse) + se.length) + vt[i].trans;
-    iverse = stxt.length;
-  }
-
-  if (iverse != -1) {
-    var ni = {};
-    calculateReadingLength(ni, stxt.substring(0, iverse), MainWin.getLocaleString("LangCode"), vt[i].book, vt[i].chapter);
-    var subo = "a";                                              
-    if (info[subo]) subo = "b";                                 
-    info[subo] = {};                                           
-    info[subo].name = vt[i].book + "-" + vt[i].chapter + ":" + vt[i].verse;     
-    info[subo].realtime = vt[i].realtime;          
-    info[subo].numtitles = ni.numtitles;                  
-    info[subo].len = ni.len;
-    info[subo].hasAudio = info.hasAudio;                            
-    vt[i] = null;                                                                                                   
-  }                           
 }
 
 function calculateReadingLength(info, html, lang, book, chapter) {

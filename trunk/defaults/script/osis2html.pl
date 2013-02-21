@@ -165,7 +165,7 @@ foreach $bk (sort keys %book) {
   open (OUTF, ">$htmldir/$bk.html") || &finish("Could not open outfile $htmldir/$bk.html\n");
   $booklocal = decode("utf8", $bk);
   utf8::upgrade($booklocal);
-  $booklocal = $localeFile{"BookName:".$booklocal};
+  $booklocal = $localeFile{"FileName:".$booklocal};
 
   my $hdr = $htmlheader;
   $hdr =~ s/THISBK/$booklocal/;
@@ -225,7 +225,7 @@ foreach $bk (sort keys %book) {
   open (OUTF, ">$htmldir/$bk.fn.html") || &finish("Could not open outfile $htmldir/$bk.fn.html\n");
   my $bkl = decode("utf8", $bk);
   utf8::upgrade($bkl);
-  $bkl = $localeFile{"BookName:".$bkl};
+  $bkl = $localeFile{"FileName:".$bkl};
   my $fhdr = $htmlheader;
   $fhdr =~ s/THISBK/$bkl/;
   &Write($fhdr);

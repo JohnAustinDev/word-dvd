@@ -198,7 +198,8 @@ function copyPropsA2B(a, b) {for (var p in a) {b[p]=a[p];}}
 // Check if the current page includes a new chapter boundary, and if so, try and find the
 // first text locative transition from pageTiming.txt which was recorded for this new chapter. 
 // This transition information is saved to allow the present page's transition to be matched 
-// to the previously recorded transition.
+// to the previously recorded transition, thus helping all other transitions in the chapter
+// to also line up as they did when transition timing was recorded by transitions.pl.
 function findTransition(book, page, matchTransition) {
   var chsi = page.passage.substring(page.beg, page.end).indexOf(MainWin.NEWCHAPTER);
   if (chsi == -1) return; // no new chapter yet
@@ -211,34 +212,28 @@ function findTransition(book, page, matchTransition) {
   var nextchn = RenderWin.Chapter;
   if (page.beg != 0) nextchn++; // get next
   nextchn += RenderWin.SubChapters; // get internal chapter number
-  var vt = RenderWin.VerseTiming["vt_" + book + "_" + nextchn];
-  if (!vt) return; // no verse timings for chapter
+  var vts = RenderWin.TransitionTiming["vt_" + book + "_" + nextchn];
+  if (!vts) return; // no verse timings for chapter
   
   // locate first text-locative transition recorded in pageTiming.txt
   var firstTrans;
-  for (var i=0; i<vt.length; i++) {
-    if (!vt[i]) continue;
-    if (!firstTrans || Number(vt[i].verse) < Number(firstTrans.verse)) firstTrans = vt[i];    
+  for (var i=0; i<vts.length; i++) {
+    if (!vts[i]) continue;
+    if (!firstTrans || Number(vts[i].index) < Number(firstTrans.index)) firstTrans = vts[i];    
   }
   if (!firstTrans) return;
   
-  // save the text location of the first text-locative transition if it's within reach
-  var transEnd = lastIndexOfTrans(firstTrans, matchTransition.chapter_beg, page.passage);
-  if (transEnd == -1) return; // timing text not found on first page
+  // save the page location of the first text-locative transition if it's within reach
+  // first check and repair (if needed) this TransitionTiming index
+  var tindex = RenderWin.checkAndRepairTransitionTiming(firstTrans, page, true);
+  if (tindex == -1) return;
+  
+  // is the first transition in this chapter out of reach?
+  if (tindex > matchTransition.chapter_beg + 2*RenderWin.APPROXLINE*RenderWin.APPNUMLINE) return;
+  // otherwise save it and then try to match it
   matchTransition.preservingTransition = true;
   matchTransition.transition = transEnd;
   return;
-}
-
-// search for the transition on the first (approximate) full page of the chapter
-// which begins at chapter_beg. If the first transition seems to occur after the first
-// page worth of text, then return -1.
-function lastIndexOfTrans(vto, chapter_beg, psg) {
-  var vend = "</sup>";
-  var re = new RegExp("<sup>" + vto.verse + "[-\s<]", "im");
-  var i = psg.substr(chapter_beg, 2*RenderWin.APPROXLINE*RenderWin.APPNUMLINE).search(re);
-  if (i == -1) return -1;
-  return psg.indexOf(vend, chapter_beg+i) + vend.length + vto.trans.length; 
 }
 
 // This function must progress the page break to the next available place.
@@ -637,7 +632,7 @@ function formatPage(elem, page, widowCheck) {
       MainWin.getLocaleString("IntroLink"):
       MainWin.getLocaleString("ChapName:" + DisplayBook + "-" + DisplayChapter, [DisplayBook, DisplayChapter]));
   if (!ch) ch = "";
-  var bklocale = MainWin.getLocaleString("BookName:" + DisplayBook, [DisplayBook]);
+  var bklocale = MainWin.getLocaleString("FileName:" + DisplayBook, [DisplayBook]);
   var myid = "text-header-" + (isLeftPage ? "left":"right");
   elem.innerHTML = "<div id=\"" + myid + "\" class=\"text-header\"></div>";
   var header;
