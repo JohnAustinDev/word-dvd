@@ -2,7 +2,7 @@
 #---------------------------------
 # Transitions are calculated automatically. The accuracy of these 
 # transitions depends on many factors, such as the accuracy of the 
-# settings below, and the amout of dramatization in the reading 
+# settings below, and the amount of dramatization in the reading 
 # (highly dramatized readings with multiple speakers reading at 
 # different speeds, pauses for sound effects, etc. are impossible to 
 # calculate accurately. On the other hand if it is a strict reading 
