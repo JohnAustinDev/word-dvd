@@ -473,9 +473,10 @@ sub formatTime($$) {
   return $sign.$timef;
 }
 
-sub unformatTime($$) {
+sub unformatTime($$$) {
   my $timef = shift;
   my $type = shift;
+  my $noerror = shift;
 
   my $tsave = $timef;
   if ($timef =~ /(-?)((\d+):)?(\d+):([\d\.]+)/) {
@@ -491,7 +492,13 @@ sub unformatTime($$) {
     if ($type ne "noFrameCheck" && ($sec*$framesPS) =~ /\./) {print "unformatTime $timef=$sec is not a frame multiple."; die;}
     return ($sign eq "-" ? (-1*$sec):$sec);
   }
-  else {print "ERROR(unformatTime) $bk-$ch-$pg: Could not convert \"$timef\" to seconds!"; die;}
+  elsif (!$noerror) {print "ERROR(unformatTime) $bk-$ch-$pg: Could not convert \"$timef\" to seconds!"; die;}
+  
+  # do nothing but return input
+  else {
+    print "WARNING(unformatTime) $bk-$ch-$pg: Unexpected input \"$timef\", conversion to seconds was not attempted.\n";
+    return $timef;
+  } 
 }
 
 #CREATE A SILENT MPG FROM A SINGLE JPG IMAGE

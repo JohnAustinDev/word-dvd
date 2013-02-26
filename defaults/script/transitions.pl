@@ -723,6 +723,8 @@ sub denormalizeMultiChapTime($$$) {
   return $t;  
 }
 
+my %allAV;
+my %allAT;
 sub sortPageTimingFile() {
   
   my $tmp = "$pageTimingFile.tmp";
@@ -732,21 +734,21 @@ sub sortPageTimingFile() {
   my $lastLineWasBlank;
   while(<INF>) {
     
-    # capture all text-locative parameters
-    if    ($_ =~ /^\s*([^-#]+-[\d+]+-i\d+)\s*=/) {
+    # capture and remove all text-locative parameters
+    if    ($_ =~ /^\s*([^-#]+-\d+-i\d+)\s*=/) {
       chomp;
       if (exists($allAV{$1})) {print sprintf("\n REMOVED:%.64s\nRETAINED:%.64s\n", $allAV{$1}, $_);} 
       $allAV{$1} = $_;
     }
     
-    # capture all fixed timing parameters
+    # capture and remove all fixed timing parameters
     elsif ($_ =~ /^\s*([^-#]+-[\d+]+-[\d\w]+)\s*=/) { 
       chomp;
       if (exists($allAT{$1})) {print sprintf("\n REMOVED:%.64s\nRETAINED:%.64s\n", $allAT{$1}, $_);} 
       $allAT{$1} = $_;
     }
     
-    # drop # INFO lines (as they will be added back later)
+    # remove # INFO lines (as they will be added back later)
     elsif ($_ =~ /^# INFO/) {next;}
     
     # pass on the rest
@@ -765,6 +767,7 @@ sub sortPageTimingFile() {
   close(INF);
   close(OUTF);
   
+  # append all timing data to the end...
   open(OUTF, ">>$tmp") || &DIE("ERROR: Could not open $tmp!\n");
   
   foreach $k (sort sortAT keys %allAT) {
@@ -797,23 +800,65 @@ sub sortPageTimingFile() {
   &sys("mv -f \"$tmp\" \"$pageTimingFile\"");
 }
 
-my %allAT;
-sub sortAT {
-  $allAT{$a} =~ /^([^-]+)-(\d+)-([\d\w]+)\s*=\s*(\S+)/;
+sub sortAV {
+
+  if ($allAV{$a} !~ /^([^-]+)-(\d+)-i(\d+)\s*=\s*([\-\.\:\d]+)/) {
+    print "ERROR: Bad data \"$a = ".$allAV{$a}."\"\n";
+  }
   my $bka = $1;
   my $cha = $2;
-  my $pa = $3;
   my $ta = $4;
+  
+  $ta = &unformatTime($ta, "noFrameCheck", 1);
   
   if (defined($localeFile{"FileOrder:$bka"})) {
     $bka = $localeFile{"FileOrder:$bka"};
   }
   
-  $allAT{$b} =~ /^([^-]+)-(\d+)-([\d\w]+)\s*=\s*(\S+)/;
+  if ($allAV{$b} !~ /^([^-]+)-(\d+)-i(\d+)\s*=\s*([\-\.\:\d]+)/) {
+    print "ERROR: Bad data \"$b = ".$allAV{$b}."\"\n";
+  }
+  my $bkb = $1;
+  my $chb = $2;
+  my $tb = $4;
+  
+  $tb = &unformatTime($tb, "noFrameCheck", 1);
+  
+  if (defined($localeFile{"FileOrder:$bkb"})) {
+    $bkb = $localeFile{"FileOrder:$bkb"};
+  }
+  
+  my $r = $bka <=> $bkb;
+  if ($r != 0) {return $r;}
+  $r = $cha <=> $chb;
+  if ($r != 0) {return $r;}
+  return $ta <=> $tb;
+}
+
+sub sortAT {
+  if ($allAT{$a} !~ /^([^-]+)-(\d+)-([\d\w]+)\s*=\s*([\-\.\:\d]+)/) {
+    print "ERROR: Bad data \"$a = ".$allAT{$a}."\"\n";
+  }
+  my $bka = $1;
+  my $cha = $2;
+  my $pa = $3;
+  my $ta = $4;
+  
+  $ta = &unformatTime($ta, "noFrameCheck", 1);
+  
+  if (defined($localeFile{"FileOrder:$bka"})) {
+    $bka = $localeFile{"FileOrder:$bka"};
+  }
+  
+  if ($allAT{$b} !~ /^([^-]+)-(\d+)-([\d\w]+)\s*=\s*([\-\.\:\d]+)/) {
+    print "ERROR: Bad data \"$b = ".$allAT{$b}."\"\n";
+  }
   my $bkb = $1;
   my $chb = $2;
   my $pb = $3;
   my $tb = $4;
+  
+  $tb = &unformatTime($tb, "noFrameCheck", 1);
   
   if (defined($localeFile{"FileOrder:$bkb"})) {
     $bkb = $localeFile{"FileOrder:$bkb"};
@@ -825,35 +870,7 @@ sub sortAT {
   if ($r != 0) {return $r;}
   if ($pa eq "chs") {return -1;}
   if ($pb eq "chs") {return 1;}
-  return $ta cmp $tb;
-}
-
-my %allAV;
-sub sortAV {
-
-  $allAV{$a} =~ /^([^-]+)-(\d+).*=\s*(\S+)/;
-  my $bka = $1;
-  my $cha = $2;
-  my $ta = $3;
-  
-  if (defined($localeFile{"FileOrder:$bka"})) {
-    $bka = $localeFile{"FileOrder:$bka"};
-  }
-  
-  $allAV{$b} =~ /^([^-]+)-(\d+).*=\s*(\S+)/;
-  my $bkb = $1;
-  my $chb = $2;
-  my $tb = $3;
-  
-  if (defined($localeFile{"FileOrder:$bkb"})) {
-    $bkb = $localeFile{"FileOrder:$bkb"};
-  }
-  
-  my $r = $bka <=> $bkb;
-  if ($r != 0) {return $r;}
-  $r = $cha <=> $chb;
-  if ($r != 0) {return $r;}
-  return $ta cmp $tb;
+  return $ta <=> $tb;
 }
 
 sub updateEntriesBy(\%) {
