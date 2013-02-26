@@ -46,6 +46,8 @@ function loadedRender() {
   StartingBindex = MainWin.StartingBindex;
   RenderFrame = document.getElementById("render");
   
+  RenderFrame.contentDocument.defaultView.location.assign("file://" + MainWin.MenuHTML.path);
+  
   RenderFrame.style.width = MainWin.PAL.W + "px";
   RenderFrame.style.height = String(MainWin.PAL.H + 16) + "px";
   window.setTimeout("postLoad1();", 1);
@@ -95,6 +97,7 @@ function startMenuGeneration() {
     MenuType="TOC";
     Basename = "toc"; // is toc here, but is Book[x].shortName for submenus
     RenderFrame.contentDocument.getElementsByTagName("body")[0].setAttribute("pageType", MenuType);
+    RenderFrame.contentDocument.getElementsByTagName("body")[0].setAttribute("maskType", none);
     MainWin.logmsg("Rendering TOC Menu(s)...");
     window.setTimeout("renderMenuSection();", 0);
   }
@@ -109,7 +112,7 @@ MainWin.logmsg("startTextGeneration");
   // switch from menu to text background
   initWaitRenderDone(true);
   
-  RenderFrame.contentDocument.defaultView.location.assign("chrome://word-dvd/content/web/text.html");
+  RenderFrame.contentDocument.defaultView.location.assign("file://" + MainWin.TextHTML.path);
   
   waitRenderDoneThenDo("startTextGeneration2();");
   
