@@ -57,6 +57,9 @@ const OSISFILE = "osis.xml";
 const PAGETIMING="pageTiming.txt";
 const LOCALEFILE="config.txt";
 const CAPTURE="import.sh";
+const DEFHTML = DEFAULTS + "/html";
+const MENUHTML="menu.html";
+const TEXTHTML="html/text.html";
 
 /************************************************************************
  * Exception Handling
@@ -552,6 +555,7 @@ function wordDVD() {
   // COPY RESOURCES AND BUILD-CODE TO INDIR
   exportDir(RESOURCE, UIfile[INDIR].path, document.getElementById("restoreDefaults").checked);
   exportDir(CODE, UIfile[INDIR].path, document.getElementById("restoreDefaults").checked);
+  exportDir(DEFHTML, UIfile[INDIR].path, document.getElementById("restoreDefaults").checked);
   exportDir(MENUSDIR, UIfile[INDIR].path, false);
   exportDir(HTMLDIR, UIfile[INDIR].path, false);
   exportFile(LOCALEFILE, UIfile[INDIR].path, false);
