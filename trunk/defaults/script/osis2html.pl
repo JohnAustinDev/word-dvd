@@ -270,6 +270,7 @@ sub convert2HTML(\$) {
   # Convert indents
   $$xin =~ s/<milestone type="x-p-indent"[^>]*\/>/$INDENT/ig;
   $$xin =~ s/<lb type="x-begin-paragraph"[^>]*\/>/<br>$INDENT/ig; # ESV
+  $$xin =~ s/<div sID="[^"]*" type="paragraph"\/>/<br>$INDENT/ig; # WEB
     
   # Convert line breaks
   $$xin =~ s/<lb[^\/]*\/>/<br>/ig;
@@ -511,6 +512,13 @@ sub removeTags(\$) {
   $$xin =~ s/<hi [^>]*type="small-caps"[^>]*>(.*?)<\/hi>/$2/ig; # ESV
   $$xin =~ s/<\/?catchWord[^>]*>//ig; # ESV
   $$xin =~ s/<\/?seg[^>]*>//ig; #ESV
+  
+  # WEB fluff
+  $$xin =~ s/<div eID="[^"]*" type="paragraph"\/>//ig; # WEB
+  $$xin =~ s/<div type="x-milestone" subType="x-preverse"[^>]*\/>//ig; # WEB
+  $$xin =~ s/<chapter eID="[^"]*"\/>//ig; # WEB
+  $$xin =~ s/<div eID="[^"]*" osisID="[^"]*" type="book"\/>//ig; # WEB
+  
 }
 
 sub finish($) {
