@@ -50,16 +50,17 @@ const HTMLDIR="html";
 const MENUSDIR="menus";
 const INAUDIODIR="audio";
 const ARTWORK="artwork";
-const STYLESHEET=DEFAULTS + "/CSS/pal.css";
 const CODE=DEFAULTS + "/script";
 const RESOURCE=DEFAULTS + "/resource";
 const OSISFILE = "osis.xml";
 const PAGETIMING="pageTiming.txt";
 const LOCALEFILE="config.txt";
 const CAPTURE="import.sh";
-const DEFHTML = DEFAULTS + "/html";
+const DEFHTML="html";
 const MENUHTML="menu.html";
-const TEXTHTML="html/text.html";
+const TEXTHTML="text.html";
+
+var MenuHTMLfile, TextHTMLfile;
 
 /************************************************************************
  * Exception Handling
@@ -243,7 +244,6 @@ var Paused, Aborted, Running;
 var LocaleFile;
 var RenderWin;
 var DBLogFile;
-var CssFile;
 var BackupDir;
 var OUTFILERE = new RegExp("(" + OUTDIRNAME + ")(\\/|$)");
 var Book;
@@ -294,6 +294,7 @@ function loadedXUL() {
     document.getElementById("browse-1").disabled = true;
     document.getElementById("browse-2").disabled = true;
   }
+  
   checkAudioDir();	
   updateControlPanel();
   sizeToContent();
@@ -532,6 +533,30 @@ function checkAudioDir(checkOnly) {
 var MessageWin;
 var Osis2HtmlInterval;
 function wordDVD() {
+
+  MenuHTMLfile = UIfile[INDIR].clone();
+  MenuHTMLfile.append(DEFAULTS);
+  MenuHTMLfile.append(DEFHTML);
+  MenuHTMLfile.append(MENUHTML);
+  
+  TextHTMLfile = UIfile[INDIR].clone();
+  TextHTMLfile.append(DEFAULTS);
+  TextHTMLfile.append(DEFHTML);
+  TextHTMLfile.append(TEXTHTML);
+
+  // COPY RESOURCES AND BUILD-CODE TO INDIR
+  exportDir(RESOURCE, UIfile[INDIR].path, document.getElementById("restoreDefaults").checked);
+  exportDir(CODE, UIfile[INDIR].path, document.getElementById("restoreDefaults").checked);
+  exportDir(DEFAULTS + "/" + DEFHTML, UIfile[INDIR].path, document.getElementById("restoreDefaults").checked);
+  exportDir(MENUSDIR, UIfile[INDIR].path, false);
+  exportDir(HTMLDIR, UIfile[INDIR].path, false);
+  exportFile(LOCALEFILE, UIfile[INDIR].path, false);
+  exportFile(PAGETIMING, UIfile[INDIR].path, false);
+
+  var artwork = UIfile[INDIR].clone();
+  artwork.append(ARTWORK);
+  if (!artwork.exists()) artwork.create(UIfile[OUTDIR].DIRECTORY_TYPE, 511);
+  
   // Create LocaleFile var
   LocaleFile = UIfile[INDIR].clone();
   LocaleFile.append(LOCALEFILE);
@@ -551,19 +576,6 @@ function wordDVD() {
     } catch (er) {}
   }
   document.getElementById("cleanOutDir").checked = false;
-
-  // COPY RESOURCES AND BUILD-CODE TO INDIR
-  exportDir(RESOURCE, UIfile[INDIR].path, document.getElementById("restoreDefaults").checked);
-  exportDir(CODE, UIfile[INDIR].path, document.getElementById("restoreDefaults").checked);
-  exportDir(DEFHTML, UIfile[INDIR].path, document.getElementById("restoreDefaults").checked);
-  exportDir(MENUSDIR, UIfile[INDIR].path, false);
-  exportDir(HTMLDIR, UIfile[INDIR].path, false);
-  exportFile(LOCALEFILE, UIfile[INDIR].path, false);
-  exportFile(PAGETIMING, UIfile[INDIR].path, false);
-  CssFile = exportFile(STYLESHEET, UIfile[INDIR].path, document.getElementById("restoreDefaults").checked);
-  var artwork = UIfile[INDIR].clone();
-  artwork.append(ARTWORK);
-  if (!artwork.exists()) artwork.create(UIfile[OUTDIR].DIRECTORY_TYPE, 511);
   
   document.getElementById("restoreDefaults").checked = false; // clear only after final time restoreDefaults is referenced!!
   

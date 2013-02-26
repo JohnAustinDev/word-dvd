@@ -45,8 +45,8 @@ function loadedRender() {
   Book = MainWin.Book;
   StartingBindex = MainWin.StartingBindex;
   RenderFrame = document.getElementById("render");
-  
-  RenderFrame.contentDocument.defaultView.location.assign("file://" + MainWin.MenuHTML.path);
+  window.alert("file://" + MainWin.MenuHTMLfile.path);
+  RenderFrame.contentDocument.defaultView.location.assign("file://" + MainWin.MenuHTMLfile.path);
   
   RenderFrame.style.width = MainWin.PAL.W + "px";
   RenderFrame.style.height = String(MainWin.PAL.H + 16) + "px";
@@ -112,7 +112,7 @@ MainWin.logmsg("startTextGeneration");
   // switch from menu to text background
   initWaitRenderDone(true);
   
-  RenderFrame.contentDocument.defaultView.location.assign("file://" + MainWin.TextHTML.path);
+  RenderFrame.contentDocument.defaultView.location.assign("file://" + MainWin.TextHTMLfile.path);
   
   waitRenderDoneThenDo("startTextGeneration2();");
   
