@@ -166,7 +166,7 @@ sub readDataFiles() {
         $v =~ s/\s*\#.*$//;
         $pageTimingFile{$k} = $v;
       }
-      else {die "Bad entry: $_";}
+      else {print "Bad entry: $_"; die;}
       $_ =~ /^\s*((.*?)\s*=\s*.*?)\s*$/;
       $pageTimingEntry{$2} = $1;
       #if ($bk ne "" && !exists($books{$bk})) {print "WARNING: No book $bk\n";}
@@ -218,11 +218,11 @@ sub readDataFiles() {
 
 # READ PAGE INFORMATION FROM FILE
 sub readPageInformation {
-  open (INF, "<$listdir/$entry") || die "Could not open $listdir/$entry";
+  if (!open (INF, "<$listdir/$entry")) {print "Could not open $listdir/$entry"; die;}
   
   $order=20000;
   while (<INF>) {
-    if ($_ =~ /error/i) {die $_;}
+    if ($_ =~ /error/i) {print $_; die;}
     if ($_ =~ /^\s*\#/) {next;}
     $order++;
     
@@ -295,7 +295,7 @@ sub readPageInformation {
         $totalTitles{$book."-".$ch} = ($totalTitles{$book."-".$ch} + 0);
       }        
     }
-    else {die "Could not parse timingstat: $_";}
+    else {print "Could not parse timingstat: $_"; die;}
   }
   close(INF);
 }
@@ -326,7 +326,7 @@ sub readPageTimingFile($$$) {
 
 # READ MENU INFORMATION FROM FILE
 sub readMenuInformation {
-  open(INF, "<$listdir/$entry") || die "Could not open infile $listdir/$entry\n";
+  if (!open(INF, "<$listdir/$entry")) {print "Could not open infile $listdir/$entry\n"; die;}
   $line = 0;
   $bnum = 0;
   while (<INF>) {
@@ -357,7 +357,7 @@ sub readChaptersCSV() {
   # READ CHAPTER INFORMATION FROM FILE
   $maxchaplength = 0;
   if (-e "$outaudiodir/chapters.csv") {
-    open(INF, "<$outaudiodir/chapters.csv") || die "Could not open infile $outaudiodir/chapters.csv.\n";
+    if (!open(INF, "<$outaudiodir/chapters.csv")) {print "Could not open infile $outaudiodir/chapters.csv.\n"; die;}
     while (<INF>) {
       if ($_ =~ /^\s*\#/) {next;}
       if ($_ =~ /^\s*([^,]+)\s*,\s*([^,]+)\s*,\s*([^,]+)\s*,\s*(.*?)\s*$/) {
@@ -457,7 +457,7 @@ sub formatTime($$) {
   my $sign = "";
   if ($t < 0) {$t = (-1*$t); $sign = "-";}
   
-  if (($t*$framesPS) =~ /\./) {die "formatTime $t is not a frame multiple.";}
+  if (($t*$framesPS) =~ /\./) {print "formatTime $t is not a frame multiple."; die;}
   my $tsave = $t;
   my $hr = sprintf("%i", ($t/3600));
   $t = $t-3600*$hr;
@@ -469,7 +469,7 @@ sub formatTime($$) {
     if ($t < 10) {$timef = sprintf("%02d:%02d:0%02.2f", $hr, $min, $t);}
     else {$timef = sprintf("%02d:%02d:%02.2f", $hr, $min, $t);}
   }
-  if ($timef eq "") {die "Could not format time $tsave";}
+  if ($timef eq "") {print "Could not format time $tsave"; die;}
   return $sign.$timef;
 }
 
@@ -488,10 +488,10 @@ sub unformatTime($$) {
     if ($hr > 0)  {$sec = ($hr*3600);}
     if ($min > 0) {$sec = ($sec + ($min*60));}
     $sec = ($sec + $ts);
-    if ($type ne "noFrameCheck" && ($sec*$framesPS) =~ /\./) {die "unformatTime $timef=$sec is not a frame multiple.";}
+    if ($type ne "noFrameCheck" && ($sec*$framesPS) =~ /\./) {print "unformatTime $timef=$sec is not a frame multiple."; die;}
     return ($sign eq "-" ? (-1*$sec):$sec);
   }
-  else {die "ERROR(unformatTime) $bk-$ch-$pg: Could not convert \"$timef\" to seconds!";}
+  else {print "ERROR(unformatTime) $bk-$ch-$pg: Could not convert \"$timef\" to seconds!"; die;}
 }
 
 #CREATE A SILENT MPG FROM A SINGLE JPG IMAGE
@@ -501,8 +501,8 @@ sub makeSilentSlide($$) {
   #print "Making Silent Slide:$path\n";
   if ($subdir) {
     $subdir = $subdir."/";
-    if (!(-e $imagedir."/".$subdir)) {die "No ".$imagedir."/".$subdir." directory\n";}
-    if (!(-e $videodir."/".$subdir)) {die "No ".$videodir."/".$subdir." directory\n";}
+    if (!(-e $imagedir."/".$subdir)) {print "No ".$imagedir."/".$subdir." directory\n"; die;}
+    if (!(-e $videodir."/".$subdir)) {print "No ".$videodir."/".$subdir." directory\n"; die;}
     $path = $imagedir."/".$subdir."/".$path;
   }
   $path =~ /([^\/\\]+)$/;

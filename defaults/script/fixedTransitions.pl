@@ -27,10 +27,18 @@ $scriptdir = @ARGV[0];
 require "$scriptdir/shared.pl";
 &readDataFiles();
 
-$ptf = "$indir/pageTiming.txt";
-
-# make a backup just in case
-&sys("cp -f \"$ptf\" \"$outaudiodir/pageTiming.txt\"");
+# NEVER EVER EVER LOSE THE ORIGINAL!!!!!
+$pageTimingFile = "$indir/pageTiming.txt";
+my $save = $pageTimingFile;
+my $n = 1;
+my $fn = sprintf("%02i", $n);
+$save =~ s/(-bak\d+)?(\.txt)/-bak$fn$2/;
+while (-e $save) {
+  $n++;
+  my $fn = sprintf("%02i", $n);
+  $save =~ s/(-bak\d+)?(\.txt)/-bak$fn$2/;
+}
+`cp $pageTimingFile $save`;
 
 # collect text-locative data which we now have...
 foreach my $k (keys %correctPageChap) {
@@ -51,10 +59,14 @@ foreach my $k (keys %correctPageChap) {
 }
 
 # now comment out fixed timing values which correspond to text-locative ones...
-&sys("mv -f \"$ptf\" \"$ptf.tmp\"");
-open(INF, "<$ptf.tmp") || die;
-open(OUTF, ">$ptf") || die;
+
+$tmp = "$pageTimingFile.tmp";
+
+open(INF, "<$pageTimingFile") || die;
+open(OUTF, ">$tmp") || die;
 while(<INF>) {
+  
+  # print every single line, but add "#" before select lines...
   if ($_ =~ /^([^-#]+)-(\d+)-(\d+)\s*=\s*([\-\:\d\.]+)\s*$/) {
     my $bk = $1;
     my $ch = $2;
@@ -66,9 +78,11 @@ while(<INF>) {
     my $f = $framesPS*$val;
     $f = sprintf("%i", $f);
     $val = ($f/$framesPS);
+      
+    if ($verseTimings{"$bk-$ch-$val"}) {
+      $_ = "#$_";
+    }
     
-#print "DEBUG2: $bk-$ch-$pg-$val\n";   
-    if ($verseTimings{"$bk-$ch-$val"}) {$_ = "#$_";}
   }
   
   print OUTF $_;
@@ -76,7 +90,9 @@ while(<INF>) {
 
 close(INF);
 close(OUTF);
-unlink("$ptf.tmp");
+
+# overwrite pageTimingFile
+&sys("mv -f \"$tmp\" \"$pageTimingFile\"");
 
 sub sys($) {
   my $cmd = shift;

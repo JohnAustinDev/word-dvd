@@ -94,8 +94,18 @@ if (!exists($books{$MBK})) {
 
 print "\nRUNNING transitions.pl $MBK $firstChapter\n";
 
-# backup our pageTiming.txt file
-&sys("cp -f \"$indir/pageTiming.txt\" \"$backupdir/pageTiming.txt\"");
+# NEVER EVER EVER LOSE THE ORIGINAL!!!!!
+$pageTimingFile = "$indir/pageTiming.txt";
+my $save = $pageTimingFile;
+my $n = 1;
+my $fn = sprintf("%02i", $n);
+$save =~ s/(-bak\d+)?(\.txt)/-bak$fn$2/;
+while (-e $save) {
+  $n++;
+  my $fn = sprintf("%02i", $n);
+  $save =~ s/(-bak\d+)?(\.txt)/-bak$fn$2/;
+}
+`cp $pageTimingFile $save`;
 
 # remove ffmpeg time file so it doesn't mess initial time up
 if (-e "$outaudiodir/audiotmp") {&sys("rm \"$outaudiodir/audiotmp\"");}
@@ -375,8 +385,8 @@ print "\n\nexiting...\n";
 
 &sys("pkill -9 eog");
 
-# Clean and sort the pageTiming.txt file
-&sortPageTimingFile("$indir/pageTiming.txt");
+# Clean and sort pageTimingFile
+&sortPageTimingFile();
 
 if (!$debug && -e "$outaudiodir/audiotmp") {&sys("rm -r -f \"$outaudiodir/audiotmp\"");}
 
@@ -483,7 +493,7 @@ sub saveTime($$) {
       print "\n$res";
       if ($res =~ /^y$/i) {
         print "\nUpdating entries...\n";
-        &updateEntriesBy("$indir/pageTiming.txt", \%entries);
+        &updateEntriesBy(\%entries);
         print "Finished updating entries.\n\n";    
       }
       else {
@@ -495,7 +505,7 @@ sub saveTime($$) {
     }
   }
 
-  open(INF, ">>$indir/pageTiming.txt") || &DIE("Could not open $indir/pageTiming.txt\n");
+  open(INF, ">>$pageTimingFile") || &DIE("Could not open $pageTimingFile\n");
   if (!defined($hasRT)) {print INF "\n"; $hasRT = "true";}     
   if (exists($transitionIndex{"$MBK-$MCH-$MPG"})) {
     my $ptentry = "$MBK-$MCH-i".$transitionIndex{"$MBK-$MCH-$MPG"}." = $pos";
@@ -581,52 +591,6 @@ sub getCalcTime($$$$) {
   if ($p > $lastPage{"$b-$c"}) {$p = $lastPage{"$b-$c"};}
   if ($t eq "formatted") {return $chaps[($p-1)];}
   else {return &unformatTime($chaps[($p-1)]);}
-}
-
-my %allAT;
-sub sortAT {
-  my $bka = $allAT{$a};
-  $bka =~ /^([^-]+)-(\d+)-([\d\w]+)\s*=\s*(\S+)/;
-  $bka = $bkorder{$1};
-  my $cha = $2;
-  my $pa = $3;
-  my $ta = $4;
-  
-  my $bkb = $allAT{$b};
-  $bkb =~ /^([^-]+)-(\d+)-([\d\w]+)\s*=\s*(\S+)/;
-  $bkb = $bkorder{$1};
-  my $chb = $2;
-  my $pb = $3;
-  my $tb = $4;
-  
-  my $r = $bka <=> $bkb;
-  if ($r != 0) {return $r;}
-  $r = $cha <=> $chb;
-  if ($r != 0) {return $r;}
-  if ($pa eq "chs") {return -1;}
-  if ($pb eq "chs") {return 1;}
-  return $ta cmp $tb;
-}
-
-my %allAV;
-sub sortAV {
-  my $bka = $allAV{$a};
-  $bka =~ /^([^-]+)-(\d+).*=\s*(\S+)/;
-  $bka = $bkorder{$1};
-  my $cha = $2;
-  my $ta = $3;
-  
-  my $bkb = $allAV{$b};
-  $bkb =~ /^([^-]+)-(\d+).*=\s*(\S+)/;
-  $bkb = $bkorder{$1};
-  my $chb = $2;
-  my $tb = $3;
-  
-  my $r = $bka <=> $bkb;
-  if ($r != 0) {return $r;}
-  $r = $cha <=> $chb;
-  if ($r != 0) {return $r;}
-  return $ta cmp $tb;
 }
 
 # plays current audio file starting at $st seconds
@@ -759,66 +723,146 @@ sub denormalizeMultiChapTime($$$) {
   return $t;  
 }
 
-sub sortPageTimingFile($) {
-  my $f = shift;
-  &sys("mv -f \"$f\" \"$f.tmp\"");
-  open(INF, "<$f.tmp") || return;
-  open(OUTF, ">$f") || return;
+sub sortPageTimingFile() {
+  
+  my $tmp = "$pageTimingFile.tmp";
+
+  open(INF, "<$pageTimingFile") || return;
+  open(OUTF, ">$tmp") || return;
   my $lastLineWasBlank;
   while(<INF>) {
-    # capture all fixed timing parameters
-    if    ($_ =~ /^\s*([^-#]+-[^-]+-[\d\w]+)\s*=/) { 
-      chomp;
-      if (exists($allAT{$1})) {print sprintf("\n REMOVED:%.64s\nRETAINED:%.64s\n", $allAT{$1}, $_);} 
-      $allAT{$1} = $_;
-    }
+    
     # capture all text-locative parameters
-    elsif ($_ =~ /^\s*([^-#]+-[^:]+:\d+)\s*=/) {
+    if    ($_ =~ /^\s*([^-#]+-[\d+]+-i\d+)\s*=/) {
       chomp;
       if (exists($allAV{$1})) {print sprintf("\n REMOVED:%.64s\nRETAINED:%.64s\n", $allAV{$1}, $_);} 
       $allAV{$1} = $_;
     }
+    
+    # capture all fixed timing parameters
+    elsif ($_ =~ /^\s*([^-#]+-[\d+]+-[\d\w]+)\s*=/) { 
+      chomp;
+      if (exists($allAT{$1})) {print sprintf("\n REMOVED:%.64s\nRETAINED:%.64s\n", $allAT{$1}, $_);} 
+      $allAT{$1} = $_;
+    }
+    
+    # drop # INFO lines (as they will be added back later)
     elsif ($_ =~ /^# INFO/) {next;}
+    
+    # pass on the rest
     else {
+      # but only allow one consecutive blank line
       if ($_ =~ /^\s*$/) {
         if ($lastLineWasBlank eq "true") {next;}
         $lastLineWasBlank = "true";
       }
       else {$lastLineWasBlank = "false";}
+      
       print OUTF $_;
     }
+    
   }
   close(INF);
   close(OUTF);
   
-  open(OUTF, ">>$f") || &DIE("ERROR: Could not open $f!\n");
+  open(OUTF, ">>$tmp") || &DIE("ERROR: Could not open $tmp!\n");
+  
   foreach $k (sort sortAT keys %allAT) {
-    $allAT{$k} =~ /^\s*([^-]+)-(\d+)[-:]/; 
+    $allAT{$k} =~ /^\s*([^-]+)-(\d+)-/; 
     my $bk = $1; 
     my $ch = (1*$2);
-    if ($ch != $lch && $allAT{$k} !~ /-chs/) {print OUTF "\n# INFO: Begin Chapter ".&internalChapter2Real($bk, $ch, 1)." (".$haveAudio{"$bk-$ch"}.")\n";}
+    if ($ch != $lch && $allAT{$k} !~ /-chs/) {
+      print OUTF "\n# INFO: Begin Chapter ".&internalChapter2Real($bk, $ch, 1)." (".$haveAudio{"$bk-$ch"}.")\n";
+    }
     $lch = $ch;
+    
     print OUTF "$allAT{$k}\n";
   }
+  
   foreach $k (sort sortAV keys %allAV) {
-    $allAV{$k} =~ /^\s*([^-]+)-(\d+)[-:]/; 
+    $allAV{$k} =~ /^\s*([^-]+)-(\d+)-/; 
     my $bk = $1; 
     my $ch = (1*$2);
-    if ($ch != $lch) {print OUTF "\n# INFO: Chapter ".&internalChapter2Real($bk, $ch, 1)." (".$haveAudio{"$bk-$ch"}.")\n";}
+    if ($ch != $lch) {
+      print OUTF "\n# INFO: Chapter ".&internalChapter2Real($bk, $ch, 1)." (".$haveAudio{"$bk-$ch"}.")\n";
+    }
     $lch = $ch;
+    
     print OUTF "$allAV{$k}\n";
   }
+  
   close(OUTF);
-  unlink("$f.tmp");
+  
+  # overwrite pageTimingFile
+  &sys("mv -f \"$tmp\" \"$pageTimingFile\"");
 }
 
-sub updateEntriesBy($\%) {
-  my $f = shift;
-  my $eP = shift;
+my %allAT;
+sub sortAT {
+  $allAT{$a} =~ /^([^-]+)-(\d+)-([\d\w]+)\s*=\s*(\S+)/;
+  my $bka = $1;
+  my $cha = $2;
+  my $pa = $3;
+  my $ta = $4;
+  
+  if (defined($localeFile{"FileOrder:$bka"})) {
+    $bka = $localeFile{"FileOrder:$bka"};
+  }
+  
+  $allAT{$b} =~ /^([^-]+)-(\d+)-([\d\w]+)\s*=\s*(\S+)/;
+  my $bkb = $1;
+  my $chb = $2;
+  my $pb = $3;
+  my $tb = $4;
+  
+  if (defined($localeFile{"FileOrder:$bkb"})) {
+    $bkb = $localeFile{"FileOrder:$bkb"};
+  }
+  
+  my $r = $bka <=> $bkb;
+  if ($r != 0) {return $r;}
+  $r = $cha <=> $chb;
+  if ($r != 0) {return $r;}
+  if ($pa eq "chs") {return -1;}
+  if ($pb eq "chs") {return 1;}
+  return $ta cmp $tb;
+}
 
-  &sys("mv -f \"$f\" \"$f.tmp\"");
-  open(INF, "<$f.tmp") || return;
-  open(OUTF, ">$f") || return;
+my %allAV;
+sub sortAV {
+
+  $allAV{$a} =~ /^([^-]+)-(\d+).*=\s*(\S+)/;
+  my $bka = $1;
+  my $cha = $2;
+  my $ta = $3;
+  
+  if (defined($localeFile{"FileOrder:$bka"})) {
+    $bka = $localeFile{"FileOrder:$bka"};
+  }
+  
+  $allAV{$b} =~ /^([^-]+)-(\d+).*=\s*(\S+)/;
+  my $bkb = $1;
+  my $chb = $2;
+  my $tb = $3;
+  
+  if (defined($localeFile{"FileOrder:$bkb"})) {
+    $bkb = $localeFile{"FileOrder:$bkb"};
+  }
+  
+  my $r = $bka <=> $bkb;
+  if ($r != 0) {return $r;}
+  $r = $cha <=> $chb;
+  if ($r != 0) {return $r;}
+  return $ta cmp $tb;
+}
+
+sub updateEntriesBy(\%) {
+  my $eP = shift;
+  
+  my $tmp = "$pageTimingFile.tmp";
+
+  open(INF, "<$pageTimingFile") || return;
+  open(OUTF, ">$tmp") || return;
   
   my $new = "";
   while(<INF>) {
@@ -839,7 +883,9 @@ sub updateEntriesBy($\%) {
   print OUTF "\n$new\n";
   close(INF);
   close(OUTF);
-  unlink("$f.tmp");
+  
+  # overwrite pageTimingFile
+  &sys("mv -f \"$tmp\" \"$pageTimingFile\"");
 }
 
 sub sys($) {
