@@ -45,13 +45,14 @@ function loadedRender() {
   Book = MainWin.Book;
   StartingBindex = MainWin.StartingBindex;
   RenderFrame = document.getElementById("render");
-  window.alert("file://" + MainWin.MenuHTMLfile.path);
+
   RenderFrame.contentDocument.defaultView.location.assign("file://" + MainWin.MenuHTMLfile.path);
   
   RenderFrame.style.width = MainWin.PAL.W + "px";
   RenderFrame.style.height = String(MainWin.PAL.H + 16) + "px";
-  window.setTimeout("postLoad1();", 1);
+  window.setTimeout("postLoad1();", 1000);
 } function postLoad1() {
+
   initWaitRenderDone(false);
   
   window.resizeTo(RenderFrame.boxObject.width, document.getElementById("body").boxObject.height);
@@ -96,8 +97,8 @@ function startMenuGeneration() {
     Bindex = 0;
     MenuType="TOC";
     Basename = "toc"; // is toc here, but is Book[x].shortName for submenus
-    RenderFrame.contentDocument.getElementsByTagName("body")[0].setAttribute("pageType", MenuType);
-    RenderFrame.contentDocument.getElementsByTagName("body")[0].setAttribute("maskType", none);
+    RenderFrame.contentDocument.getElementById("body").setAttribute("pageType", MenuType);
+    RenderFrame.contentDocument.getElementById("body").setAttribute("maskType", "none");
     MainWin.logmsg("Rendering TOC Menu(s)...");
     window.setTimeout("renderMenuSection();", 0);
   }
@@ -183,11 +184,18 @@ function readPageTiming() {
 
 var MenuEntries, MenuEntryIndex, SectionMenuNumber, MenuType, Basename;
 function renderMenuSection() {
+  
   if (MenuEntryIndex < MenuEntries.length) {
     SectionMenuNumber++; // first menu is number 1 (not zero)
+
+    RenderFrame.contentDocument.getElementById("body").setAttribute("pageName", Basename + "-m" + SectionMenuNumber);
+
     var arrayL = [];
     var arrayR = [];
-    var haveart = getSubFilePath(MainWin.UIfile[MainWin.INDIR], MainWin.ARTWORK + "/" + Basename + "-m" + SectionMenuNumber + ".png");
+    
+    // using RenderFrameWindow.getComputedStyle waits for the pageName update (unlike window.getComputedStyle)
+    var haveart = RenderFrame.contentDocument.defaultView.getComputedStyle(RenderFrame.contentDocument.getElementById("menu-page1"));
+    haveart = (haveart.visibility == "hidden");
     
     // prepare next menu's button list
     var pagedone = false;
@@ -290,7 +298,7 @@ function renderChapterMenus() {
       SectionMenuNumber = 0;
       MenuType = "CHP";
       Basename = Book[Bindex].shortName;
-      RenderFrame.contentDocument.getElementsByTagName("body")[0].setAttribute("pageType", MenuType);
+      RenderFrame.contentDocument.getElementById("body").setAttribute("pageType", MenuType);
       MainWin.logmsg("Rendering Chapter Menu(s):" + Basename + "...");
       window.setTimeout("renderMenuSection();", 0);
       Bindex++;
@@ -305,8 +313,6 @@ function renderChapterMenus() {
 
 var MenuHeaders = {};
 function renderMenu(menubase, menunumber, listArrayL, listArrayR, isFirstMenu, isLastMenu, returnFun) {
-
-  RenderFrame.contentDocument.getElementsByTagName("body")[0].setAttribute("pageName", menubase + "-" + menunumber);
 
   if (listArrayL.length>8 || listArrayR.length>8) {
     MainWin.jsdump("ERROR: Too many headings for menu page: " + menuname);
@@ -336,40 +342,32 @@ function renderMenu(menubase, menunumber, listArrayL, listArrayR, isFirstMenu, i
   
   // page 1 & 2 headers
   var mdoc = RenderFrame.contentDocument;
-  applyHeader(names[TL], RenderFrame.contentDocument.getElementById("menu-header-left"), MenuHeaders);
-  applyHeader(names[TR], RenderFrame.contentDocument.getElementById("menu-header-right"), MenuHeaders);
+  applyHeader(names[TL], mdoc.getElementById("menu-header-left"), MenuHeaders);
+  applyHeader(names[TR], mdoc.getElementById("menu-header-right"), MenuHeaders);
   
   // page 1 button list
-  mdoc.getElementById("menu-image-left").style.visibility = "hidden";
   if (listArrayL.length) writeButtonList(listArrayL, menuname, true, mdoc);
   else {
     for (var i=0; i<8; i++) {
       mdoc.getElementById("p1b" + String(i+1)).innerHTML = "";
       mdoc.getElementById("p1b" + String(i+1)).className = "button"; // not hasAudio!
     }
-    var artwork = getSubFilePath(MainWin.UIfile[MainWin.INDIR], MainWin.ARTWORK + "/" + menubase + "-m" + menunumber + ".png");
-    if (artwork) {
-      mdoc.getElementById("menu-image-left").style.visibility = "visible";
-      setImgSrc(mdoc.getElementById("menu-image-left"), "File://" + artwork);
-    }
   }
   
   // page 1 footers
   mdoc.getElementById("menu-footer-left").innerHTML = names[BL];
-  var btype = (names[BL] && targets[BL] ? "underline":"normal");
-  mdoc.getElementById("menu-button-left").style.visibility = (btype=="normal" && targets[BL] ? "visible":"hidden");  
+  if (names[BL] && targets[BL]) mdoc.getElementById("menu-button-left").setAttribute("buttonType", "underline");
   
-  MainWin.write2File(MenusFile, formatMenuString(menuname, 8, true, targets[BL], btype), true);  
+  MainWin.write2File(MenusFile, formatMenuString(menuname, 8, true, targets[BL], "normal"), true);  
   
   // page 2 button list
   writeButtonList(listArrayR, menuname, false, mdoc);
   
   // page 2 footers
   mdoc.getElementById("menu-footer-right").innerHTML = names[BR];
-  btype = (names[BR] && targets[BR] ? "underline":"normal");
-  mdoc.getElementById("menu-button-right").style.visibility = (btype=="normal" && targets[BR] ? "visible":"hidden");
+  if (names[BR] && targets[BR]) mdoc.getElementById("menu-button-right").setAttribute("buttonType", "underline");
   
-  MainWin.write2File(MenusFile, formatMenuString(menuname, 8, false, targets[BR], btype), true); 
+  MainWin.write2File(MenusFile, formatMenuString(menuname, 8, false, targets[BR], "normal"), true); 
 
   initWaitRenderDone(false);
 
@@ -446,7 +444,7 @@ function renderAllPages() {
   // Open a window to render to
   Bindex = StartingBindex;
   initBookGlobals();
-  RenderFrame.contentDocument.getElementsByTagName("body")[0].setAttribute("pageType", "text");
+  RenderFrame.contentDocument.getElementById("body").setAttribute("pageType", "text");
   if (MainWin.Aborted) return;
   else if (!MainWin.Paused) renderNewScreen();
   else ContinueFunc = "renderNewScreen();";
@@ -494,7 +492,7 @@ function renderNewScreen() {
   
   Page.pagebreakboth = false;
   var pageName = Book[Bindex].shortName + (Chapter==0 ? ".intr":"") + "-" + Number(Chapter+SubChapters) + "-" + Page.pagenumber;
-  RenderFrame.contentDocument.getElementsByTagName("body")[0].setAttribute("pageName", pageName);
+  RenderFrame.contentDocument.getElementById("body").setAttribute("pageName", pageName);
   RenderFrame.contentDocument.defaultView.fitScreen(Book[Bindex].shortName, Chapter, SubChapters, Page, skipPage1, skipPage2);
     
   waitRenderDoneThenDo("screenDrawComplete()");
@@ -1346,7 +1344,7 @@ function initFootnotes() {
   Prepender = "";
   ContinueFunc = "renderNewFNScreen();";
   LastBindex=0;
-  RenderFrame.contentDocument.getElementsByTagName("body")[0].setAttribute("pageType", "footnote");
+  RenderFrame.contentDocument.getElementById("body").setAttribute("pageType", "footnote");
   if (PageWithFootnotes[FootnoteIndex])
       MainWin.logmsg("Rendering Footnotes for page:" + PageWithFootnotes[FootnoteIndex].name + "...");
 }
@@ -1400,7 +1398,7 @@ function renderNewFNScreen() {
 
   var tstart = Page.end;
   Page.pagebreakboth = false;
-  RenderFrame.contentDocument.getElementsByTagName("body")[0].setAttribute("pageName", Book[Bindex].shortName + ".fn-" + Chapter + "-" + Page.pagenumber);
+  RenderFrame.contentDocument.getElementById("body").setAttribute("pageName", Book[Bindex].shortName + ".fn-" + Chapter + "-" + Page.pagenumber);
   RenderFrame.contentDocument.defaultView.fitScreen(Book[Bindex].shortName, Chapter, 0, Page, false, false);
 
   // couldn't fit this last page, so start new page with it...
@@ -1467,12 +1465,15 @@ function getSubFilePath(parent, subpath) {
 }
 
 // call initWaitRenderDone, then redraw window, then call waitRenderDoneThenDo
-var UseRenderDoneFallback = false;
+var UseRenderDoneFallback = true;
 var Paint = {count:null, check:null, numcheck:0, interval:null, tinterval:10, tstable:50};
 var DrawInterval;
 var RenderDoneTO;
 // set skipFallback if fallback init is handled elsewhere
 function initWaitRenderDone(skipFallback) {
+  return;
+  
+  
   // prepare for waitRenderDoneThenDo
   RenderFrame.contentDocument.defaultView.RenderDone = false;
   try {
@@ -1494,7 +1495,7 @@ function initWaitRenderDone(skipFallback) {
         func += "  else Paint.numcheck++; ";
         func += "} ";
         func += "else Paint.numcheck = 0; ";
-    Paint.interval = window.setInterval(func, Paint.tinterval);
+    Paint.interval = window.setInterval(func, 1000);
   }
   catch (er) {
     // skip the firefox 3- fallback method if RenderDone is handled somewhere else
@@ -1518,9 +1519,9 @@ function setImgSrc(img, src) {
 }
 
 function waitRenderDoneThenDo(funcString) {
-  if (DrawInterval) window.clearInterval(DrawInterval);
-  DrawInterval = window.setInterval("if (RenderFrame.contentDocument.defaultView.RenderDone) {window.clearInterval(DrawInterval); " + funcString + ";}", 10);
-  //window.setTimeout(funcString, MainWin.WAIT);
+  //if (DrawInterval) window.clearInterval(DrawInterval);
+  //DrawInterval = window.setInterval("if (RenderFrame.contentDocument.defaultView.RenderDone) {window.clearInterval(DrawInterval); " + funcString + ";}", 10);
+  window.setTimeout(funcString, MainWin.WAIT);
 }
 
 function unloadedRender() {
