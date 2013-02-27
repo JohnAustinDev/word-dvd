@@ -1,4 +1,4 @@
-/*@import "my-custom.css";*/
+/*@import "my-project.css";*/
 
 /******************/
 /* GENERAL LAYOUT */
@@ -28,6 +28,9 @@ body:not([maskType="none"]) {
   z-index:-1;
 }
 
+/* NOTE: if a page has visibility=hidden, then the menu and text renderer
+will not write to that page. But images may still appear on those pages
+using my-project.css */
 .page {
   position:absolute;
   overflow:visible;
@@ -62,7 +65,7 @@ body:not([pageType]) .pagebreak-both {
   background-repeat:no-repeat;
 }
 
-#menu-page1 {
+.menu #page1 {
   margin-right:18px;
   top:0px;
   right:50%;
@@ -70,39 +73,12 @@ body:not([pageType]) .pagebreak-both {
   left:0px;
 }
 
-#menu-page2 {
+.menu #page2 {
   margin-left:18px;
   top:0px;
   right:0px;
   bottom:45px;
   left:50%;
-}
-
-#menu-image-left {
-  position:absolute;
-  text-align:center;
-  left:0px;
-  top:0px;
-  visibility:hidden;
-  z-index:2;
-}
-
-#menu-button-left {
-  position:absolute;
-  text-align:center;
-  left:0px;
-  top:0px;
-  visibility:hidden;
-  z-index:2;
-}
-
-#menu-button-right {
-  position:absolute;
-  text-align:center;
-  left:0px;
-  top:0px;
-  visibility:hidden;
-  z-index:2;
 }
 
 /* NOTE: if "max-width" is specified here in px, it will 
@@ -227,7 +203,7 @@ body[maskType="select"] .navbutton[buttonType="underline"]:after {
   background-repeat:no-repeat;
 }
 
-#text-page1 {
+.text #page1 {
   margin-right:18px;
   top:0px;
   right:50%;
@@ -235,32 +211,12 @@ body[maskType="select"] .navbutton[buttonType="underline"]:after {
   left:0px;
 }
 
-/* NOTE: If "visibility:hidden;" is used here, then text 
-will be rendered only to page 1, and page 2 will be skipped */
-#text-page2 {
+.text #page2 {
   margin-left:18px;
   top:0px;
   right:0px;
   bottom:45px;
   left:50%;
-}
-
-#text-image-left {
-  position:absolute;
-  text-align:center;
-  left:0px;
-  top:0px;
-  visibility:hidden;
-  z-index:2;
-}
-
-#text-image-right {
-  position:absolute;
-  text-align:center;
-  right:0px;
-  top:0px;
-  visibility:hidden;
-  z-index:2;
 }
 
 body.text:before {
