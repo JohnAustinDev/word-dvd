@@ -52,6 +52,7 @@ const INAUDIODIR="audio";
 const ARTWORK="artwork";
 const CODE=DEFAULTS + "/script";
 const RESOURCE=DEFAULTS + "/resource";
+const CSS=DEFAULTS + "/css";
 const OSISFILE = "osis.xml";
 const PAGETIMING="pageTiming.txt";
 const LOCALEFILE="config.txt";
@@ -547,6 +548,7 @@ function wordDVD() {
   // COPY RESOURCES AND BUILD-CODE TO INDIR
   exportDir(RESOURCE, UIfile[INDIR].path, document.getElementById("restoreDefaults").checked);
   exportDir(CODE, UIfile[INDIR].path, document.getElementById("restoreDefaults").checked);
+  exportDir(CSS, UIfile[INDIR].path, document.getElementById("restoreDefaults").checked);
   exportDir(DEFAULTS + "/" + DEFHTML, UIfile[INDIR].path, document.getElementById("restoreDefaults").checked);
   exportDir(MENUSDIR, UIfile[INDIR].path, false);
   exportDir(HTMLDIR, UIfile[INDIR].path, false);
