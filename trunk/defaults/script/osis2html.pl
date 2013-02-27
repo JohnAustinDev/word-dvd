@@ -146,9 +146,9 @@ $htmlheader .=   "<head>";
 $htmlheader .=     "<meta http-equiv=\"content-type\" content=\"text/html; charset=utf-8\">";
 $htmlheader .=     "<link rel=\"stylesheet\" type=\"text/css\" href=\"".$CSSFILE."\" />";
 $htmlheader .=   "</head>";
-$htmlheader .=   "<body class=\"text\">";
+$htmlheader .=   "<body class=\"text\" maskType=\"none\">";
 $htmlheader .=     "<div class=\"usable\">";
-$htmlheader .=       "<div id=\"text-page1\" class=\"page\" style=\"overflow:visible\">";
+$htmlheader .=       "<div id=\"page1\" class=\"page\" style=\"overflow:visible\">";
 # NOTE everything up to first \n is stripped off by Word-DVD screen text parser!
 $htmlheader .=          "<div id=\"text-header-left\" class=\"text-header\" style=\"max-width:999px; width:100%;\">THISBK</div>\n";
 $htmlfooter  =       "</div>";

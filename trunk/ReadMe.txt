@@ -110,20 +110,6 @@ but can contain more than one chapter (even a whole book).
 - AudioPrefix and FileName must appear in the appropriate place in
 the config.txt.
 
-
-artwork directory
------------------
-Images like artwork, tables, drawings, or photos can be rendered onto
-the DVD. Images are optional. Currently, images are allowed on the
-left side of menu pages and on the left side of the first page of each
-chapter. To apply an image, simply place a .png file in this directory
-with the following naming convention:
-
-toc-m1.png = first menu page of the DVD's root menu.
-<book>-m2.png = second page of <book>'s chapter-menu.
-<book>-3.png = the beginning of <book>'s third chapter.
-
-
 menus directory
 ---------------
 Book and chapter menus are created automatically by Word-DVD, but custom

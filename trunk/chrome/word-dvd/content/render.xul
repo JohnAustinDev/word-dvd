@@ -29,7 +29,8 @@
     persist = "top screenY"
     xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
     
-  <script type="application/x-javascript" src="chrome://word-dvd/content/render.js" />
+  <script type="application/x-javascript" src="chrome://word-dvd/content/render.js"/>
+  <script type="application/x-javascript" src="chrome://word-dvd/content/screen.js"/>
 
   <vbox id="body">
     <iframe id="render" src=""/>
