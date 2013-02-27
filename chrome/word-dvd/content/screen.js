@@ -1,8 +1,6 @@
 // JavaScript Document
 const SPACE = " ";
-var MainWin = Components.classes["@mozilla.org/embedcomp/window-watcher;1"].getService(Components.interfaces.nsIWindowWatcher).getWindowByName("word-dvd", window);
-var RenderWin = window.frameElement.ownerDocument.defaultView;
-var PageElem1, PageElem2,Body;
+var PageElem1, PageElem2;
 var DebugChapter=0;
 var DebugPage=0;
 var RenderDone;
@@ -10,16 +8,15 @@ var RenderDone;
 var CSSHeading1Color, CSSHeading2Color;
   
 function init() {
-  PageElem1 = document.getElementById("text-page1");
-  PageElem2 = document.getElementById("text-page2");
-  Body = document.getElementById("body");
+  PageElem1 = RenderFrame.contentDocument.getElementById("page1");
+  PageElem2 = RenderFrame.contentDocument.getElementById("page2");
 
   // firefox 3- needs a fallback waitRender method (simple delay) so test and do if needed
   try {
-    if ((RenderWin && RenderWin.UseRenderDoneFallback) || window.mozPaintCount===undefined) throw true;
-    var test = RenderWin.mozPaintCount;
+    if ((UseRenderDoneFallback) || RenderFrame.contentDocument.defaultView.mozPaintCount===undefined) throw true;
+    var test = mozPaintCount;
   }
-  catch (er) {window.setTimeout("window.setTimeout('RenderDone = true;',0);", MainWin.WAIT);}
+  catch (er) {RenderFrame.contentDocument.defaultView.setTimeout("window.setTimeout('RenderDone = true;',0);", MainWin.WAIT);}
 }
 
 function fitScreen(book, chapter, subchapters, aPage, skipPage1, skipPage2) {
@@ -92,10 +89,10 @@ MainWin.jsdump("Chapter=" + Number(chapter+subchapters) + ", Pagenumber=" + aPag
 
   // firefox 3- needs a fallback waitRender method (simple delay) so test and do if needed
   try {
-    if ((RenderWin && RenderWin.UseRenderDoneFallback) || window.mozPaintCount===undefined) throw true;
-    var test = RenderWin.mozPaintCount;
+    if ((UseRenderDoneFallback) || RenderFrame.contentDocument.defaultView.mozPaintCount===undefined) throw true;
+    var test = mozPaintCount;
   }
-  catch (er) {window.setTimeout("window.setTimeout('RenderDone = true;',0);", MainWin.WAIT);}
+  catch (er) {RenderFrame.contentDocument.defaultView.setTimeout("window.setTimeout('RenderDone = true;',0);", MainWin.WAIT);}
   return true;
 }
 
@@ -114,11 +111,11 @@ function fitPage(elem, book, chapter, page, sep, matchTransition) {
       MainWin.logmsg("WARNING " + book + "-" + chapter + "-" + page.pagenumber + ": Preserving transition by truncating page.");
       break;
     }
-    if (page.passage.substring(page.beg, page.end).search(RenderWin.PAGEBREAKBOTH)!=-1) {
+    if (page.passage.substring(page.beg, page.end).search(PAGEBREAKBOTH)!=-1) {
       goodpage.pagebreakboth = true;
       break;
     }
-    if (page.passage.substring(page.beg, page.end).search(RenderWin.PAGEBREAK)!=-1) break;
+    if (page.passage.substring(page.beg, page.end).search(PAGEBREAK)!=-1) break;
     if (!shiftup(elem, page, sep, widowCheck, isFirstPass)) {
       // either end of passage, or impossible to shift up
       page.end = page.passage.length;
@@ -150,7 +147,7 @@ jsdump2(page, "Shifted up to:" + page.passage.substr(page.end,16) + ", isFirstPa
       var charsLeft = countPrintChars(startFinalLine, parEnd, page.passage); //+2 skips the space and the possible first "<"
 
 jsdump2(page, "WidowCheck:charsLeft=" + charsLeft + ", startFinalLine=" + page.passage.substr(startFinalLine, 16) + ", findParEnd=" + page.passage.substr(parEnd, 16));
-      if (!isFirstPass && charsLeft < 2*RenderWin.APPROXLINE) {
+      if (!isFirstPass && charsLeft < 2*APPROXLINE) {
         // In this case a widow might result. So stretch to the end of the 
         // paragraph and if it all fits on the last line, then good. 
         // Otherwise, the last line will not be utilized.
@@ -172,7 +169,7 @@ jsdump2(page, "Finished " + elem.id + ", page break before:" + page.passage.subs
     if (!matchTransition.preserved) matchTransition.preserved = (Math.abs(goodpage.end-matchTransition.transition) < 48);
     // if this is the second page, and we did not match our transistion on the first try, 
     // then end the current page at the chapter boundary, and try again on the next page.
-    if (elem.id=="text-page2" && !matchTransition.preserved && !matchTransition.secondTry) {
+    if (elem.id=="page2" && !matchTransition.preserved && !matchTransition.secondTry) {
       MainWin.logmsg("WARNING " + book + "-" + chapter + "-" + page.pagenumber + ": Preserving transition by pushing chapter to next page.");
       goodpage.end = matchTransition.chapter_beg;
       goodpage.bottomSplitTag = ""; 
@@ -199,10 +196,10 @@ function findTransition(book, page, matchTransition) {
 
   // now save the transition information
   matchTransition.chapter_beg = page.beg + chsi;
-  var nextchn = RenderWin.Chapter;
+  var nextchn = Chapter;
   if (page.beg != 0) nextchn++; // get next
-  nextchn += RenderWin.SubChapters; // get internal chapter number
-  var vts = RenderWin.TransitionTiming["vt_" + book + "_" + nextchn];
+  nextchn += SubChapters; // get internal chapter number
+  var vts = TransitionTiming["vt_" + book + "_" + nextchn];
   if (!vts) return; // no verse timings for chapter
   
   // locate first text-locative transition recorded in pageTiming.txt
@@ -215,11 +212,11 @@ function findTransition(book, page, matchTransition) {
   
   // save the page location of the first text-locative transition if it's within reach
   // first check and repair (if needed) this TransitionTiming index
-  var tindex = RenderWin.checkAndRepairTransitionTiming(firstTrans, page, true);
+  var tindex = checkAndRepairTransitionTiming(firstTrans, page, true);
   if (tindex == -1) return;
   
   // is the first transition in this chapter out of reach?
-  if (tindex > matchTransition.chapter_beg + 2*RenderWin.APPROXLINE*RenderWin.APPNUMLINE) return;
+  if (tindex > matchTransition.chapter_beg + 2*APPROXLINE*APPNUMLINE) return;
   // otherwise save it and then try to match it
   matchTransition.preservingTransition = true;
   matchTransition.transition = transEnd;
@@ -269,7 +266,7 @@ function adjustPageBreak(elem, page, sep, widowCheck, minPossibleShift) {
 
   var startingIndex = page.end;
   var prevPar = (page.isNotes ? findNoteBeg(page.passage, page.end):findParBeg(page.passage, page.end));
-  if (prevPar>0 && countPrintChars(prevPar, page.end, page.passage) < RenderWin.APPROXLINE) {
+  if (prevPar>0 && countPrintChars(prevPar, page.end, page.passage) < APPROXLINE) {
     if (!page.isNotes) {
       var ret = toSecondLine(prevPar, page);
       if (ret==0) ret = toSecondLine(page.end, page);
@@ -350,8 +347,8 @@ function adjustIndexForTag(elem, page, sep, tag, widowCheck, minPossibleShift, o
   var tagClass = page.passage.substr(tag.beg).match(/^<[^>]+class=\"(.*?)\"/);
   if (tagClass) tagClass = tagClass[1];
 
-  var titles = new RegExp("(" + RenderWin.TITLES + ")", "i");
-  var splitdivs = new RegExp("(" + RenderWin.SPLITABLEDIVS + ")", "i");
+  var titles = new RegExp("(" + TITLES + ")", "i");
+  var splitdivs = new RegExp("(" + SPLITABLEDIVS + ")", "i");
   var action = "split";
   if (tag.name=="span" || tag.name=="sup" || tag.name == "i" || tag.name == "b") action="exitTag";
   else if (tag.name=="div" && tagClass && tagClass.match(titles)) action="exitTitles";
@@ -374,7 +371,7 @@ function adjustIndexForTag(elem, page, sep, tag, widowCheck, minPossibleShift, o
       consecTitleDiv = indexOfTitleDiv(page.passage, page.end, iAfterNPrintChars(page.passage, page.end, 1, true));
     }
     // unless this is the first pass, move forward n lines
-    if (!minPossibleShift) page.end = iAfterNPrintChars(page.passage, page.end, 2*RenderWin.APPROXLINE);
+    if (!minPossibleShift) page.end = iAfterNPrintChars(page.passage, page.end, 2*APPROXLINE);
     if (!shiftup(elem, page, sep, widowCheck, minPossibleShift)) {
       MainWin.logmsg("NOTE (exitTitles): Could not shift up n lines after title. May be at end of passage.", true);
       return false;
@@ -433,8 +430,8 @@ function findParEnd(passage, starting) {
   var end = passage.indexOf("<", starting);
   while (end != -1) {
     if (passage.substr(end, MainWin.NEWCHAPTER.length) == MainWin.NEWCHAPTER) break;
-    if (passage.substr(end, RenderWin.PAGEBREAKBOTH.length) == RenderWin.PAGEBREAKBOTH) break;
-    if (passage.substr(end, RenderWin.PAGEBREAK.length) == RenderWin.PAGEBREAK) break;
+    if (passage.substr(end, PAGEBREAKBOTH.length) == PAGEBREAKBOTH) break;
+    if (passage.substr(end, PAGEBREAK.length) == PAGEBREAK) break;
     if (passage.substr(end,2)=="</" || passage.substr(end,6).search(/^<(span|sup)/i)!=-1) {
       end = passage.indexOf("<", end+1);
       continue;
@@ -453,7 +450,7 @@ function findParBeg(passage, starting) {
   
   // Count certain div classes as a paragraph also...
   var par2 = passage.lastIndexOf("<div", starting);
-  var re = new RegExp("^<div[^>]+class=\"(" + RenderWin.SPLITABLEDIVS + ")\""); // ^<div[^>]+class="majorquote"
+  var re = new RegExp("^<div[^>]+class=\"(" + SPLITABLEDIVS + ")\""); // ^<div[^>]+class="majorquote"
   if (passage.substr(par2) && !passage.substr(par2).match(re)) par2=-1;
   
   if (par >= par2) return par;
@@ -462,14 +459,14 @@ function findParBeg(passage, starting) {
 
 // Returns index of next NOTESTART or passage.length if none is found.
 function findNoteEnd(passage, starting) {
-  var end = passage.indexOf(RenderWin.NOTESTART, starting);
+  var end = passage.indexOf(NOTESTART, starting);
   if (end==-1) end = passage.length;
   return end;
 }
 
 // Returns index to start tag of previous note start, or -1 if not found.
 function findNoteBeg(passage, starting) {
-  var note = passage.lastIndexOf(RenderWin.NOTESTART, starting);
+  var note = passage.lastIndexOf(NOTESTART, starting);
   return note;
 }
 
@@ -478,7 +475,7 @@ function findNoteBeg(passage, starting) {
 function indexOfTitleDiv(passage, beg, end) {
   if (beg>end) return -1;
   var sTag = passage.indexOf("<", beg);
-  var titles = new RegExp("(" + RenderWin.TITLES + ")");
+  var titles = new RegExp("(" + TITLES + ")");
   while (sTag!=-1 && sTag<=end) {
     if (passage.substr(sTag,4) == "<div") {
       var tag = passage.substr(sTag).match(/^<[^>]+class=\"(.*?)\"/);
@@ -496,7 +493,7 @@ function countPrintChars(beg, end, string, dontCountWhiteSpace) {
   if (end<=beg) return 0;
   if (PCRES===undefined) {
     PCRES = new Object();
-    PCRES.parSRE = new RegExp("\\s*" + MainWin.escapeRE(RenderWin.PARSTART) + "\\s*", "gi");
+    PCRES.parSRE = new RegExp("\\s*" + MainWin.escapeRE(PARSTART) + "\\s*", "gi");
     
     PCRES.tag1RE = new RegExp("^[^<]*>");
     PCRES.tag2RE = new RegExp("<[^>]*$");
@@ -552,15 +549,15 @@ function iAfterNPrintChars(passage, beg, numpchars, dontCountWhiteSpace) {
 // Return values: 0=at_new_line-continue, 1=at_new_line-stop, 2=at_space-stop
 function toSecondLine(lineStart, page) {
   var lineEnd = findParEnd(page.passage, lineStart+2); //2 for possible space plus 1
-  if (countPrintChars(lineStart, lineEnd, page.passage)<=RenderWin.APPROXLINE+4) { //+4 insures break is actually on next line
+  if (countPrintChars(lineStart, lineEnd, page.passage)<=APPROXLINE+4) { //+4 insures break is actually on next line
     page.end = lineEnd;
     //Only allow second pass if lineEnd is a paragraph!
-    if (page.passage.substr(page.end, RenderWin.PARSTART.length)==RenderWin.PARSTART) return 0;
+    if (page.passage.substr(page.end, PARSTART.length)==PARSTART) return 0;
     else return 1;
   }
   
   var retval = 2;
-  page.end = iAfterNPrintChars(page.passage, lineStart, RenderWin.APPROXLINE)+4; //+4 insures break is actually on next line
+  page.end = iAfterNPrintChars(page.passage, lineStart, APPROXLINE)+4; //+4 insures break is actually on next line
   page.end = page.passage.indexOf(SPACE, page.end);
   if (page.end==-1 || page.end>lineEnd) {
     retval = 1;
@@ -572,15 +569,15 @@ function toSecondLine(lineStart, page) {
 
 // Return values: 0=noteEnd-continue, 1=noteEnd-stop, 2=space-stop
 function toNoteSecondLine(noteStart, page) {
-  var noteEnd = page.passage.indexOf(RenderWin.NOTESTART, noteStart+2);
+  var noteEnd = page.passage.indexOf(NOTESTART, noteStart+2);
   if (noteEnd==-1) noteEnd = page.passage.length;
-  if (countPrintChars(noteStart, noteEnd, page.passage)<=RenderWin.APPROXLINE) {
+  if (countPrintChars(noteStart, noteEnd, page.passage)<=APPROXLINE) {
     page.end = noteEnd;
     return 0;
   }
   
   var retval = 2;
-  page.end = iAfterNPrintChars(page.passage, noteStart, RenderWin.APPROXLINE)+4; //+4 insures break is actually on next line
+  page.end = iAfterNPrintChars(page.passage, noteStart, APPROXLINE)+4; //+4 insures break is actually on next line
   page.end = page.passage.indexOf(SPACE, page.end);
   if (page.end==-1 || page.end>noteEnd) {
     retval = 1;
@@ -610,7 +607,7 @@ function formatPage(elem, page, widowCheck) {
   var bottomSplitTag = (page ? page.bottomSplitTag:"");
 
   //look for special case new chapter
-  var isLeftPage = elem.id=="text-page1";
+  var isLeftPage = elem.id=="page1";
   if (isLeftPage) {
     var re = new RegExp("^((<[^>]+>)|\\s)*" + escapeRE(MainWin.NEWCHAPTER) + "(\\d+)\">", "i");
     var special = html.match(re);
@@ -628,14 +625,14 @@ function formatPage(elem, page, widowCheck) {
   var header;
   if (!isNotes) header = isLeftPage ? bklocale:ch;
   else header = bklocale;
-  RenderWin.applyHeader(header, document.getElementById(myid), TextHeaders); 
+  applyHeader(header, RenderFrame.contentDocument.getElementById(myid), TextHeaders); 
   
   // Remove any leading <br> or paragraphs on page
   var firstBR = html.indexOf("<br>");
   while (firstBR!=-1 && countPrintChars(0, firstBR, html, true)==0) {
-    if (html.substr(firstBR, RenderWin.PARSTART.length)==RenderWin.PARSTART) {
+    if (html.substr(firstBR, PARSTART.length)==PARSTART) {
       if (countPrintChars(firstBR, findParEnd(html, firstBR+2), html, true)>0) html=html.replace("<br>", "");
-      else html=html.replace(RenderWin.PARSTART, "");
+      else html=html.replace(PARSTART, "");
     }
     else html=html.replace("<br>", "");
     firstBR = html.indexOf("<br>");
@@ -644,7 +641,7 @@ function formatPage(elem, page, widowCheck) {
   // If widowCheck, include approx. next line worth of chars, 
   // so that line height is accurate.
   if (page && widowCheck) {
-    var nextLine = iAfterNPrintChars(page.passage, page.end, Math.floor(0.75*RenderWin.APPROXLINE), false);
+    var nextLine = iAfterNPrintChars(page.passage, page.end, Math.floor(0.75*APPROXLINE), false);
     var endPar = (page.isNotes ? findNoteEnd(page.passage, page.end):findParEnd(page.passage, page.end));
     if (nextLine > endPar) nextLine = endPar;
     html += "<br>" + page.passage.substring(page.end, nextLine);
@@ -670,8 +667,8 @@ function jsdump2(page, str) {
 function getCSS(searchText, styleSheetNumber) {
   if (!styleSheetNumber) styleSheetNumber=0;
   searchText = new RegExp("^" + escapeRE(searchText));
-  for (var z=0; z!=document.styleSheets[styleSheetNumber].cssRules.length; z++) {
-    var myRule = document.styleSheets[styleSheetNumber].cssRules[z];
+  for (var z=0; z!=RenderFrame.contentDocument.styleSheets[styleSheetNumber].cssRules.length; z++) {
+    var myRule = RenderFrame.contentDocument.styleSheets[styleSheetNumber].cssRules[z];
     if (myRule.cssText.search(searchText) != -1) return myRule;
   }
   return null;

@@ -46,12 +46,16 @@ function loadedRender() {
   StartingBindex = MainWin.StartingBindex;
   RenderFrame = document.getElementById("render");
 
-  RenderFrame.contentDocument.defaultView.location.assign("file://" + MainWin.MenuHTMLfile.path);
+  RenderFrame.contentDocument.defaultView.location.assign("file://" + MainWin.ScreenHTML.path);
   
   RenderFrame.style.width = MainWin.PAL.W + "px";
   RenderFrame.style.height = String(MainWin.PAL.H + 16) + "px";
+  
   window.setTimeout("postLoad1();", 1000);
+  
 } function postLoad1() {
+  
+  init(); // in screen.js
 
   initWaitRenderDone(false);
   
@@ -69,7 +73,7 @@ function startMenuGeneration() {
     MenusFile.append(MainWin.LISTING);
     MenusFile.append(MainWin.MENUSFILE);
     if (MenusFile.exists()) MenusFile.remove(false);
-    MainWin.write2File(MenusFile, "#Button,Target,Type\n"); 
+    MainWin.write2File(MenusFile, "#<menu-name>.images, image.png, image-HIGH.png, image-SEL.png\n#<menu-name>.button-<n>, target-menu, x0, y0, x1, y1\n"); 
     
     // CREATE TABLE OF CONTENTS
     MenuEntries = [];
@@ -97,8 +101,12 @@ function startMenuGeneration() {
     Bindex = 0;
     MenuType="TOC";
     Basename = "toc"; // is toc here, but is Book[x].shortName for submenus
-    RenderFrame.contentDocument.getElementById("body").setAttribute("pageType", MenuType);
-    RenderFrame.contentDocument.getElementById("body").setAttribute("maskType", "none");
+    
+    var body = RenderFrame.contentDocument.getElementById("body");
+    body.setAttribute("pageType", "TOC");
+    body.setAttribute("maskType", "none");
+    body.className = "menu";
+    
     MainWin.logmsg("Rendering TOC Menu(s)...");
     window.setTimeout("renderMenuSection();", 0);
   }
@@ -113,11 +121,15 @@ MainWin.logmsg("startTextGeneration");
   // switch from menu to text background
   initWaitRenderDone(true);
   
-  RenderFrame.contentDocument.defaultView.location.assign("file://" + MainWin.TextHTMLfile.path);
+  var body = RenderFrame.contentDocument.getElementById("body");
+  body.setAttribute("pageType", "TEXT");
+  body.setAttribute("maskType", "none");
+  body.className = "text";
   
   waitRenderDoneThenDo("startTextGeneration2();");
   
 } function startTextGeneration2() {
+  
   if (!MainWin.document.getElementById("skiptext").checked) {
     readPageTiming();
     MainWin.logmsg("Generating Text Pages...");
@@ -127,6 +139,7 @@ MainWin.logmsg("startTextGeneration");
     MainWin.logmsg("Skipped Text generation.");
     window.setTimeout("startFootnoteGeneration();", 0);  
   }
+  
 }
 
 function startFootnoteGeneration() {
@@ -182,56 +195,66 @@ function readPageTiming() {
   }
 }
 
-var MenuEntries, MenuEntryIndex, SectionMenuNumber, MenuType, Basename;
+var MenuEntries, MenuEntryIndex, SectionMenuNumber, MenuType, Basename, ButtonArrayL, ButtonArrayR;
 function renderMenuSection() {
   
   if (MenuEntryIndex < MenuEntries.length) {
     SectionMenuNumber++; // first menu is number 1 (not zero)
-
-    RenderFrame.contentDocument.getElementById("body").setAttribute("pageName", Basename + "-m" + SectionMenuNumber);
-
-    var arrayL = [];
-    var arrayR = [];
+    var pagename = Basename + "-m" + SectionMenuNumber;
     
+    RenderFrame.contentDocument.getElementById("body").setAttribute("pageName", pagename);
+    RenderFrame.contentDocument.getElementById("body").setAttribute("maskType", "none");
+    
+    // initialize button arrays (includes navbutton)
+    ButtonArrayL = [];
+    ButtonArrayR = [];
+    for (var i=0; i<9; i++) {
+
+      var objL = { isLeft:true,  target:"", label:"", className:"", id:"", row:i, pagename:pagename, image:"", imageHIGH:"", imageSEL:"", x0:0, y0:0, x1:0, y1:0 };
+      var objR = { isLeft:false, target:"", label:"", className:"", id:"", row:i, pagename:pagename, image:"", imageHIGH:"", imageSEL:"", x0:0, y0:0, x1:0, y1:0 };
+      
+      ButtonArrayL.push(objL);
+      ButtonArrayR.push(objR);
+      
+    }
+    
+    // Handle left page...
     // using RenderFrameWindow.getComputedStyle waits for the pageName update (unlike window.getComputedStyle)
-    var haveart = RenderFrame.contentDocument.defaultView.getComputedStyle(RenderFrame.contentDocument.getElementById("menu-page1"));
-    haveart = (haveart.visibility == "hidden");
+    var skipPage = RenderFrame.contentDocument.defaultView.getComputedStyle(RenderFrame.contentDocument.getElementById("page1"));
+    if (skipPage.visibility != "hidden") populateButtonColumn(ButtonArrayL, true);
     
-    // prepare next menu's button list
-    var pagedone = false;
-    for (var r=1; r<=16; r++) {
-      if (r == 9) pagedone = false;
-      if (haveart && r <= 8 || pagedone || !MenuEntries[MenuEntryIndex]) continue;
+    // Handle right page...
+    skipPage = RenderFrame.contentDocument.defaultView.getComputedStyle(RenderFrame.contentDocument.getElementById("page2"));
+    if (skipPage.visibility != "hidden") populateButtonColumn(ButtonArrayR, false);
+    
+    // create a new menu
+    renderMenu((SectionMenuNumber==1), (MenuEntryIndex>=MenuEntries.length), "renderMenuSection();");
+  }
+  else window.setTimeout("renderChapterMenus();", 0);
+}
+
+function populateButtonColumn(buttonArray, isLeft) {
+
+  if (MenuEntries[MenuEntryIndex]) {
+    var index = MenuEntryIndex;
+    while(MenuEntries[index] && index-MenuEntryIndex < 8) {
+      index++;
+      var mel = MainWin.getLocaleString(MenuType + (isLeft ? "left":"right") + "last:" + String(SectionMenuNumber));
+      if (mel && mel == MenuEntries[index-1].label) break;
+    }
+    
+    while(MenuEntryIndex < index) {
+
+      var button = buttonArray[index-MenuEntryIndex-1];
       
-      // Chapter submenus may have ChapName specified, so handle that now
-      if (MenuType == "CHP") {
-        // check for UI locale entries corresponding to chapter menu entries
-        var label = MainWin.getLocaleString("ChapName:" + Book[Bindex-1].shortName + "-" + MenuEntryIndex+1, [Book[Bindex-1].shortName, MenuEntryIndex+1]);
-        if (label !== null) {
-          MenuEntries[MenuEntryIndex].label = label;
-          MenuEntries[MenuEntryIndex].className = "custombutton";
-        }
-        
-        var target = MainWin.getLocaleString("ChapName:" + Book[Bindex-1].shortName + "-" + MenuEntryIndex+1 + "T", [Book[Bindex-1].shortName, MenuEntryIndex+1]);
-        if (target !== null) MenuEntries[MenuEntryIndex].target = target;
-      }
-      
-      // save next menu entry to menu
-      if (r <= 8) arrayL.push(MenuEntries[MenuEntryIndex]);
-      else arrayR.push(MenuEntries[MenuEntryIndex]);
-      
-      var mel = MainWin.getLocaleString(MenuType + (r <= 8 ? "left":"right") + "last:" + String(SectionMenuNumber));
-      if (MenuEntries[MenuEntryIndex] && mel && mel == MenuEntries[MenuEntryIndex].label) {
-        pagedone = true;
-      }
+      button.target    = MenuEntries[MenuEntryIndex].target;
+      button.label     = MenuEntries[MenuEntryIndex].label;
+      button.className = MenuEntries[MenuEntryIndex].className;
       
       MenuEntryIndex++;
     }
-    
-    // create a new menu
-    renderMenu(Basename, SectionMenuNumber, arrayL, arrayR, (SectionMenuNumber==1), (MenuEntryIndex>=MenuEntries.length), "renderMenuSection();");
   }
-  else window.setTimeout("renderChapterMenus();", 0);
+  
 }
 
 function renderChapterMenus() {
@@ -298,7 +321,12 @@ function renderChapterMenus() {
       SectionMenuNumber = 0;
       MenuType = "CHP";
       Basename = Book[Bindex].shortName;
-      RenderFrame.contentDocument.getElementById("body").setAttribute("pageType", MenuType);
+      
+      var body = RenderFrame.contentDocument.getElementById("body");
+      body.setAttribute("pageType", "CHP");
+      body.setAttribute("maskType", "none");
+      body.className = "menu";
+      
       MainWin.logmsg("Rendering Chapter Menu(s):" + Basename + "...");
       window.setTimeout("renderMenuSection();", 0);
       Bindex++;
@@ -312,92 +340,207 @@ function renderChapterMenus() {
 }
 
 var MenuHeaders = {};
-function renderMenu(menubase, menunumber, listArrayL, listArrayR, isFirstMenu, isLastMenu, returnFun) {
+function renderMenu(isFirstMenu, isLastMenu, returnFun) {
 
-  if (listArrayL.length>8 || listArrayR.length>8) {
-    MainWin.jsdump("ERROR: Too many headings for menu page: " + menuname);
-    return;
-  }
+  var menubase   = ButtonArrayL[0].pagename.match(/^(.*?)-m(\d+)$/)[1];
+  var menunumber = Number(ButtonArrayL[0].pagename.match(/^(.*?)-m(\d+)$/)[2]);
   
   var menuname = menubase + "-m" + menunumber;
   var prevmenu = menubase + "-m" + String(menunumber-1);
   var nextmenu = menubase + "-m" + String(menunumber+1);
   
-  const TL=0, TR=1, BR=2, BL=3;
-  const locnames = ["topleft", "topright", "bottomright", "bottomleft"];
-  const locnamesT = ["topleftT", "toprightT", "bottomrightT", "bottomleftT"];
-  var names = [null, null, null, null];
-  var targets = [null, null, (isLastMenu ? "":nextmenu), (isFirstMenu ? (menubase=="toc" ? "":"toc-1"):prevmenu)];
+  var headerLeft = "";
+  var headerRight = "";
+  ButtonArrayL[8].target = (isFirstMenu ? (menubase=="toc" ? "":"toc-1"):prevmenu);
+  ButtonArrayR[8].target = (isLastMenu ? "":nextmenu);
+  
+  const locnames  = ["topleft", "topright", "bottomright", "bottomleft"];
   for (var i=0; i<locnames.length; i++) {
   
     var bk = (MenuType == "CHP" ? MainWin.getLocaleString("FileName:" + Book[Bindex-1].shortName, [Book[Bindex-1].shortName]):null);
 
-    var name = MainWin.getLocaleString(MenuType + locnames[i] + ":" + String(menunumber), [bk, null, null, null]);
-    if (name !== null) names[i] = name;
+    var label = MainWin.getLocaleString(MenuType + locnames[i] + ":" + String(menunumber), [bk, null, null, null]);
+    var target = MainWin.getLocaleString(MenuType + locnames[i] + "T:" + String(menunumber));
     
-    var target = MainWin.getLocaleString(MenuType + locnames[i] + ":" + String(menunumber));
-    if (target) targets[i] = target;
+    switch(locnames[i]) {
+    case "topleft":
+      headerLeft = label;
+      break;
+    case "topright":
+      headerRight = label;
+      break;
+    case "bottomright":
+      ButtonArrayR[8].label = label;
+      if (target) ButtonArrayR[8].target = target;
+      break;
+    case "bottomleft":
+      ButtonArrayL[8].label = label;
+      if (target) ButtonArrayL[8].target = target;
+      break;
+    }
 
   }
   
-  // page 1 & 2 headers
+  // page 1
   var mdoc = RenderFrame.contentDocument;
-  applyHeader(names[TL], mdoc.getElementById("menu-header-left"), MenuHeaders);
-  applyHeader(names[TR], mdoc.getElementById("menu-header-right"), MenuHeaders);
+  applyHeader(headerLeft, mdoc.getElementById("menu-header-left"), MenuHeaders);
+  applyButtonList(ButtonArrayL, menuname, true);
   
-  // page 1 button list
-  if (listArrayL.length) writeButtonList(listArrayL, menuname, true, mdoc);
-  else {
-    for (var i=0; i<8; i++) {
-      mdoc.getElementById("p1b" + String(i+1)).innerHTML = "";
-      mdoc.getElementById("p1b" + String(i+1)).className = "button"; // not hasAudio!
-    }
-  }
+  // page 2
+  applyHeader(headerRight, mdoc.getElementById("menu-header-right"), MenuHeaders);
+  applyButtonList(ButtonArrayR, menuname, false);
   
-  // page 1 footers
-  mdoc.getElementById("menu-footer-left").innerHTML = names[BL];
-  if (names[BL] && targets[BL]) mdoc.getElementById("menu-button-left").setAttribute("buttonType", "underline");
-  
-  MainWin.write2File(MenusFile, formatMenuString(menuname, 8, true, targets[BL], "normal"), true);  
-  
-  // page 2 button list
-  writeButtonList(listArrayR, menuname, false, mdoc);
-  
-  // page 2 footers
-  mdoc.getElementById("menu-footer-right").innerHTML = names[BR];
-  if (names[BR] && targets[BR]) mdoc.getElementById("menu-button-right").setAttribute("buttonType", "underline");
-  
-  MainWin.write2File(MenusFile, formatMenuString(menuname, 8, false, targets[BR], "normal"), true); 
-
-  initWaitRenderDone(false);
-
   if (MainWin.Aborted) return;
-  else if (!MainWin.Paused) waitRenderDoneThenDo("captureImage('" + menuname + "', " + ISMENUIMAGE + ", '" + returnFun + "');");
-  else ContinueFunc = "captureImage('" + menuname + "', " + ISMENUIMAGE + ", '" + returnFun + "');";
+
+  MenuRenderReturnFunc = returnFun;
+  var func = "captureImage('" + ButtonArrayL[0].pagename + "', " + ISMENUIMAGE + ", 'captureMenuMask();');";
+  if (!MainWin.Paused) waitRenderDoneThenDo(func);
+  else ContinueFunc = func;
+
 }
 
-function writeButtonList(listArray, menuname, isLeft, doc) {
-  var offset = (MenuType=="TOC" ? Math.floor(0.5*(8-listArray.length)):0);
-  for (var i=0; i<8; i++) {
-    var aClass = "button";
-    var aLabel = "";
-    var aTarget = "";
-    var ia = i-offset;
-    if (ia>=0 && listArray[ia]) {
-      if (listArray[ia].className) aClass += " " + listArray[ia].className;
-      if (listArray[ia].label) aLabel = listArray[ia].label;
-      if (listArray[ia].target) aTarget = listArray[ia].target;
-    }
-    var id = (isLeft ? "p1b":"p2b");
-    doc.getElementById(id + String(i+1)).className = aClass;
-    doc.getElementById(id + String(i+1)).innerHTML = aLabel;
+var MenuRenderReturnFunc;
+function captureMenuMask() {
+  
+  initWaitRenderDone(false);
+  
+  var body = RenderFrame.contentDocument.getElementById("body");
+  
+  var isHighlight = (body.getAttribute("maskType") == "highlight");
     
-    if (aTarget) MainWin.write2File(MenusFile, formatMenuString(menuname, i, isLeft, aTarget), true);
-  }
+  body.setAttribute("maskType", (!isHighlight ? "highlight":"select"));
+  
+  waitRenderDoneThenDo("captureMask();");
 }
 
-function formatMenuString(name, row, isLeft, target, type) {
-  return name + ".button-" + String(row+(isLeft ? 1:10)) + (target ? ", " + target + (type ? ", " + type:""):"") + "\n"
+function captureMask() {
+  
+  var body = RenderFrame.contentDocument.getElementById("body");
+  var isHighlight = (body.getAttribute("maskType") == "highlight");
+  
+  // capture and save the mask
+  var capture = Components.classes["@mozilla.org/file/local;1"].createInstance(Components.interfaces.nsILocalFile);
+  capture.initWithPath(MainWin.UIfile[MainWin.INDIR].path + "/" + MainWin.CODE + "/" + MainWin.CAPTUREMASK);
+  
+  var imageName = ButtonArrayL[0].pagename + (isHighlight ? "-HIGH":"-SEL") + ".png";
+      
+  var imgfile = MainWin.UIfile[MainWin.OUTDIR].clone();
+  imgfile.append(MainWin.IMGDIR);
+  imgfile.append(MainWin.MASKDIR);
+  if (!imgfile.exists()) {imgfile.create(imgfile.DIRECTORY_TYPE, 511);}
+  imgfile.append(imageName);
+  
+  var process = Components.classes["@mozilla.org/process/util;1"]
+                    .createInstance(Components.interfaces.nsIProcess);
+
+  process.init(capture);
+  var args = ["-window render-win", "-crop " + MainWin.PAL.W + "x" + MainWin.PAL.H + "+0+0", imgfile.path, MainWin.DBLogFile.path];
+  process.run(true, args, args.length);
+  
+  // save the mask button data
+  getMaskButtonData(ButtonArrayL);
+  getMaskButtonData(ButtonArrayR);
+
+  // call next function
+  if (isHighlight) captureMenuMask();
+  else writeMenuData();
+  
+}
+
+function getMaskButtonData(buttonArray) {
+  var body = RenderFrame.contentDocument.getElementById("body");
+  var isHighlight = (body.getAttribute("maskType") == "highlight");
+  
+  for (var i=0; i<buttonArray.length; i++) {
+    var b = buttonArray[i];
+    b.image = buttonArray[i].pagename + ".jpg";
+    
+    var imageName = buttonArray[i].pagename + (isHighlight ? "-HIGH":"-SEL") + ".png";
+    if (isHighlight) b.imageHIGH = imageName;
+    else b.imageSEL = imageName;
+    
+    if (!b.id) continue;
+    
+    var elem = RenderFrame.contentDocument.getElementById(b.id);
+    b.x0 = elem.offsetLeft;
+    b.y0 = elem.offsetTop;
+    b.x1 = b.x0 + elem.offsetWidth;
+    b.y1 = b.y0 + elem.offsetHeight;
+  } 
+}
+
+function writeMenuData() {
+  
+  // write data
+  MainWin.write2File(MenusFile, formatMenuString(ButtonArrayL[0], true), true);
+  
+  for (var i=0; i<ButtonArrayL.length; i++) {
+    if (!ButtonArrayL[i].target) continue;
+    MainWin.write2File(MenusFile, formatMenuString(ButtonArrayL[i], false), true);
+  }
+  
+  for (var i=0; i<ButtonArrayR.length; i++) {
+    if (!ButtonArrayR[i].target) continue;
+    MainWin.write2File(MenusFile, formatMenuString(ButtonArrayR[i], false), true);
+  }
+  
+  window.setTimeout(MenuRenderReturnFunc, 1);
+}
+
+function formatMenuString(b, writeImages) {
+  
+  if (writeImages) 
+      var data  = b.pagename + ".images, " + b.image + ", " + b.imageHIGH + ", " + b.imageSEL + "\n";
+      
+  else {
+    data  = b.pagename + ".button-" + String(b.row+(b.isLeft ? 1:10)) + ", ";
+    data += b.target + ", " + b.x0 + ", " + b.y0 + ", " + b.x1 + ", " + b.y1 + "\n";
+  }
+  
+  return data;
+}
+
+function applyButtonList(buttonArray, menuname, isLeft) {
+  
+  var doc = RenderFrame.contentDocument;
+  
+  // standard buttons
+  for (var i=0; i<8; i++) {
+
+    var aLabel = "";
+    var aClass = "button";
+    
+    if (buttonArray[i].label) {
+      aLabel = buttonArray[i].label;
+    }
+    
+    if (buttonArray[i].className) {
+      aClass += " " + buttonArray[i].className;
+    }
+    
+    if (!buttonArray[i].target) {
+      aClass += " notarget";
+    }
+    
+    var id = (isLeft ? "p1b":"p2b") + String(i+1);
+    buttonArray[i].id = id;
+    doc.getElementById(id).className = aClass;
+    doc.getElementById(id).innerHTML = aLabel;
+
+  }
+  
+  // navbutton
+  var navid = "menu-footer-" + (isLeft ? "left":"right");
+  doc.getElementById(navid).innerHTML = (buttonArray[8].label ? buttonArray[8].label:"");
+  doc.getElementById(navid).className = "button";
+  
+  // hide if there's no target, and use underline highlight if there is a label
+  if (buttonArray[8].target) {
+    if (buttonArray[8].label) doc.getElementById(navid).setAttribute("buttonType", "underline");
+    else doc.getElementById(navid).removeAttribute("buttonType");
+  }
+  else doc.getElementById(navid).setAttribute("buttonType", "none");
+
 }
 
 // Adjust page header to fit inside max-width.
@@ -444,7 +587,7 @@ function renderAllPages() {
   // Open a window to render to
   Bindex = StartingBindex;
   initBookGlobals();
-  RenderFrame.contentDocument.getElementById("body").setAttribute("pageType", "text");
+
   if (MainWin.Aborted) return;
   else if (!MainWin.Paused) renderNewScreen();
   else ContinueFunc = "renderNewScreen();";
@@ -474,26 +617,19 @@ function renderNewScreen() {
 
   ContinueFunc = null;
   var mdoc = RenderFrame.contentDocument;
-  mdoc.getElementById("text-image-left").style.visibility = "hidden";
-  mdoc.getElementById("text-image-right").style.visibility = "hidden";
-  var skipPage1 = false;
-  var artwork;
-  if (Page.pagenumber==1 && Chapter==1) 
-    artwork = getSubFilePath(MainWin.UIfile[MainWin.INDIR], MainWin.ARTWORK + "/" + Book[Bindex].shortName + "-1" + ".png");
-  if (artwork) {
-    skipPage1 = true;
-    mdoc.getElementById("text-image-left").style.visibility = "visible";
-    setImgSrc(mdoc.getElementById("text-image-left"), "File://" + artwork);
-  }
-  var tstyle = mdoc.defaultView.getComputedStyle(mdoc.getElementById("text-page2"), null);
-  var skipPage2 = (tstyle.visibility == "hidden"); // this allows single column display by setting text-page2 visibility=hidden
+
+  var tstyle = mdoc.defaultView.getComputedStyle(mdoc.getElementById("page1"), null);
+  var skipPage1 = (tstyle.visibility == "hidden"); // this allows single column display by setting page2 visibility=hidden
+  
+  tstyle = mdoc.defaultView.getComputedStyle(mdoc.getElementById("page2"), null);
+  var skipPage2 = (tstyle.visibility == "hidden");
   
   initWaitRenderDone(true);
   
   Page.pagebreakboth = false;
   var pageName = Book[Bindex].shortName + (Chapter==0 ? ".intr":"") + "-" + Number(Chapter+SubChapters) + "-" + Page.pagenumber;
   RenderFrame.contentDocument.getElementById("body").setAttribute("pageName", pageName);
-  RenderFrame.contentDocument.defaultView.fitScreen(Book[Bindex].shortName, Chapter, SubChapters, Page, skipPage1, skipPage2);
+  fitScreen(Book[Bindex].shortName, Chapter, SubChapters, Page, skipPage1, skipPage2);
     
   waitRenderDoneThenDo("screenDrawComplete()");
   
@@ -1344,7 +1480,12 @@ function initFootnotes() {
   Prepender = "";
   ContinueFunc = "renderNewFNScreen();";
   LastBindex=0;
-  RenderFrame.contentDocument.getElementById("body").setAttribute("pageType", "footnote");
+  
+  var body = RenderFrame.contentDocument.getElementById("body");
+  body.setAttribute("pageType", "FOOTNOTE");
+  body.setAttribute("maskType", "none");
+  body.className = "text";
+  
   if (PageWithFootnotes[FootnoteIndex])
       MainWin.logmsg("Rendering Footnotes for page:" + PageWithFootnotes[FootnoteIndex].name + "...");
 }
@@ -1399,7 +1540,7 @@ function renderNewFNScreen() {
   var tstart = Page.end;
   Page.pagebreakboth = false;
   RenderFrame.contentDocument.getElementById("body").setAttribute("pageName", Book[Bindex].shortName + ".fn-" + Chapter + "-" + Page.pagenumber);
-  RenderFrame.contentDocument.defaultView.fitScreen(Book[Bindex].shortName, Chapter, 0, Page, false, false);
+  fitScreen(Book[Bindex].shortName, Chapter, 0, Page, false, false);
 
   // couldn't fit this last page, so start new page with it...
   if (!ContinuePage && !Page.complete) {

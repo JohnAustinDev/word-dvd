@@ -1,4 +1,4 @@
-/*@import "my-project.css";*/
+@import "project.css"; /* supply your own project.css */
 
 /******************/
 /* GENERAL LAYOUT */
@@ -136,6 +136,9 @@ the desired width. */
   left:-12px;
   height:34px;
 }
+.button.notarget {
+  display:none;
+}
 body[maskType="highlight"] .button:after,
 body[maskType="select"] .button:after {
   content:url(../resource/menuUnderline-HIGH.png);
@@ -154,6 +157,9 @@ body[maskType="select"] .button:after {
   position:relative;
   height:30px;
   margin-top:36px;
+}
+.navbutton[buttonType="none"] {
+  display:none;
 }
 .navbutton:before {
   content:url(../resource/menuArrow.png);
