@@ -1,5 +1,3 @@
-@import "project.css"; /* supply your own project.css */
-
 /******************/
 /* GENERAL LAYOUT */
 /******************/
@@ -8,15 +6,20 @@ body {
   /* Let the background overscan, but restrict the content to title-safe. */
   font-family:arial, sans-serif;
   font-size:19px;
-  max-width:720px;
-  max-height:576px;
+  width:720px;
+  height:576px;
   color:rgb(60,60,0);
 }
-body:not([maskType="none"]) {
+body:not([masktype="none"]) {
   /* this color should contrast with the highlight and select masks
      and should be converted to transparent after screen capture */
   background-color:rgb(0,0,255);
   background-image:none;
+}
+body:not([masktype="none"]):before,
+body:not([masktype="none"]) .button div:first-child,
+body:not([masktype="none"]) .menu-header {
+  visibility:hidden;
 }
 
 .usable {
@@ -30,18 +33,17 @@ body:not([maskType="none"]) {
 
 /* NOTE: if a page has visibility=hidden, then the menu and text renderer
 will not write to that page. But images may still appear on those pages
-using my-project.css */
+using project.css */
 .page {
   position:absolute;
-  overflow:visible;
   text-align:left;
   padding-top:12px;
   padding-bottom:12px;
 }
 
 /* make pagebreaks visible when viewed directly in browser */
-body:not([pageType]) .pagebreak,
-body:not([pageType]) .pagebreak-both {
+body:not([pagetype]) .pagebreak,
+body:not([pagetype]) .pagebreak-both {
   display:block;
   clear:both;
   width:calc(100% - 60px);
@@ -49,12 +51,45 @@ body:not([pageType]) .pagebreak-both {
   margin:0px 30px 50px 30px;
   border-bottom:2px dashed green;
 }
-body:not([pageType]) .pagebreak-both {
+body:not([pagetype]) .pagebreak-both {
   width:100%;
   margin:0px 00px 50px 00px;
   border-bottom:2px dashed red;
 }
 
+/****************************/
+/* MENU AND TEXT IMAGES CSS */
+/****************************/
+
+/* An overlay image can be placed on any menu or text 
+page by adding the following into your project.css file:
+
+body[pagename="name-of-a-page"]:before {
+  content:url(an-image-url);
+}
+
+You can also have the renderer skip the left or right
+half of any page by adding this into your project.css:
+
+body[pagename="name-of-a-page"] #left-page {
+  visibility:hidden;
+}
+
+or 
+
+body[pagename="name-of-a-page"] #right-page {
+  visibility:hidden;
+}
+
+*/
+
+body:before {
+  position:absolute;
+  top:0px;
+  left:0px;
+  width:100%;
+  height:100%;
+}
 
 /******************/
 /* MENU PAGES CSS */
@@ -64,20 +99,18 @@ body:not([pageType]) .pagebreak-both {
   background-image: url(../resource/menu.jpg);
   background-repeat:no-repeat;
 }
-
-.menu #page1 {
-  margin-right:18px;
+.menu .page {
   top:0px;
-  right:50%;
   bottom:45px;
+}
+.menu #left-page {
+  margin-right:18px;
+  right:50%;
   left:0px;
 }
-
-.menu #page2 {
+.menu #right-page {
   margin-left:18px;
-  top:0px;
-  right:0px;
-  bottom:45px;
+  right:20px;
   left:50%;
 }
 
@@ -92,7 +125,7 @@ the desired width. */
   text-align:center;
   white-space:nowrap;
   height:30px;
-  margin-bottom:35px;
+  margin:0px auto 35px auto;
 }
 
 .menu-header div {
@@ -111,16 +144,15 @@ the desired width. */
 /* adjusting for example "book" background image */
 #menu-header-right {
   position:relative;
-  left:-20px;
   top:-2px;
 }
 
 .hasAudio {
   position:relative;
-  left:12px; /* approx (width-of-audio-icon.png + margin-left)/2 */
+  left:14px; /* approx (width-of-audio-icon.png + margin-left)/2 */
 }
 
-.hasAudio:after {
+.hasAudio div:first-child:after{
   content: url(../resource/audio-icon.png);
   margin-left:7px;
 }
@@ -129,76 +161,58 @@ the desired width. */
   font-weight:bold;
 }
 
+.chapter-button-col {
+  height:272px; /* 34*8 */
+  width:342px; /* 720/2-18 px */
+  display:table-cell;
+  vertical-align:middle;
+}
 .button {
   font-size:20px;
   text-align:center;
-  position:relative;
-  left:-12px;
-  height:34px;
+  height:12.5%; /* 100%/8 buttons */
+  overflow:visible;
+  white-space:nowrap;
+}
+#p1b9, #p2b9 {
+  margin-top:36px;
 }
 .button.notarget {
   display:none;
 }
-body[maskType="highlight"] .button:after,
-body[maskType="select"] .button:after {
-  content:url(../resource/menuUnderline-HIGH.png);
-  position:absolute;
-  text-align:center;
-  left:0px;
-  top:20px;
-  width:100%;
-}
-body[maskType="select"] .button:after {
-  content:url(../resource/menuUnderline-SEL.png);
-}
-.navbutton {
-  font-size:20px;
-  text-align:center;
+.button-mask {
+  background-repeat:no-repeat;
+  background-position:center; 
   position:relative;
-  height:30px;
-  margin-top:36px;
 }
-.navbutton[buttonType="none"] {
-  display:none;
+.button-mask {
+/* this is for menuUnderline images */
+  background-image:none;
+  height:16px;
+  top:-4px;
 }
-.navbutton:before {
-  content:url(../resource/menuArrow.png);
-  position:absolute;
-  text-align:center;
-  left:0px;
-  top:-7px;
-  width:100%;
+body[masktype="highlight"] .button-mask {
+  background-image:url(../resource/menuUnderline-HIGH.png);
 }
-body:not([maskType="none"]) .navbutton:before {
-  display:none;
+body[masktype="select"] .button-mask {
+  background-image:url(../resource/menuUnderline-SEL.png);
 }
-#menu-footer-left:before,
-#menu-footer-left:after {
+.button.arrow .button-mask {
+/* this is for menuArrow images */
+  background-image:url(../resource/menuArrow.png);
+  height:42px;
+  top:-32px;
+}
+#p1b9.arrow .button-mask {
   transform:scaleX(-1);
 }
-.navbutton[buttonType="underline"]:before {
-  content:none;
+body[masktype="highlight"] .button.arrow .button-mask {
+  background-image:url(../resource/menuArrow-HIGH.png);
 }
-body[maskType="highlight"] .navbutton:after,
-body[maskType="select"] .navbutton:after {
-  content:url(../resource/menuArrow-HIGH.png);
-  position:absolute;
-  text-align:center;
-  left:0px;
-  top:-7px;
-  width:100%;
+body[masktype="select"] .button.arrow .button-mask {
+  background-image:url(../resource/menuArrow-SEL.png);
 }
-body[maskType="select"] .navbutton:after {
-  content:url(../resource/menuArrow-SEL.png);
-}
-body[maskType="highlight"] .navbutton[buttonType="underline"]:after,
-body[maskType="select"] .navbutton[buttonType="underline"]:after {
-  content:url(../resource/menuUnderline-HIGH.png);
-  top:20px;
-}
-body[maskType="select"] .navbutton[buttonType="underline"]:after {
-  content:url(../resource/menuUnderline-SEL.png);
-}
+
 
 /******************/
 /* TEXT PAGES CSS */
@@ -208,16 +222,17 @@ body[maskType="select"] .navbutton[buttonType="underline"]:after {
   background-image: url(../resource/text.jpg);
   background-repeat:no-repeat;
 }
-
-.text #page1 {
+.text .page {
+  overflow:auto;
+}
+.text #left-page {
   margin-right:18px;
   top:0px;
   right:50%;
   bottom:45px;
   left:0px;
 }
-
-.text #page2 {
+.text #right-page {
   margin-left:18px;
   top:0px;
   right:0px;
@@ -232,10 +247,10 @@ body.text:before {
   top:0px;
   width:100%;
 }
-body.text[maskType="highlight"]:before {
+body.text[masktype="highlight"]:before {
   content:url(../resource/textButtons-HIGH.png);
 }
-body.text[maskType="select"]:before {
+body.text[masktype="select"]:before {
   content:url(../resource/textButtons-SEL.png);
 }
 

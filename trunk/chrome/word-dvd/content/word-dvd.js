@@ -49,9 +49,9 @@ const DEFAULTS = "defaults";
 const HTMLDIR="html";
 const MENUSDIR="menus";
 const INAUDIODIR="audio";
-const CODE=DEFAULTS + "/script";
-const RESOURCE=DEFAULTS + "/resource";
-const CSS=DEFAULTS + "/css";
+const CODE="script";
+const RESOURCE="resource";
+const CSS="css";
 const OSISFILE = "osis.xml";
 const PAGETIMING="pageTiming.txt";
 const LOCALEFILE="config.txt";
@@ -299,6 +299,11 @@ function loadedXUL() {
   checkAudioDir();	
   updateControlPanel();
   sizeToContent();
+  
+  // Log File
+  DBLogFile = UIfile[OUTDIR].clone();
+  DBLogFile.append(DBLOGFILE);
+  if (DBLogFile.exists()) DBLogFile = moveToBackup(DBLogFile);
 }
 
 function handle(e) {
@@ -541,12 +546,17 @@ function wordDVD() {
   ScreenHTML.append(SCREENHTML);
 
   // COPY RESOURCES AND BUILD-CODE TO INDIR
-  exportDir(RESOURCE, UIfile[INDIR].path, document.getElementById("restoreDefaults").checked);
-  exportDir(CODE, UIfile[INDIR].path, document.getElementById("restoreDefaults").checked);
-  exportDir(CSS, UIfile[INDIR].path, document.getElementById("restoreDefaults").checked);
+  exportDir(DEFAULTS + "/" + RESOURCE, UIfile[INDIR].path, document.getElementById("restoreDefaults").checked);
+  exportDir(DEFAULTS + "/" + CODE, UIfile[INDIR].path, document.getElementById("restoreDefaults").checked);
+  exportDir(DEFAULTS + "/" + CSS, UIfile[INDIR].path, document.getElementById("restoreDefaults").checked);
   exportDir(DEFAULTS + "/" + DEFHTML, UIfile[INDIR].path, document.getElementById("restoreDefaults").checked);
-  exportDir(MENUSDIR, UIfile[INDIR].path, false);
-  exportDir(HTMLDIR, UIfile[INDIR].path, false);
+  
+  var test; // don't copy these files if destination directory already exists
+  test = UIfile[INDIR].clone(); test.append(MENUSDIR);
+  if (!test.exists()) exportDir(MENUSDIR, UIfile[INDIR].path, false);
+  test = UIfile[INDIR].clone(); test.append(HTMLDIR);
+  if (!test.exists()) exportDir(HTMLDIR, UIfile[INDIR].path, false);
+  
   exportFile(LOCALEFILE, UIfile[INDIR].path, false);
   exportFile(PAGETIMING, UIfile[INDIR].path, false);
 
@@ -620,11 +630,19 @@ function readHtmlFiles() {
     var file = htmlFiles.getNext().QueryInterface(Components.interfaces.nsIFile);
     var fileName = file.leafName.match(/^([^\.]+)\.(.*)$/); // process only book text files
     if (!fileName || fileName[2]!="html") continue;
+    
+    if (!getLocaleLiteral("FileName:" + file.leafName.replace(/(\.[^\.]*)?\.html/, ""))) {
+    window.alert("SDfs");
+      logmsg("WARNING: File \"" + file.path + "\" is not listed in config.txt. Skipping...");
+      continue;
+    }
+    
     var data = readFile(file);
     if (!data) {
       logmsg("ERROR: Empty HTML file, or could not read \"" + file.path + "\"");
       continue;
     }
+    
     Book.push(null);
     Book[Book.length-1] = new Object();
     Book[Book.length-1].shortName = fileName[1];
@@ -712,11 +730,6 @@ function wordDVD2() {
   BackupDir = Components.classes["@mozilla.org/file/local;1"].createInstance(Components.interfaces.nsILocalFile);
   BackupDir.initWithPath(UIfile[OUTDIR].path + "/" + BACKUP);
   if (!BackupDir.exists()) BackupDir.create(BackupDir.DIRECTORY_TYPE, 511);
-  
-  // Log File
-  DBLogFile = UIfile[OUTDIR].clone();
-  DBLogFile.append(DBLOGFILE);
-  if (DBLogFile.exists()) DBLogFile = moveToBackup(DBLogFile);
 
   logmsg("Starting Word-DVD imager at " + StartDate.toTimeString() + " " + StartDate.toDateString());
   logmsg("Word-DVD Version: " + (ExtVersion ? ExtVersion:"undreadable"));
@@ -1052,7 +1065,7 @@ function writeRunScripts() {
   if (!file.exists()) file.create(file.DIRECTORY_TYPE, 511);
   
   var scriptdir = Components.classes["@mozilla.org/file/local;1"].createInstance(Components.interfaces.nsILocalFile);
-  scriptdir.initWithPath(UIfile[INDIR].path + "/" + CODE);
+  scriptdir.initWithPath(UIfile[INDIR].path + "/" + DEFAULTS + "/" + CODE);
   
   var rundir = Components.classes["@mozilla.org/file/local;1"].createInstance(Components.interfaces.nsILocalFile);
   rundir.initWithPath(UIfile[OUTDIR].path + "/" + SCRIPT);
@@ -1110,7 +1123,7 @@ function getPathOrRelativePath(aFile, rFile, rootFile) {
 
 function getTempRunScript(script) {
   var scriptdir = Components.classes["@mozilla.org/file/local;1"].createInstance(Components.interfaces.nsILocalFile);
-  scriptdir.initWithPath(UIfile[INDIR].path + "/" + CODE);
+  scriptdir.initWithPath(UIfile[INDIR].path + "/" + DEFAULTS + "/" + CODE);
   var temp = Components.classes["@mozilla.org/file/directory_service;1"].
 			    getService(Components.interfaces.nsIProperties).
 			    get("TmpD", Components.interfaces.nsIFile);		      

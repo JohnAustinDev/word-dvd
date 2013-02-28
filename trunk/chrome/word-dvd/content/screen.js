@@ -8,8 +8,8 @@ var RenderDone;
 var CSSHeading1Color, CSSHeading2Color;
   
 function init() {
-  PageElem1 = RenderFrame.contentDocument.getElementById("page1");
-  PageElem2 = RenderFrame.contentDocument.getElementById("page2");
+  PageElem1 = RenderFrame.contentDocument.getElementById("left-page");
+  PageElem2 = RenderFrame.contentDocument.getElementById("right-page");
 
   // firefox 3- needs a fallback waitRender method (simple delay) so test and do if needed
   try {
@@ -44,9 +44,9 @@ MainWin.jsdump("Chapter=" + Number(chapter+subchapters) + ", Pagenumber=" + aPag
   if (skipPage1) formatPage(PageElem1, null, false);
   else fitPage(PageElem1, book, chapter, aPage, SPACE, matchTransition);
   
-  // save page 1 for verse timing preservation
-  var page1 = {};
-  copyPropsA2B(aPage, page1);
+  // save left page for verse timing preservation
+  var pageLeft = {};
+  copyPropsA2B(aPage, pageLeft);
  
  // render page Right
   if (aPage.complete) PageElem2.innerHTML="";
@@ -66,9 +66,9 @@ MainWin.jsdump("Chapter=" + Number(chapter+subchapters) + ", Pagenumber=" + aPag
     // the next page instead, where the transition should then be matched.
     if (matchTransition && aPage.end < aPage.beg) {
       MainWin.logmsg("WARNING " + book + "-" + chapter + "-" + aPage.pagenumber + ": Preserving transition by skipping right page.");
-      page1.end = matchTransition.chapter_beg;
-      page1.bottomSplitTag = "";
-      copyPropsA2B(page1, aPage); 
+      pageLeft.end = matchTransition.chapter_beg;
+      pageLeft.bottomSplitTag = "";
+      copyPropsA2B(pageLeft, aPage); 
       formatPage(PageElem1, aPage, false);      
     }
   }
@@ -169,7 +169,7 @@ jsdump2(page, "Finished " + elem.id + ", page break before:" + page.passage.subs
     if (!matchTransition.preserved) matchTransition.preserved = (Math.abs(goodpage.end-matchTransition.transition) < 48);
     // if this is the second page, and we did not match our transistion on the first try, 
     // then end the current page at the chapter boundary, and try again on the next page.
-    if (elem.id=="page2" && !matchTransition.preserved && !matchTransition.secondTry) {
+    if (elem.id=="right-page" && !matchTransition.preserved && !matchTransition.secondTry) {
       MainWin.logmsg("WARNING " + book + "-" + chapter + "-" + page.pagenumber + ": Preserving transition by pushing chapter to next page.");
       goodpage.end = matchTransition.chapter_beg;
       goodpage.bottomSplitTag = ""; 
@@ -607,7 +607,7 @@ function formatPage(elem, page, widowCheck) {
   var bottomSplitTag = (page ? page.bottomSplitTag:"");
 
   //look for special case new chapter
-  var isLeftPage = elem.id=="page1";
+  var isLeftPage = elem.id=="left-page";
   if (isLeftPage) {
     var re = new RegExp("^((<[^>]+>)|\\s)*" + escapeRE(MainWin.NEWCHAPTER) + "(\\d+)\">", "i");
     var special = html.match(re);
