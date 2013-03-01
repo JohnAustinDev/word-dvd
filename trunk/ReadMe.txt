@@ -122,7 +122,7 @@ image file, and the images associated with each button state), as well
 as the target of each button.
 
 These menus can reference one another and can also be referenced in the
-config.txt file. The help-m1 menu is a special case which is referenced
+config.txt file. The cm-help-m1 menu is a special case which is referenced
 automatically by each text page in the DVD (currently this menu is 
 required, not optional like the others).
 
