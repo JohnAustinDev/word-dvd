@@ -11,7 +11,7 @@ $outdir =~ s/\/\s*$//; # remove any trailing slash
 $audiodir =~ s/\/\s*$//; # remove any trailing slash
 
 $projmenusdir = "$indir/menus";
-$resourcedir = "$indir/defaults/resource";
+$resourcedir = "$indir/code/resource";
 $locale = "$indir/config.txt";
 $htmldir = "$indir/html";
 $outaudiodir = "$outdir/audio";

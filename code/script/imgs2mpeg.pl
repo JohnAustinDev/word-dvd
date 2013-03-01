@@ -72,7 +72,7 @@ foreach $book (sort {$books{$a}<=>$books{$b}} keys %books) {
       if (!$pages{"$book-$ch-$pg"}) {next;}
 
       #make single silent page...
-      if ($haveAudio{"$book-$ch"} eq "still") {makeSilentSlide($book, "$book-$ch-$pg");}
+      if ($haveAudio{"$book-$ch"} eq "still") {&makeSilentSlide("$book-$ch-$pg", "$imagedir/$book/$book-$ch-$pg.jpg");}
 
       #make single audio page, suitable for later concatenation...
       else {
@@ -113,13 +113,13 @@ foreach $book (sort {$books{$a}<=>$books{$b}} keys %books) {
       #create silent slides for all footnotes...
       $pgn=1;
       while (-e "$imagedir/$book/fn-$book-$ch-$pg-$pgn.jpg") {
-        makeSilentSlide($book, "fn-$book-$ch-$pg-$pgn");
+        &makeSilentSlide("fn-$book-$ch-$pg-$pgn", "$imagedir/$book/fn-$book-$ch-$pg-$pgn.jpg");
         $pgn++;
       }
     }
 
-    if (!$debug)  {`rm -r $videodir/videotmp/*.*`;}
   }
+  
   if ($multChapListing ne "") {
     open(OUTF, ">>$outaudiodir/multiChapterTiming.txt") || die "Could not open $outaudiodir/multiChapterTiming.txt\n";
     print OUTF $multChapListing;

@@ -59,7 +59,7 @@ foreach $book (sort {$books{$a}<=>$books{$b}} keys %books) {
   }
 }
 
-foreach $menu (sort {$AllMenus{$a} <=> $AllMenus{$b}} keys %AllMenus) {
+foreach $menu (sort {&menuSort($a, $b);} keys %AllMenus) {
   $bytes = ($bytes + ($STILLKBPS*1000/8));
   $menupages++;
 }
