@@ -28,76 +28,87 @@ $debug = @ARGV[4];
 require "$scriptdir/shared.pl" || die "Can't require shared.pl";
 &readDataFiles();
 
-foreach $menu (keys %allMenus) {
-  if (!(-e "$imagedir/$menu.jpg")) {die "Missing menu image $imagedir/$menu.jpg";}
-}
-
 #PREPARE OUTPUT DIRECTORYS
 if (!(-e $videodir)) {`mkdir $videodir`;}
 if (!(-e "$videodir/videotmp")) {`mkdir $videodir/videotmp`;}
 if (!(-e "$videodir/menutmp")) {`mkdir $videodir/menutmp`;}
 
-#goto PROJMENUS;
-
-foreach $menu (keys %allMenus) {
+foreach my $menu (sort keys %AllMenus) {
+  if ($menu eq "textoverlay") {next;}
+  
   print "Creating menu $menu\n";
+  
   # RENDER THE MENU
-  makeSilentSlide("", $imagedir."/".$menu);
+  makeSilentSlide("", $AllMenus{$menu}{"image"});
 
-  # ADD BUTTONS TO THE MENU
-  if ($allBTypes{$menu."-9"} ne "underline" && $allBTypes{$menu."-18"} ne "underline") {$btype = "menuNorm";}
-  elsif ($allBTypes{$menu."-9"} ne "underline") {$btype = "menuLeft";}
-  elsif ($allBTypes{$menu."-18"} ne "underline") {$btype = "menuRight";}
-  else {$btype = "menuBoth";}
-  if (!(-e "$resourcedir/".$btype."HIGH.png")) {print "ERROR: Must add or create button type \"".$btype."HIGH.png\" to use text buttons.\n"; $btype = "menuNorm";}
-  if (!(-e "$resourcedir/".$btype."SEL.png"))  {print "ERROR: Must add or create button type \"".$btype."SEL.png\" to use text buttons.\n"; $btype = "menuNorm";}
-  $xml =        "<subpictures>\n";
-  $xml = $xml . "\t<stream>\n";
-  $xml = $xml . "\t\t<spu force=\"yes\" start=\"00:00:00.00\" image=\"$resourcedir/transparent.png\" highlight=\"$resourcedir/".$btype."HIGH.png\" select=\"$resourcedir/".$btype."SEL.png\" >\n";
+  # GET SPUMUX XML TO MUX BUTTONS INTO MENU
+  my $xml;
+  $xml  = "<subpictures>\n";
+  $xml .= "\t<stream>\n";
+  $xml .= "\t\t<spu force=\"yes\" start=\"00:00:00.00\" ";
+  $xml .= "image=\"".$AllMenus{$menu}{"maskNORM"}."\" ";
+  $xml .= "highlight=\"".$AllMenus{$menu}{"maskHIGH"}." ";
+  $xml .= "select=\"".$AllMenus{$menu}{"maskSEL"}."\" >\n";
+  
+  foreach my $key (sort keys %{$AllMenus{$menu}}) {
+    if ($key !~ /^button-(\d)$/) {next;}
+    my $b = $1;
+    
+    $xml .= "\t\t\t<button name=\"b".$b."\" ";
+    $xml .= "x0=\"".$AllMenus{$menu}{"x0"}."\" ";
+    $xml .= "y0=\"".$AllMenus{$menu}{"y0"}."\" ";
+    $xml .= "x1=\"".$AllMenus{$menu}{"x1"}."\" ";
+    $xml .= "y1=\"".$AllMenus{$menu}{"y1"}."\" ";
 
-  # button rows  
-  for ($b=1; $b<=18; $b++) {
-    if (!$allButtons{$menu."-".$b}) {next;}
-
-    # up, down, left, right instructions
-    $up = ($b-1);
-    while (!$allButtons{$menu."-".$up}) {
-      if ($up <= 0) {$up = 18; next;}
-      $up = ($up-1);
-    }
-    $down = ($b+1);
-    while (!$allButtons{$menu."-".$down}) {
-      if ($down >= 18) {$down = 0; next;}
-      $down = ($down+1);
-    }
-    $right = $b;
-    $left = $b;
-    if ($b <= 9) {$leftright = ($b+9); $minb = 10;}
-    else {$leftright = ($b-9); $minb = 1;}
-    for ($cnt=0; $cnt<9; $cnt++) {
-      if ($allButtons{$menu."-".$leftright}) {
-        $right = $leftright;
-        $left = $leftright;
-        last;
+    # apply smart select only to TOC and CHP menus
+    if ($menu !~ /^(cm-|textoverlay)/) {
+      
+      # up, down, left, right instructions
+      my $up = ($b-1);
+      while (!$AllButtons{$menu."-".$up}) {
+        if ($up <= 0) {$up = 18; next;}
+        $up = ($up-1);
       }
-      $leftright--;
-      if ($leftright < $minb) {$leftright = ($leftright + 9);}
+      
+      my $down = ($b+1);
+      while (!$AllButtons{$menu."-".$down}) {
+        if ($down >= 18) {$down = 0; next;}
+        $down = ($down+1);
+      }
+      
+      my $leftright, $minb;
+      my $right = $b;
+      my $left = $b;
+      if ($b <= 9) {
+        $leftright = ($b+9); 
+        $minb = 10;
+      }
+      else {
+        $leftright = ($b-9); 
+        $minb = 1;
+      }
+      for (my $cnt=0; $cnt<9; $cnt++) {
+        if ($AllButtons{$menu."-".$leftright}) {
+          $right = $leftright;
+          $left = $leftright;
+          last;
+        }
+        $leftright--;
+        if ($leftright < $minb) {$leftright = ($leftright + 9);}
+      }
+    
+      $xml .= "up=\"b".$up."\" ";
+      $xml .= "right=\"b".$right."\" ";
+      $xml .= "down=\"b".$down."\" ";
+      $xml .= "left=\"b".$left."\" ";
     }
-
-    # button locations
-    if ($b <= 9) {$yni=($b-1); $x0 = 124;}
-    else {$yni=($b-10); $x0 = 432;}
-    $w = 164;
-    $h = 20;
-    $yn = 34;
-    if ($b==9 || $b==18) {$y0 = 440; $h = 52;} #472
-    else {$y0 = 160 + ($yn*$yni);}
-    $xml = $xml . "\t\t\t<button name=\"b".$b."\" x0=\"".$x0."\" y0=\"".$y0."\" x1=\"".($x0+$w)."\" y1=\"".($y0+$h)."\" up=\"b$up\" right=\"b$right\" down=\"b$down\" left=\"b$left\" />\n";
+    
+    $xml .= "/>\n";
   }
 
-  $xml = $xml . "\t\t</spu>\n";
-  $xml = $xml . "\t</stream>\n";
-  $xml = $xml . "</subpictures>\n";
+  $xml .= "\t\t</spu>\n";
+  $xml .= "\t</stream>\n";
+  $xml .= "</subpictures>\n";
 
   open(TMP, ">$outdir/spumux.xml") || die "Could not open spumux xml $outdir/spumux.xml\n";
   print TMP $xml;
@@ -107,39 +118,6 @@ TOCSPUMUX:
   `spumux -v $Verbosity -m dvd $outdir/spumux.xml < $videodir/$menu.mpg > $videodir/fin-$menu.mpg`;
   #print "Rerun spumux? "; $pause = <>; if ($pause =~ /^\s*y\s*$/i) {goto TOCSPUMUX;}
   if (!$debug)  {`rm -r $videodir/$menu.mpg`;}
-  `rm -r $outdir/spumux.xml`;
-}
-
-PROJMENUS:
-foreach $menu (sort keys %pmenuIMG) {
-  if (-e $projmenusdir."/".$pmenuIMG{$menu}) {print "ERROR: Could not find menu image ".$projmenusdir."/".$pmenuIMG{$menu}."\n"; next;}
-  if (-e $projmenusdir."/".$pmenuHIGH{$menu}) {print "ERROR: Could not find menu highlight image ".$projmenusdir."/".$pmenuHIGH{$menu}."\n"; next;}
-  if (-e $projmenusdir."/".$pmenuSEL{$menu}) {print "ERROR: Could not find menu selection image ".$projmenusdir."/".$pmenuSEL{$menu}."\n"; next;}
-
-  print "Creating menu $menu\n";
-  # RENDER THE HELP MENU
-  makeSilentSlide("", $projmenusdir."/".$menu);
-
-  # ADD BUTTONS TO THE MENU
-  if (!open(TMP, ">$outdir/spumux.xml")) {print "ERROR: Could not open spumux xml $outdir/spumux.xml\n"; die;}
-  print TMP "<subpictures>\n";
-  print TMP "\t<stream>\n";
-  print TMP "\t\t<spu force=\"yes\" start=\"00:00:00.00\" end=\"00:00:00.00\" image=\"".$pmenuIMG{$menu}."\" highlight=\"".$pmenuHIGH{$menu}."\" select=\"".$pmenuSEL{$menu}."\" >\n";
-  foreach $b (sort keys %pbuttonTARG) {
-    if ($b !~ /^$menu-(\d+)$/) {next;}
-    $b = $1;
-    print TMP "\t\t\t<button name=\"b".$b."\" x0=\"".$pbuttonX0{$menu."-".$b}."\" y0=\"".$pbuttonY0{$menu."-".$b}."\" x1=\"".$pbuttonX1{$menu."-".$b}."\" y1=\"".$pbuttonY1{$menu."-".$b}."\" />\n";
-  }
-  print TMP "\t\t</spu>\n";
-  print TMP "\t</stream>\n";
-  print TMP "</subpictures>\n";
-  close(TMP);
-
-PROJSPUMUX:
-  `spumux -v $Verbosity -m dvd $outdir/spumux.xml < $videodir/$menu.mpg > $videodir/fin-$menu.mpg`;
-  #print "Rerun spumux? "; $pause = <>; if ($pause =~ /^\s*y\s*$/i) {goto PROJSPUMUX;}
-
-  if (!$debug) {`rm -r $videodir/$menu.mpg`;}
   `rm -r $outdir/spumux.xml`;
 }
 

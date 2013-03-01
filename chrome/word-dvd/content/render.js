@@ -52,8 +52,11 @@ function loadedRender() {
   // easily developed and tested.
   RenderFrame.contentDocument.defaultView.location.assign("file://" + MainWin.ScreenHTML.path);
   
-  RenderFrame.style.width = MainWin.PAL.W + "px";
-  RenderFrame.style.height = String(MainWin.PAL.H + 16) + "px";
+  // The extra width/height should be anything large enough to prevent
+  // scrollbars from appearing in the xul iframe. Captured images are
+  // not effected by the extra width/height.
+  RenderFrame.style.width = Number(MainWin.PAL.W + 16) + "px";
+  RenderFrame.style.height = Number(MainWin.PAL.H + 16) + "px";
   
   window.setTimeout("postLoad1();", 1000);
   
@@ -61,7 +64,9 @@ function loadedRender() {
   
   init(); // in screen.js
   
-  window.resizeTo(RenderFrame.boxObject.width, document.getElementById("body").boxObject.height);
+  window.sizeToContent();
+  
+  //window.resizeTo(RenderFrame.boxObject.width, document.getElementById("body").boxObject.height);
 
   waitRenderDoneThenDo("startMenuGeneration();");
 }
@@ -75,7 +80,7 @@ function startMenuGeneration() {
     MenusFile.append(MainWin.LISTING);
     MenusFile.append(MainWin.MENUSFILE);
     if (MenusFile.exists()) MenusFile.remove(false);
-    MainWin.write2File(MenusFile, "#<menu-name>.images, image.png, image-NORM.png, image-HIGH.png, image-SEL.png\n#<menu-name>.button-<n>, target-menu, x0, y0, x1, y1\n"); 
+    MainWin.write2File(MenusFile, "#menu-name.images, image-file, image-NORM.png, image-HIGH.png, image-SEL.png\n#menu-name.button-n, target, x0, y0, x1, y1\n"); 
     
     // CREATE TABLE OF CONTENTS
     MenuEntries = [];

@@ -31,45 +31,31 @@ if (!(-e "$videodir/videotmp")) {`mkdir $videodir/videotmp`;}
 
 #goto CONCAT;
 
-#assign location variables for text pages' spumux XML...
-$by0 = 476;
-$by1 = 516;
+if (!defined($AllMenus{"textoverlay"})) {print "ERROR: textoverlay was not defined\n"; die;}
 
-$bxhw = 30;
+# GET SPUMUX XML TO MUX CONTROL BUTTONS INTO ALL TEXT PAGES
+$xml  = "<subpictures>\n";
+$xml .= "\t<stream>\n";
+$xml .= "\t\t<spu force=\"yes\" start=\"00:00:00.00\" end=\"00:00:00.00\" ";
+$xml .= "image=\"".$AllMenus{"textoverlay"}{"maskNORM"}."\" ";
+$xml .= "highlight=\"".$AllMenus{"textoverlay"}{"maskHIGH"}."\" ";
+$xml .= "select=\"".$AllMenus{"textoverlay"}{"maskSEL"}."\" >\n";
 
-$bxa = 75;
-$bxb = 170;
-$bxc = 238;
-$bxd = 455;
-$bxe = 520;
-$bxf = 585;
+my @names = ("", "bhelp", "bmainmenu", "bsubmenu", "bprevious", "bfootnotes", "bnext");
 
-$bxa0 = $bxa-$bxhw;
-$bxa1 = $bxa+$bxhw;
-$bxb0 = $bxb-$bxhw;
-$bxb1 = $bxb+$bxhw;
-$bxc0 = $bxc-$bxhw;
-$bxc1 = $bxc+$bxhw;
-$bxd0 = $bxd-$bxhw;
-$bxd1 = $bxd+$bxhw;
-$bxe0 = $bxe-$bxhw;
-$bxe1 = $bxe+$bxhw;
-$bxf0 = $bxf-$bxhw;
-$bxf1 = $bxf+$bxhw;
+for (my $b=1; $b<=6; $b++) {
+  if (!defined($AllMenus{"textoverlay"}{"button-".$b})) {print "ERROR: textoverlay button \"button-".$b."\" was not defined.\n"; die;}
+  $xml .= "\t\t\t<button name=\"".@names[$b]."\" ";
+  $xml .= "x0=\"".$AllMenus{"textoverlay"}{"button-".$b}{"x0"}."\" ";
+  $xml .= "y0=\"".$AllMenus{"textoverlay"}{"button-".$b}{"y0"}."\" ";
+  $xml .= "x1=\"".$AllMenus{"textoverlay"}{"button-".$b}{"x1"}."\" ";
+  $xml .= "y1=\"".$AllMenus{"textoverlay"}{"button-".$b}{"y1"}."\" ";
+  $xml .= "/>\n";
+}
 
-# spumux file for text and footnotes pages...
-$xml =        "<subpictures>\n";
-$xml = $xml . "\t<stream>\n";
-$xml = $xml . "\t\t<spu force=\"yes\" start=\"00:00:00.00\" end=\"00:00:00.00\" image=\"$resourcedir/transparent.png\" highlight=\"$resourcedir/textbuttonsHIGH.png\" select=\"$resourcedir/textbuttonsSEL.png\" >\n";
-$xml = $xml . "\t\t\t<button name=\"bhelp\"       left=\"bnext\"      right=\"bmainmenu\"   x0=\"".$bxa0."\" y0=\"".$by0."\" x1=\"".$bxa1."\" y1=\"".$by1."\" />\n";
-$xml = $xml . "\t\t\t<button name=\"bmainmenu\"   left=\"bhelp\"      right=\"bsubmenu\"    x0=\"".$bxb0."\" y0=\"".$by0."\" x1=\"".$bxb1."\" y1=\"".$by1."\" />\n";
-$xml = $xml . "\t\t\t<button name=\"bsubmenu\"    left=\"bmainmenu\"  right=\"bprevious\"   x0=\"".$bxc0."\" y0=\"".$by0."\" x1=\"".$bxc1."\" y1=\"".$by1."\" />\n";
-$xml = $xml . "\t\t\t<button name=\"bprevious\"   left=\"bsubmenu\"   right=\"bfootnotes\"  x0=\"".$bxd0."\" y0=\"".$by0."\" x1=\"".$bxd1."\" y1=\"".$by1."\" />\n";
-$xml = $xml . "\t\t\t<button name=\"bfootnotes\"  left=\"bprevious\"  right=\"bnext\"       x0=\"".$bxe0."\" y0=\"".$by0."\" x1=\"".$bxe1."\" y1=\"".$by1."\" />\n";
-$xml = $xml . "\t\t\t<button name=\"bnext\"       left=\"bfootnotes\" right=\"bhelp\"       x0=\"".$bxf0."\" y0=\"".$by0."\" x1=\"".$bxf1."\" y1=\"".$by1."\" />\n";
-$xml = $xml . "\t\t</spu>\n";
-$xml = $xml . "\t</stream>\n";
-$xml = $xml . "</subpictures>\n";
+$xml .= "\t\t</spu>\n";
+$xml .= "\t</stream>\n";
+$xml .= "</subpictures>\n";
 
 if (!open(TMP, ">$outdir/spumux.xml")) {print "ERROR: Could not open spumux xml $outdir/spumux.xml\n"; die;}
 print TMP $xml;

@@ -368,16 +368,20 @@ writeVideoInfo();
 
 #build accessory menus
 $tocmenu = "toc-m1";
-foreach $menu (sort keys %pmenuIMG) {$menuVMGM{$menu} = ++$numVMGMmenus;}
-foreach $menu (sort keys %pmenuIMG) {
+foreach $menu (sort keys %AllMenus) {
+  if ($menu !~ /^cm-/) {next;}
+  $menuVMGM{$menu} = ++$numVMGMmenus;
+}
+foreach $menu (sort keys %AllMenus) {
+  if ($menu !~ /^cm-/) {next;}
   PGCstartTag("\t\t\t<pgc>", "Accessory menu $menu.");
-  foreach $but (sort keys %pbuttonTARG) {
+  foreach $but (sort keys %AllButtons) {
     if ($but !~ /^$menu-(\d+)$/) {next;}
     $b = $1;
-    if ($pbuttonTARG{$menu."-".$b} eq $tocmenu) {$command = "jump menu entry title;";}
+    if ($AllButtons{$menu."-".$b} eq $tocmenu) {$command = "jump menu entry title;";}
     else {
-      if (!exists($menuVMGM{$pbuttonTARG{$menu."-".$b}})) {print "ERROR: Target \"".$pbuttonTARG{$menu."-".$b}."\" from menu $menu does not exist.\n"; next;}
-      $command = "jump menu ".$menuVMGM{$pbuttonTARG{$menu."-".$b}}.";"
+      if (!exists($menuVMGM{$AllButtons{$menu."-".$b}})) {print "ERROR: Target \"".$AllButtons{$menu."-".$b}."\" from menu $menu does not exist.\n"; next;}
+      $command = "jump menu ".$menuVMGM{$AllButtons{$menu."-".$b}}.";"
     }
     print XML "\t\t\t\t<button name=\"b".$b."\">".$command."</button>\n";
   }
@@ -386,7 +390,7 @@ foreach $menu (sort keys %pmenuIMG) {
 }
 
 #build TITLE and TOC menus
-if (!exists($allMenus{$tocmenu})) {
+if (!exists($AllMenus{$tocmenu})) {
   PGCstartTag("\t\t\t<pgc entry=\"title\" >", "BEGIN MAIN VMGM TITLE MENU. NO TOC MENU!");
   $numVMGMmenus++;
   $menuVMGM{$tocmenu} = $numVMGMmenus;
@@ -417,7 +421,7 @@ else {
   print XML "\t\t\t</pgc>\n";
 
   #build TOC menus
-  foreach $menu (sort {$allMenus{$a} <=> $allMenus{$b}} keys %allMenus) {
+  foreach $menu (sort {$AllMenus{$a} <=> $AllMenus{$b}} keys %AllMenus) {
     if ($menu !~ /^toc-m(\d+)/) {next;}
     
     if ($menu eq "toc-m1") {
@@ -439,7 +443,7 @@ else {
       print XML "\t\t\t\t\t\tif ( ".$gTYPE." eq 4 ) {\n";
       print XML &menuSelector(($menuVMGM{$tocmenu}+1), "^toc-m(\\d+)", "^(.+)-", "", "\t\t\t\t\t\t\t");
       print XML "\t\t\t\t\t\t}\n";
-      if (exists $nextbuttonnum{$menu}) {$hbutton=$nextbuttonnum{$menu};}
+      if (exists $NextButtonNum{$menu}) {$hbutton=$NextButtonNum{$menu};}
       else {$hbutton=1024;}
       print XML "\t\t\t\t\t\telse ".$gHILB."=".$hbutton.";\n";
       print XML "\t\t\t\t\t\tjump menu ".($numVMGMmenus+1).";\n";
@@ -505,8 +509,8 @@ for ($vts=1; $vts<=$LASTVTS; $vts++) {
   }
 
   #build help menu
-  $help = "help-m1";
-  if (exists($pmenuIMG{$help})) {
+  $help = "cm-help-m1";
+  if (exists($AllMenus{$help})) {
     PGCstartTag("\t\t\t<pgc>", "HELP menu.");
     $nummenus++;
     $HELPMENU{$vts} = $nummenus;
@@ -521,7 +525,7 @@ for ($vts=1; $vts<=$LASTVTS; $vts++) {
     @allbooks = split(";", $BOOKSTARTS{$RELtextVTS{$vts}});
     foreach $book (@allbooks) {
       $nomenu="true";
-      foreach $menu (sort {$allMenus{$a} <=> $allMenus{$b}} keys %allMenus) {
+      foreach $menu (sort {$AllMenus{$a} <=> $AllMenus{$b}} keys %AllMenus) {
         if ($menu !~ /^$book-m(\d+)/) {next;}
         $n = $1;
         PGCstartTag("\t\t\t<pgc>", "Chapter selection menu  for \"$book\".");
@@ -960,11 +964,11 @@ sub writeMenuButtonsVMGM($$) {
   my $amenu = shift;
   my $tocnum = shift;
   for ($b=1; $b<=18; $b++) {
-    if (!$allButtons{$amenu."-".$b}) {next;}
-    $target = $allButtons{$amenu."-".$b};
+    if (!$AllButtons{$amenu."-".$b}) {next;}
+    $target = $AllButtons{$amenu."-".$b};
     $highbutnum = 1024;
-    if ($b == 9 && $prevbuttonnum{$target})  {$highbutnum = $prevbuttonnum{$target};}
-    if ($b == 18 && $nextbuttonnum{$target}) {$highbutnum = $nextbuttonnum{$target};}
+    if ($b == 9 && $PrevButtonNum{$target})  {$highbutnum = $PrevButtonNum{$target};}
+    if ($b == 18 && $NextButtonNum{$target}) {$highbutnum = $NextButtonNum{$target};}
     $m=""; $n="";
     if ($target =~ /([^-]+)-m?(\d+)/) {
       $m = $1;
@@ -979,11 +983,11 @@ sub writeMenuButtonsVMGM($$) {
     elsif (exists($books{$m})) {
       $hib = "nohilt";
       if ($n==1) {
-        if ($nextbuttonnum{$m."-m1"}) {$hib = $nextbuttonnum{$m."-m1"};}
+        if ($NextButtonNum{$m."-m1"}) {$hib = $NextButtonNum{$m."-m1"};}
         else {
           for ($b2=1; $b2<=18; $b2++) {
             if ($b2==9) {next;} # Don't hilight "back" button
-            if (!$allButtons{$m."-m1"."-".$b2}) {next;}
+            if (!$AllButtons{$m."-m1"."-".$b2}) {next;}
             $hib = (1024*$b2);
             last;
           }
@@ -996,7 +1000,7 @@ sub writeMenuButtonsVMGM($$) {
     elsif (exists($menuVMGM{$target})) {
       $command = "";
       # if target is extra menu with two or more buttons, highlight the second (rather than the return button)
-      if ($allButtons{$target."-2"}) {$command = $command." ".$gHILB."=2048;";} 
+      if ($AllButtons{$target."-2"}) {$command = $command." ".$gHILB."=2048;";} 
       $command = $command." jump menu ".$menuVMGM{$target}."; ";
     }
     else {print "ERROR: Could not locate target \"".$target."\".\n";}
@@ -1011,8 +1015,8 @@ sub writeMenuButtonsVTS($) {
   if ($amenu !~ /^([^-]+)-m/) {die "Bad VTS menu name: $amenu";}
   my $bk = $1;
   for ($b=1; $b<=18; $b++) {
-    if (!$allButtons{$amenu."-".$b}) {next;}
-    $target = $allButtons{$amenu."-".$b};
+    if (!$AllButtons{$amenu."-".$b}) {next;}
+    $target = $AllButtons{$amenu."-".$b};
     if ($target !~ /([^-]+)-(m?)(\d+)/) {die "Bad target \"$target\"";}
     $m = $1;
     $t = $2;
@@ -1023,8 +1027,8 @@ sub writeMenuButtonsVTS($) {
     #jump to another menu
     elsif ($t && $m eq $bk) {
       $hibutton = 1024;
-      if ($b == 9 && $prevbuttonnum{$target})  {$hibutton = $prevbuttonnum{$target};}
-      if ($b == 18 && $nextbuttonnum{$target}) {$hibutton = $nextbuttonnum{$target};}
+      if ($b == 9 && $PrevButtonNum{$target})  {$hibutton = $PrevButtonNum{$target};}
+      if ($b == 18 && $NextButtonNum{$target}) {$hibutton = $NextButtonNum{$target};}
       $command = "";
       if ($n == 1) {
         # insures selection doesn't get whiped out!
@@ -1149,7 +1153,7 @@ sub menuSelector($$$$$) {
   else {$rn = $gMRNM; $rh = $gMRHI;}
   my $ret = $pref.$gHILB."=".$rh.";\n";
 
-  foreach $menu (sort {$allMenus{$b} <=> $allMenus{$a}} keys %allMenus) {
+  foreach $menu (sort {$AllMenus{$b} <=> $AllMenus{$a}} keys %AllMenus) {
     if ($menu !~ /$mpat/) {next;}
     my $n = ($1+$mstartnum-1);
     if ($n == $mstartnum) {next;}
@@ -1172,13 +1176,13 @@ sub menuSelectorSREGS($$$$$$) {
   my $bk = "";
   my $ret = "";
   
-  foreach $menu (sort {$allMenus{$b} <=> $allMenus{$a}} keys %allMenus) {
+  foreach $menu (sort {$AllMenus{$b} <=> $AllMenus{$a}} keys %AllMenus) {
     if ($menu !~ /$mpat/) {next;}
     my $n = ($1+$mstartnum-1);
     if ($n == $mstartnum) {last;}
     
-    my $t = $allButtons{$menu."-1"};
-    if ($allButtons{$menu."-1"} !~ /$tpat/) {next;}
+    my $t = $AllButtons{$menu."-1"};
+    if ($AllButtons{$menu."-1"} !~ /$tpat/) {next;}
     if ($book eq "") {
       $bk = $1;
       if (exists($chapters{$bk."-0"})) {$ch = 0;}
@@ -1205,7 +1209,7 @@ sub menuHighlightSREGS($$) {
   my $bn=0;
   my %bnums;
   for ($b=1; $b<=18; $b++) {
-    if (!exists($allButtons{$menu."-".$b})) {next;}
+    if (!exists($AllButtons{$menu."-".$b})) {next;}
     $bn++;
     $bnums{$b} = $bn;
   }
@@ -1213,8 +1217,8 @@ sub menuHighlightSREGS($$) {
   my $b=0;
   for ($b=17; $b>=1; $b--) {
     if ($b==9) {next;}
-    if (!exists($allButtons{$menu."-".$b})) {next;}
-    my $targ = $allButtons{$menu."-".$b};
+    if (!exists($AllButtons{$menu."-".$b})) {next;}
+    my $targ = $AllButtons{$menu."-".$b};
     my $bk = "";
     my $ch = "";
     if ($targ =~ /^(.*?)-(\d+)/) {$bk=$1; $ch=$2;}

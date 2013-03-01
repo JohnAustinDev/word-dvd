@@ -46,20 +46,10 @@ sub readDataFiles() {
   undef(%correctChapStartTime);
   undef(%correctChapEndTime);
   
-  undef(%prevbuttonnum);
-  undef(%nextbuttonnum);
-  undef(%allBTypes);
-  undef(%allMenus);
-  undef(%allButtons);
-  
-  undef(%pmenuIMG);
-  undef(%pmenuHIGH);
-  undef(%pmenuSEL);
-  undef(%pbuttonTARG);
-  undef(%pbuttonX0);
-  undef(%pbuttonX1);
-  undef(%pbuttonY0);
-  undef(%pbuttonY1);
+  undef(%PrevButtonNum);
+  undef(%NextButtonNum);
+  undef(%AllMenus);
+  undef(%AllButtons);
   
   #COLLECT PAGE AND RELATIVE TIMING INFORMATION
   if (-e "$listdir") {
@@ -70,7 +60,7 @@ sub readDataFiles() {
     foreach $entry (@entries) {
       if ($entry !~ /\.csv$/) {next;}
       elsif($entry =~ /-trans\.csv/) {next;}
-      elsif ($entry =~ /^\s*$MENUSFILE\s*$/) {&readMenuInformation;}
+      elsif ($entry =~ /^\s*$MENUSFILE\s*$/) {&readMenuInformation("$listdir/$entry");}
       else {&readPageInformation;}
     }
   
@@ -175,44 +165,7 @@ sub readDataFiles() {
   }
   
   # READ PROJECT MENU FILE
-  if (-e "$projmenusdir/menus.txt") {
-    if (!open(PMNU, "<$projmenusdir/menus.txt")) {print "ERROR: Could not open $projmenusdir/menus.txt"; die;}
-    while(<PMNU>) {
-      if ($_ =~ /^\s*$/) {next;}
-      if ($_ =~ /^\s*#/) {next;}
-      if ($_ =~ /(.*?)\.images\s*=\s*([^,]+),\s*([^,]+),\s*([^,]+?)\s*$/) {
-        $menu = $1;
-        $image = $2;
-        $high = $3;
-        $sel = $4;
-        if ($image eq "transparent.png") {$image = $resourcedir."/".$image;}
-        else {$image = $projmenusdir."/".$image;}
-        if ($high eq "transparent.png") {$high = $resourcedir."/".$high;}
-        else {$high = $projmenusdir."/".$high;}
-        if ($sel eq "transparent.png") {$sel = $resourcedir."/".$sel;}
-        else {$sel = $projmenusdir."/".$sel;}
-        
-        $pmenuIMG{$menu} = $image;
-        $pmenuHIGH{$menu} = $high;
-        $pmenuSEL{$menu} = $sel;
-      }
-      elsif ($_ =~ /(.*?)\.button-(\d+)\s*=\s*([^,]+),\s*([^,]+),\s*([^,]+),\s*([^,]+),\s*([^,]+?)\s*$/) {
-        $menu = $1;
-        $button = $2;
-        $target = $3;
-        $x0 = $4;
-        $y0 = $5;
-        $x1 = $6;
-        $y1 = $7;
-        $pbuttonTARG{$menu."-".$button} = $target;
-        $pbuttonX0{$menu."-".$button} = $x0;
-        $pbuttonX1{$menu."-".$button} = $x1;
-        $pbuttonY0{$menu."-".$button} = $y0;
-        $pbuttonY1{$menu."-".$button} = $y1;
-      }
-      else {print "ERROR: Could not parse \"$_\" in \"$projmenusdir/menus.txt\"\n";}
-    }
-  }
+  if (-e "$projmenusdir/menus.txt") {&readMenuInformation("$projmenusdir/menus.txt");}
   else {print "ERROR: Could not find project menus.txt file.\n";}
 }
 
@@ -325,30 +278,66 @@ sub readPageTimingFile($$$) {
 }
 
 # READ MENU INFORMATION FROM FILE
-sub readMenuInformation {
-  if (!open(INF, "<$listdir/$entry")) {print "Could not open infile $listdir/$entry\n"; die;}
+sub readMenuInformation($) {
+  my $menucsv = shift;
+  
+  if (!open(INF, "<$menucsv")) {print "Could not open infile $menucsv\n"; die;}
   $line = 0;
   $bnum = 0;
   while (<INF>) {
     $line++;
     if ($_ =~ /^\s*#/) {next;}
-
-    #toc-m1.button-2, more-m1[, underline]
-    if ($_ =~ /^\s*(.*?)\.button-(\d+)\s*,\s*(\S+)\s*(,\s*(\S+)\s*)?\s*$/) {
-      $thismenu = $1;
-      $thisbutton = $2;
-      $target = $3;
-      $type = $5;
+    
+    #toc-m1.images, ../images/toc-m1.jpg, ../images/transparent.png, ../images/masks/toc-m1-HIGH.png, ../images/masks/toc-m1-SEL.png
+    elsif ($_ ~= /^\s*([^,]+)\.images\s*,\s*([^,]+)\s*,\s*([^,]+)\s*,\s*([^,]+)\s*,\s*([^,]+)\s*$/) {
+      my $menuName = $1;
+      my $image = $2;
+      my $maskNORM = $3;
+      my $maskHIGH = $4;
+      my $maskSEL = $5;
       
-      if ($thismenu ne $lastmenu) {$bnum = 0;}
-      $lastmenu = $thismenu;
-      $bnum++;
-      if ($thisbutton == 9 && $target) {$prevbuttonnum{$thismenu} = ($bnum*1024); $allBTypes{$thismenu."-9"} = $type;}
-      if ($thisbutton == 18 && $target) {$nextbuttonnum{$thismenu} = ($bnum*1024); $allBTypes{$thismenu."-18"} = $type;}
+      my $csvdir = $menucsv;
+      $csvdir =~ s/[\/\\][^\/\\]*$//;
       
-      if (!(exists $allMenus{$thismenu})) {$allMenus{$thismenu} = $line;}
-      $allButtons{$thismenu."-".$thisbutton} = $target;
+      $AllMenus{$menuName}++;
+      $AllMenus{$menuName}{"image"}    = "$csvdir/$image";
+      $AllMenus{$menuName}{"maskNORM"} = "$csvdir/$maskNORM";
+      $AllMenus{$menuName}{"maskHIGH"} = "$csvdir/$maskHIGH";
+      $AllMenus{$menuName}{"maskSEL"}  = "$csvdir/$maskSEL";
     }
+    
+    #toc-m1.button-9, more-m1, 84, 470, 342, 486
+    elsif ($_ ~= /^\s*([^,]+)\.button-(\d+)\s*,\s*([^,]+)\s*,\s*([^,]+)\s*,\s*([^,]+)\s*,\s*([^,]+)\s*,\s*([^,]+)\s*$/) {
+      my $menuName = $1;
+      my $buttonNum = $2;
+      my $target = $3;
+      my $x0 = $4;
+      my $y0 = $5;
+      my $x1 = $6;
+      my $y1 = $7;
+      
+      $AllMenus{$menuName}++;
+      $AllMenus{$menuName}{"button-" + $buttonNum}{"target"} = $target;
+      $AllMenus{$menuName}{"button-" + $buttonNum}{"x0"} = $x0;
+      $AllMenus{$menuName}{"button-" + $buttonNum}{"y0"} = $y0;
+      $AllMenus{$menuName}{"button-" + $buttonNum}{"x1"} = $x1;
+      $AllMenus{$menuName}{"button-" + $buttonNum}{"y1"} = $y1;
+      
+      $AllButtons{$menuName."-".$buttonNum} = $target;
+      
+      if ($menuName =~ /^(cm-|textoverlay)/) {next;}
+      
+      if ($buttonNum eq "9" && $target) {
+        $PrevButtonNum{$menuName} = ($buttonNum*1024);
+      }
+      
+      if ($buttonNum eq "18" && $target) {
+        $NextButtonNum{$menuName} = ($buttonNum*1024);
+      }
+      
+    }
+    else {print "ERROR: Skipping bad menu listing entry \"$_\"";}
+
   }
   close(INF);
 }
