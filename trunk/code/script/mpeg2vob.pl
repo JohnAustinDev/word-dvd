@@ -368,11 +368,11 @@ writeVideoInfo();
 
 #build accessory menus
 $tocmenu = "toc-m1";
-foreach $menu (sort keys %AllMenus) {
+foreach $menu (sort {&menuSort($a, $b);} keys %AllMenus) {
   if ($menu !~ /^cm-/) {next;}
   $menuVMGM{$menu} = ++$numVMGMmenus;
 }
-foreach $menu (sort keys %AllMenus) {
+foreach $menu (sort {&menuSort($a, $b);} keys %AllMenus) {
   if ($menu !~ /^cm-/) {next;}
   PGCstartTag("\t\t\t<pgc>", "Accessory menu $menu.");
   foreach $but (sort keys %AllButtons) {
@@ -421,7 +421,7 @@ else {
   print XML "\t\t\t</pgc>\n";
 
   #build TOC menus
-  foreach $menu (sort {$AllMenus{$a} <=> $AllMenus{$b}} keys %AllMenus) {
+  foreach $menu (sort {&menuSort($a, $b);} keys %AllMenus) {
     if ($menu !~ /^toc-m(\d+)/) {next;}
     
     if ($menu eq "toc-m1") {
@@ -525,7 +525,7 @@ for ($vts=1; $vts<=$LASTVTS; $vts++) {
     @allbooks = split(";", $BOOKSTARTS{$RELtextVTS{$vts}});
     foreach $book (@allbooks) {
       $nomenu="true";
-      foreach $menu (sort {$AllMenus{$a} <=> $AllMenus{$b}} keys %AllMenus) {
+      foreach $menu (sort {&menuSort($a, $b);} keys %AllMenus) {
         if ($menu !~ /^$book-m(\d+)/) {next;}
         $n = $1;
         PGCstartTag("\t\t\t<pgc>", "Chapter selection menu  for \"$book\".");
@@ -1153,7 +1153,7 @@ sub menuSelector($$$$$) {
   else {$rn = $gMRNM; $rh = $gMRHI;}
   my $ret = $pref.$gHILB."=".$rh.";\n";
 
-  foreach $menu (sort {$AllMenus{$b} <=> $AllMenus{$a}} keys %AllMenus) {
+  foreach $menu (sort {&menuSort($a, $b);} keys %AllMenus) {
     if ($menu !~ /$mpat/) {next;}
     my $n = ($1+$mstartnum-1);
     if ($n == $mstartnum) {next;}
@@ -1176,7 +1176,7 @@ sub menuSelectorSREGS($$$$$$) {
   my $bk = "";
   my $ret = "";
   
-  foreach $menu (sort {$AllMenus{$b} <=> $AllMenus{$a}} keys %AllMenus) {
+  foreach $menu (sort {&menuSort($a, $b);} keys %AllMenus) {
     if ($menu !~ /$mpat/) {next;}
     my $n = ($1+$mstartnum-1);
     if ($n == $mstartnum) {last;}

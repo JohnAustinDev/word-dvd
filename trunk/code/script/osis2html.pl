@@ -29,7 +29,6 @@ $infile = "$indir/osis.xml";
 
 $AddChapterNumbers = $localeFile{"AddChNums2Text"};
 
-$CSSFILE = "../defaults/CSS/pal.css";
 $INDENT = "<span class=\"paragraph-start\"></span>";
 $PARAGRAPH = "<br>$INDENT";
 $NEWCHAPTER = "<span name=\"chapter.";
@@ -144,7 +143,8 @@ $htmlheader  = "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\"
 $htmlheader .= "<html>";
 $htmlheader .=   "<head>";
 $htmlheader .=     "<meta http-equiv=\"content-type\" content=\"text/html; charset=utf-8\">";
-$htmlheader .=     "<link rel=\"stylesheet\" type=\"text/css\" href=\"".$CSSFILE."\" />";
+$htmlheader .=     "<link rel=\"stylesheet\" type=\"text/css\" href=\"pal.css\" />";
+$htmlheader .=     "<link rel=\"stylesheet\" type=\"text/css\" href=\"../project.css\" />";
 $htmlheader .=   "</head>";
 $htmlheader .=   "<body class=\"text\" masktype=\"none\">";
 $htmlheader .=     "<div class=\"usable\">";

@@ -166,7 +166,18 @@ sub readDataFiles() {
   
   # READ PROJECT MENU FILE
   if (-e "$projmenusdir/menus.txt") {&readMenuInformation("$projmenusdir/menus.txt");}
-  else {print "ERROR: Could not find project menus.txt file.\n";}
+  else {print "ERROR: Could not find \"$projmenusdir/menus.txt\".\n";}
+  
+}
+
+sub menuSort($$) {
+  my $a = shift;
+  my $b = shift;
+  
+  if ($a =~ /-m(\d+)$/) {$a = $1;}
+  if ($b =~ /-m(\d+)$/) {$b = $1;}
+  
+  return $a <=> $b;
 }
 
 # READ PAGE INFORMATION FROM FILE
@@ -286,10 +297,12 @@ sub readMenuInformation($) {
   $bnum = 0;
   while (<INF>) {
     $line++;
-    if ($_ =~ /^\s*#/) {next;}
+    
+    if ($_ =~ /^\s*\#/) {next;}
+    elsif ($_ =~ /^\s*$/) {next;}
     
     #toc-m1.images, ../images/toc-m1.jpg, ../images/transparent.png, ../images/masks/toc-m1-HIGH.png, ../images/masks/toc-m1-SEL.png
-    elsif ($_ ~= /^\s*([^,]+)\.images\s*,\s*([^,]+)\s*,\s*([^,]+)\s*,\s*([^,]+)\s*,\s*([^,]+)\s*$/) {
+    elsif ($_ =~ /^\s*([^,]+)\.images\s*,\s*([^,]+)\s*,\s*([^,]+)\s*,\s*([^,]+)\s*,\s*([^,]+?)\s*$/) {
       my $menuName = $1;
       my $image = $2;
       my $maskNORM = $3;
@@ -299,7 +312,6 @@ sub readMenuInformation($) {
       my $csvdir = $menucsv;
       $csvdir =~ s/[\/\\][^\/\\]*$//;
       
-      $AllMenus{$menuName}++;
       $AllMenus{$menuName}{"image"}    = "$csvdir/$image";
       $AllMenus{$menuName}{"maskNORM"} = "$csvdir/$maskNORM";
       $AllMenus{$menuName}{"maskHIGH"} = "$csvdir/$maskHIGH";
@@ -307,7 +319,7 @@ sub readMenuInformation($) {
     }
     
     #toc-m1.button-9, more-m1, 84, 470, 342, 486
-    elsif ($_ ~= /^\s*([^,]+)\.button-(\d+)\s*,\s*([^,]+)\s*,\s*([^,]+)\s*,\s*([^,]+)\s*,\s*([^,]+)\s*,\s*([^,]+)\s*$/) {
+    elsif ($_ =~ /^\s*([^,]+)\.button-(\d+)\s*,\s*([^,]+)\s*,\s*([^,]+)\s*,\s*([^,]+)\s*,\s*([^,]+)\s*,\s*([^,]+?)\s*$/) {
       my $menuName = $1;
       my $buttonNum = $2;
       my $target = $3;
@@ -316,12 +328,11 @@ sub readMenuInformation($) {
       my $x1 = $6;
       my $y1 = $7;
       
-      $AllMenus{$menuName}++;
-      $AllMenus{$menuName}{"button-" + $buttonNum}{"target"} = $target;
-      $AllMenus{$menuName}{"button-" + $buttonNum}{"x0"} = $x0;
-      $AllMenus{$menuName}{"button-" + $buttonNum}{"y0"} = $y0;
-      $AllMenus{$menuName}{"button-" + $buttonNum}{"x1"} = $x1;
-      $AllMenus{$menuName}{"button-" + $buttonNum}{"y1"} = $y1;
+      $AllMenus{$menuName}{"button-".$buttonNum}{"target"} = $target;
+      $AllMenus{$menuName}{"button-".$buttonNum}{"x0"} = $x0;
+      $AllMenus{$menuName}{"button-".$buttonNum}{"y0"} = $y0;
+      $AllMenus{$menuName}{"button-".$buttonNum}{"x1"} = $x1;
+      $AllMenus{$menuName}{"button-".$buttonNum}{"y1"} = $y1;
       
       $AllButtons{$menuName."-".$buttonNum} = $target;
       
@@ -336,7 +347,7 @@ sub readMenuInformation($) {
       }
       
     }
-    else {print "ERROR: Skipping bad menu listing entry \"$_\"";}
+    else {print "ERROR: Skipping bad menu listing entry: \"$_\"";}
 
   }
   close(INF);
@@ -492,20 +503,26 @@ sub unformatTime($$$) {
 
 #CREATE A SILENT MPG FROM A SINGLE JPG IMAGE
 sub makeSilentSlide($$) {
-  my $subdir = shift;
-  my $path = shift;
-  #print "Making Silent Slide:$path\n";
-  if ($subdir) {
-    $subdir = $subdir."/";
-    if (!(-e $imagedir."/".$subdir)) {print "No ".$imagedir."/".$subdir." directory\n"; die;}
-    if (!(-e $videodir."/".$subdir)) {print "No ".$videodir."/".$subdir." directory\n"; die;}
-    $path = $imagedir."/".$subdir."/".$path;
-  }
-  $path =~ /([^\/\\]+)$/;
-  $leaf = $1;
-  `jpeg2yuv -v 0 -n 1 -I p -f 25 -j $path.jpg | mpeg2enc -v 0 -f 8 -g 1 -G 1 -o $videodir/videotmp/$leaf.m2v`;
+  my $pagename = shift;
+  my $imagefile = shift;
+  if (!-e $imagefile) {print "ERROR: Missing image: \"$image\"\n"; die;}
+  if ($imagefile !~ /\.jpg$/) {print "ERROR: Image must be jpg: \"$image\"\n"; die;}
+  if (!-e $videodir) {`mkdir $videodir`;}
   
-  `mplex -v $Verbosity -V -f 8 $videodir/videotmp/$leaf.m2v $resourcedir/blankaudio.ac3 -o $videodir/$subdir$leaf.mpg`
+  # is this a chapter image?
+  my $subdir = "";
+  if    ($pagename =~ /^fn-(.*?)-(\d+)-(\d+)-(\d+)/) {$subdir = $1;}
+  elsif ($pagename =~ /^(.*?)-(\d+)-(\d+)/) {$subdir = $1;}
+  
+  if ($subdir) {
+    if (!-e "$videodir/$subdir") {`mkdir "$videodir/$subdir"`;}
+    $subdir .= "/";
+  }
+  
+  `jpeg2yuv -v 0 -n 1 -I p -f 25 -j $imagefile | mpeg2enc -v 0 -f 8 -g 1 -G 1 -o $videodir/videotmp/$leaf.m2v`;
+  
+  `mplex -v $Verbosity -V -f 8 $videodir/videotmp/$leaf.m2v $resourcedir/blankaudio.ac3 -o $videodir/$subdir$pagename.mpg`;
+  
 }
 
 # converts internal chapter to real chapter number

@@ -72,7 +72,7 @@ foreach $book (sort {$books{$a}<=>$books{$b}} keys %books) {
       if (!$pages{"$book-$ch-$pg"}) {next;}
       if (-e "$videodir/$book/$book-$ch-$pg.mpg") {
         `spumux -v $Verbosity -m dvd $outdir/spumux.xml < $videodir/$book/$book-$ch-$pg.mpg > $videodir/$book/fin-$book-$ch-$pg.mpg`;
-        if (!$debug)  {`rm -r $outdir/video/$book/$book-$ch-$pg.mpg`;}
+        if (!$debug)  {`rm -r $videodir/$book/$book-$ch-$pg.mpg`;}
       }
       else {print "ERROR: Missing file: $videodir/$book/$book-$ch-$pg.mpg\n"; die;}
     }
@@ -83,7 +83,7 @@ foreach $book (sort {$books{$a}<=>$books{$b}} keys %books) {
       $pgn=1;
       while (-e "$videodir/$book/fn-$book-$ch-$pg-$pgn.mpg") {
         `spumux -v $Verbosity -m dvd $outdir/spumux.xml < $videodir/$book/fn-$book-$ch-$pg-$pgn.mpg > $videodir/$book/fin-fn-$book-$ch-$pg-$pgn.mpg`;
-        if (!$debug)  {`rm -r $videodir/$book/fn-$book-$ch-$pg.mpg`;}
+        if (!$debug)  {`rm -r $videodir/$book/fn-$book-$ch-$pg-$pgn.mpg`;}
         $pgn++;
       }
     }  

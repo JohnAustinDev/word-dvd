@@ -11,7 +11,7 @@ $dir = shift;
 $nozipflag = shift;
 
 $totrunk = "../../.."; # relative path from this script to word-dvd trunk
-$tohere = "defaults/script/utilities"; # reverse path to here
+$tohere = "code/script/utilities"; # reverse path to here
 $tocontent = "chrome/word-dvd"; # content of word-dvd.jar
 
 if (!$dir) {$dir = ".";}

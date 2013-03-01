@@ -33,32 +33,32 @@ if (!(-e $videodir)) {`mkdir $videodir`;}
 if (!(-e "$videodir/videotmp")) {`mkdir $videodir/videotmp`;}
 if (!(-e "$videodir/menutmp")) {`mkdir $videodir/menutmp`;}
 
-foreach my $menu (sort keys %AllMenus) {
+foreach my $menu (sort {&menuSort($a, $b);} keys %AllMenus) {
   if ($menu eq "textoverlay") {next;}
   
   print "Creating menu $menu\n";
   
   # RENDER THE MENU
-  makeSilentSlide("", $AllMenus{$menu}{"image"});
+  &makeSilentSlide($menu, $AllMenus{$menu}{"image"});
 
   # GET SPUMUX XML TO MUX BUTTONS INTO MENU
   my $xml;
   $xml  = "<subpictures>\n";
   $xml .= "\t<stream>\n";
-  $xml .= "\t\t<spu force=\"yes\" start=\"00:00:00.00\" ";
-  $xml .= "image=\"".$AllMenus{$menu}{"maskNORM"}."\" ";
-  $xml .= "highlight=\"".$AllMenus{$menu}{"maskHIGH"}." ";
-  $xml .= "select=\"".$AllMenus{$menu}{"maskSEL"}."\" >\n";
+  $xml .= "\t\t<spu force=\"yes\" start=\"00:00:00.00\" \n";
+  $xml .= "\t\timage=\"".$AllMenus{$menu}{"maskNORM"}."\" \n";
+  $xml .= "\t\thighlight=\"".$AllMenus{$menu}{"maskHIGH"}."\" \n";
+  $xml .= "\t\tselect=\"".$AllMenus{$menu}{"maskSEL"}."\">\n";
   
   foreach my $key (sort keys %{$AllMenus{$menu}}) {
     if ($key !~ /^button-(\d)$/) {next;}
     my $b = $1;
     
     $xml .= "\t\t\t<button name=\"b".$b."\" ";
-    $xml .= "x0=\"".$AllMenus{$menu}{"x0"}."\" ";
-    $xml .= "y0=\"".$AllMenus{$menu}{"y0"}."\" ";
-    $xml .= "x1=\"".$AllMenus{$menu}{"x1"}."\" ";
-    $xml .= "y1=\"".$AllMenus{$menu}{"y1"}."\" ";
+    $xml .= "x0=\"".$AllMenus{$menu}{$key}{"x0"}."\" ";
+    $xml .= "y0=\"".$AllMenus{$menu}{$key}{"y0"}."\" ";
+    $xml .= "x1=\"".$AllMenus{$menu}{$key}{"x1"}."\" ";
+    $xml .= "y1=\"".$AllMenus{$menu}{$key}{"y1"}."\" ";
 
     # apply smart select only to TOC and CHP menus
     if ($menu !~ /^(cm-|textoverlay)/) {
@@ -117,8 +117,8 @@ foreach my $menu (sort keys %AllMenus) {
 TOCSPUMUX:
   `spumux -v $Verbosity -m dvd $outdir/spumux.xml < $videodir/$menu.mpg > $videodir/fin-$menu.mpg`;
   #print "Rerun spumux? "; $pause = <>; if ($pause =~ /^\s*y\s*$/i) {goto TOCSPUMUX;}
-  if (!$debug)  {`rm -r $videodir/$menu.mpg`;}
-  `rm -r $outdir/spumux.xml`;
+  if (!$debug) {`rm -r $videodir/$menu.mpg`;}
+  if (!$debug) {`rm -r $outdir/spumux.xml`;}
 }
 
 if (!$debug) {`rm -f -r $videodir/menutmp`;}
