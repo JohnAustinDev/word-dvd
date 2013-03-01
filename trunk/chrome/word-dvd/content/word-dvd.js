@@ -55,7 +55,7 @@ const HTMLDIR="html";
 const MENUSDIR="menus";
 const INAUDIODIR="audio";
 const INIMAGEDIR="images";
-const DEFAULTS = "defaults";
+const DEFAULTS = "code";
 const SCREENHTML="screen.html";
 const PALCSS="pal.css";
 const RESOURCE="resource";
@@ -366,7 +366,7 @@ function updateAction(elem) {
 
   case "restoreDefaults":
     if (elem.checked)
-      window.alert("WARNING!: This will permanently delete any changes you have made to any files in the defaults directory.");
+      window.alert("WARNING!: This will permanently delete any changes you have made to files in the \"" + DEFAULTS + "\" directory.");
     break;
     
   case "installPrompt":

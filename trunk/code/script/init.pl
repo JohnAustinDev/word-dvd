@@ -6,6 +6,10 @@ $indir = @ARGV[1];
 $outdir = @ARGV[2];
 $audiodir = @ARGV[3];
 
+$indir =~ s/\/\s*$//; # remove any trailing slash
+$outdir =~ s/\/\s*$//; # remove any trailing slash
+$audiodir =~ s/\/\s*$//; # remove any trailing slash
+
 $projmenusdir = "$indir/menus";
 $resourcedir = "$indir/defaults/resource";
 $locale = "$indir/config.txt";
