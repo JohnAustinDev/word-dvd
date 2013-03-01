@@ -1,7 +1,16 @@
-# Define your custom menus and button targets & locations here:
-#   name.images, image, hilighted image, selected image
-#   name.button, target name, x0, y0, x1, y1
+# Navigation control buttons are defined here.
+textoverlay.images, textoverlay, ../defaults/resources/textButtons.png, ../defaults/resources/textButtons-HIGH.png, ../defaults/resources/textButtons-SEL.png,
+textoverlay.button-1, ??
+textoverlay.button-2, ??
+textoverlay.button-3, ??
+textoverlay.button-4, ??
+textoverlay.button-5, ??
+textoverlay.button-6, ??
 
-help-m1.images, transparent.png, transparent.png, help-m1-SEL.png
+# Define your custom menus and button targets & locations here:
+#   name.images, image, normal overlay image, hilighted overlay image, selected overlay image
+#   name.button, target, x0, y0, x1, y1
+
+help-m1.images, ./help-m1.jpg, ./defaults/resource/transparent.png, ./defaults/resource/transparent.png, ./help-m1-SEL.png
 help-m1.button-1, toc-m1, 50, 466, 124, 538
 

@@ -30,36 +30,38 @@ const VERSENUMBER = ">\\s*(\\d+)(\\s*-\\s*(\\d+))?\\s*<";
 const WAIT=1;
 // Output directory
 const OUTDIRNAME="OUTPUTS";
-const SCRIPT="script";
-const LISTING="listing";
+const DBLOGFILE="logfile.txt";
 const OUTAUDIODIR="audio";
-const IMGDIR="images";
 const BACKUP="backup";
+const IMGDIR="images";
+const TRANSIMAGE="transparent.png";
+const MASKDIR="masks";
+const LISTING="listing";
+const MENUSFILE="MENU_BUTTONS.csv";
+const SCRIPT="script";
 const OSISPL="osis2html.pl";
 const FIXEDTRANSITIONS="fixedTransitions.pl";
 const WORDDVD="word-dvd.sh";
 const VIDEOFILES="word-video.sh";
-const DBLOGFILE="logfile.txt";
-const MENUSFILE="MENU_BUTTONS.csv";
 const IMAGEEXT="jpg";
 const CONVERSIONDONE="conversion-finished";
 const OSISPROGRESS="osis2html-progress";
 // Input directory
-const DEFAULTS = "defaults";
+const LOCALEFILE="config.txt";
+const OSISFILE = "osis.xml";
+const PAGETIMING="pageTiming.txt";
+const PROJECTCSS="project.css";
 const HTMLDIR="html";
 const MENUSDIR="menus";
 const INAUDIODIR="audio";
-const CODE="script";
+const INIMAGEDIR="images";
+const DEFAULTS = "defaults";
+const SCREENHTML="screen.html";
+const PALCSS="pal.css";
 const RESOURCE="resource";
-const CSS="css";
-const OSISFILE = "osis.xml";
-const PAGETIMING="pageTiming.txt";
-const LOCALEFILE="config.txt";
+const CODE="script";
 const CAPTURE="import.sh";
 const CAPTUREMASK="importMask.sh";
-const DEFHTML="html";
-const MASKDIR="masks";
-const SCREENHTML="screen.html";
 
 var ScreenHTML;
 
@@ -547,21 +549,24 @@ function wordDVD() {
 
   ScreenHTML = UIfile[INDIR].clone();
   ScreenHTML.append(DEFAULTS);
-  ScreenHTML.append(DEFHTML);
   ScreenHTML.append(SCREENHTML);
 
-  // COPY RESOURCES AND BUILD-CODE TO INDIR
-  exportDir(DEFAULTS + "/" + RESOURCE, UIfile[INDIR].path, document.getElementById("restoreDefaults").checked);
-  exportDir(DEFAULTS + "/" + CODE, UIfile[INDIR].path, document.getElementById("restoreDefaults").checked);
-  exportDir(DEFAULTS + "/" + CSS, UIfile[INDIR].path, document.getElementById("restoreDefaults").checked);
-  exportDir(DEFAULTS + "/" + DEFHTML, UIfile[INDIR].path, document.getElementById("restoreDefaults").checked);
+  // EXPORT RESOURCES AND BUILD-CODE TO INDIR
+  exportDir(DEFAULTS, UIfile[INDIR].path, document.getElementById("restoreDefaults").checked);
   
-  var test; // don't copy these files if destination directory already exists
+  // EXPORT THESE DIRECTORIES ONLY IF THE DESTINATION DIR DOES NOT EXIST
+  var test;
   test = UIfile[INDIR].clone(); test.append(MENUSDIR);
   if (!test.exists()) exportDir(MENUSDIR, UIfile[INDIR].path, false);
   test = UIfile[INDIR].clone(); test.append(HTMLDIR);
   if (!test.exists()) exportDir(HTMLDIR, UIfile[INDIR].path, false);
+  test = UIfile[INDIR].clone(); test.append(INIMAGEDIR);
+  if (!test.exists()) exportDir(INIMAGEDIR, UIfile[INDIR].path, false);
+  test = UIfile[INDIR].clone(); test.append(INAUDIODIR);
+  if (!test.exists()) exportDir(INAUDIODIR, UIfile[INDIR].path, false);
   
+  // EXPORT THESE FILES ONLY IF THE DESTINATION FILE DOES NOT EXIST
+  exportFile(PROJECTCSS, UIfile[INDIR].path, false);
   exportFile(LOCALEFILE, UIfile[INDIR].path, false);
   exportFile(PAGETIMING, UIfile[INDIR].path, false);
 
@@ -782,11 +787,19 @@ function wordDVD2() {
   var entries = getLocaleLiterals();
   for (var i=0; entries && i<entries.length; i++) {logmsg(entries[i]);}
   
-  logmsg("\nChecking/Creating directories...");  
+  logmsg("\nChecking/Creating output directories...");  
+  
   // IMAGE DIRECTORY
   var imgdir = UIfile[OUTDIR].clone();
   imgdir.append(IMGDIR);
   if (!imgdir.exists()) imgdir.create(imgdir.DIRECTORY_TYPE, 511);
+  var transparentImage = UIfile[INDIR].clone();
+  transparentImage.append(DEFAULTS);
+  transparentImage.append(RESOURCE);
+  transparentImage.append(TRANSIMAGE);
+  var transparentImageDest = UIfile[OUTDIR].clone();
+  transparentImageDest.append(IMGDIR);
+  transparentImage.copyTo(transparentImageDest, null);
 
   // LISTING DIRECTORY
   var listdir = UIfile[OUTDIR].clone();
