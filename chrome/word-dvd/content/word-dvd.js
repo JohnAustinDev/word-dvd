@@ -27,7 +27,7 @@ const MYGUID="{f597ab2a-3a14-11de-a792-e68e56d89593}";
 const NEWCHAPTER = "<span name=\"chapter.";
 const NEWVERSERE = "<sup>[\\d\\s-]+<\/sup>";
 const VERSENUMBER = ">\\s*(\\d+)(\\s*-\\s*(\\d+))?\\s*<";
-const WAIT=500;
+const WAIT=1;
 // Output directory
 const OUTDIRNAME="OUTPUTS";
 const SCRIPT="script";
@@ -299,6 +299,11 @@ function loadedXUL() {
   checkAudioDir();	
   updateControlPanel();
   sizeToContent();
+  
+  // Create backup directory
+  BackupDir = Components.classes["@mozilla.org/file/local;1"].createInstance(Components.interfaces.nsILocalFile);
+  BackupDir.initWithPath(UIfile[OUTDIR].path + "/" + BACKUP);
+  if (!BackupDir.exists()) BackupDir.create(BackupDir.DIRECTORY_TYPE, 511);
   
   // Log File
   DBLogFile = UIfile[OUTDIR].clone();
@@ -725,11 +730,6 @@ function wordDVD2() {
     quit(true);
     return;
   }
-
-  // Create backup directory
-  BackupDir = Components.classes["@mozilla.org/file/local;1"].createInstance(Components.interfaces.nsILocalFile);
-  BackupDir.initWithPath(UIfile[OUTDIR].path + "/" + BACKUP);
-  if (!BackupDir.exists()) BackupDir.create(BackupDir.DIRECTORY_TYPE, 511);
 
   logmsg("Starting Word-DVD imager at " + StartDate.toTimeString() + " " + StartDate.toDateString());
   logmsg("Word-DVD Version: " + (ExtVersion ? ExtVersion:"undreadable"));

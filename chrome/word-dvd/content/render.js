@@ -60,8 +60,6 @@ function loadedRender() {
 } function postLoad1() {
   
   init(); // in screen.js
-
-  initWaitRenderDone(false);
   
   window.resizeTo(RenderFrame.boxObject.width, document.getElementById("body").boxObject.height);
 
@@ -128,7 +126,6 @@ function startMenuGeneration() {
 function startTextGeneration() {
 MainWin.logmsg("startTextGeneration");
   // switch from menu to text background
-  initWaitRenderDone(true);
   
   var body = RenderFrame.contentDocument.getElementById("body");
   body.setAttribute("pagetype", "TEXT");
@@ -430,8 +427,6 @@ function renderMenu(isFirstMenu, isLastMenu, returnFun) {
 var MenuRenderReturnFunc;
 function captureMenuMask() {
   
-  initWaitRenderDone(false);
-  
   var body = RenderFrame.contentDocument.getElementById("body");
   
   var isHighlight = (body.getAttribute("masktype") == "highlight");
@@ -458,11 +453,15 @@ function captureMask() {
   if (!imgfile.exists()) {imgfile.create(imgfile.DIRECTORY_TYPE, 511);}
   imgfile.append(imageName);
   
+  // get color which will be converted to transparent
+  var color = RenderFrame.contentDocument.defaultView.getComputedStyle(RenderFrame.contentDocument.getElementById("body"));
+  color = color.backgroundColor;
+  
   var process = Components.classes["@mozilla.org/process/util;1"]
                     .createInstance(Components.interfaces.nsIProcess);
 
   process.init(capture);
-  var args = ["-window render-win", "-crop " + MainWin.PAL.W + "x" + MainWin.PAL.H + "+0+0", imgfile.path, MainWin.DBLogFile.path];
+  var args = ["-window render-win", "-crop " + MainWin.PAL.W + "x" + MainWin.PAL.H + "+0+0", imgfile.path, color, MainWin.DBLogFile.path];
   process.run(true, args, args.length);
   
   // save the mask button data
@@ -470,6 +469,11 @@ function captureMask() {
     getMaskButtonData(ButtonArrayL);
     getMaskButtonData(ButtonArrayR);
   }
+  /* DEBUG CODE
+  else {
+    var elems = RenderFrame.contentDocument.getElementsByClassName("removeme");
+    while(elems.length) {elems[0].parentNode.removeChild(elems[0]);}
+  } */
 
   // call next function
   if (isHighlight) captureMenuMask();
@@ -488,12 +492,38 @@ function getMaskButtonData(buttonArray) {
     var b = buttonArray[i];
     var buttonMask = RenderFrame.contentDocument.getElementById(b.id).getElementsByClassName("button-mask")[0];
     
-    b.x0 = buttonMask.offsetLeft;
-    b.y0 = buttonMask.offsetTop;
-    b.x1 = b.x0 + buttonMask.offsetWidth;
-    b.y1 = b.y0 + buttonMask.offsetHeight;
+    var os = findPos(buttonMask);
     
+    b.x0 = os.left;
+    b.y0 = os.top;
+    b.x1 = os.left + buttonMask.offsetWidth;
+    b.y1 = os.top + buttonMask.offsetHeight;
+    
+/* DEBUG CODE
+    var elem = document.createElement("div");
+    elem.className = "removeme";
+    elem.style.border = "1px solid red";
+    elem.style.position = "absolute";
+    elem.style.top = b.y0 + "px";
+    elem.style.left = b.x0 + "px";
+    elem.style.width = Number(b.x1 - b.x0) + "px";
+    elem.style.height = Number(b.y1 - b.y0) + "px";
+    RenderFrame.contentDocument.getElementById("body").appendChild(elem);
+*/    
   } 
+}
+
+function findPos(obj) {
+	var curleft, curtop;
+	curleft = curtop = 0;
+	if (obj.offsetParent) {
+		do {
+			curleft += obj.offsetLeft;
+			curtop += obj.offsetTop;
+			obj = obj.offsetParent
+		} while (obj);
+	}
+	return {left:curleft, top:curtop};
 }
 
 function writeMenuData() {
@@ -628,8 +658,6 @@ function renderNewScreen() {
   
   tstyle = mdoc.defaultView.getComputedStyle(mdoc.getElementById("right-page"), null);
   var skipPage2 = (tstyle.visibility == "hidden");
-  
-  initWaitRenderDone(true);
   
   Page.pagebreakboth = false;
   var pageName = Book[Bindex].shortName + (Chapter==0 ? ".intr":"") + "-" + Number(Chapter+SubChapters) + "-" + Page.pagenumber;
@@ -1539,8 +1567,6 @@ function renderNewFNScreen() {
     Page.bottomSplitTag = "";
     Page.passage += PageWithFootnotes[FootnoteIndex].html;
   }
-  
-  initWaitRenderDone(true);
 
   var tstart = Page.end;
   Page.pagebreakboth = false;
@@ -1610,64 +1636,29 @@ function getSubFilePath(parent, subpath) {
   else return "";
 }
 
-// call initWaitRenderDone, then redraw window, then call waitRenderDoneThenDo
-var UseRenderDoneFallback = true;
-var Paint = {count:null, check:null, numcheck:0, interval:null, tinterval:10, tstable:50};
-var DrawInterval;
-var RenderDoneTO;
-// set skipFallback if fallback init is handled elsewhere
-function initWaitRenderDone(skipFallback) {
-  return;
-  
-  
-  // prepare for waitRenderDoneThenDo
-  RenderFrame.contentDocument.defaultView.RenderDone = false;
-  try {
-    if (UseRenderDoneFallback || window.mozPaintCount===undefined) throw true;
-    Paint.count = window.mozPaintCount;
-    if (Paint.interval) clearInterval(Paint.interval);
-    
-    // this function waits until:
-    //    mozPaintCount has incremented, 
-    //    and LoadingImages is 0,
-    //    then mozPaintCount must be stable for tstable milliseconds after that.
-    // then it sets RenderDone = true
-    var func  = "if (RenderFrame.contentDocument.defaultView.LoadingImages == 0 && window.mozPaintCount > Paint.count) { ";
-        func += "  if (Paint.numcheck == 0 || window.mozPaintCount != Paint.check) {Paint.numcheck = 1; Paint.check = window.mozPaintCount;} ";
-        func += "  else if (Paint.numcheck == Math.floor(Paint.tstable/Paint.tinterval)) { ";
-        func += "     window.clearInterval(Paint.interval); ";
-        func += "     RenderFrame.contentDocument.defaultView.RenderDone = true; ";
-        func += "   } ";
-        func += "  else Paint.numcheck++; ";
-        func += "} ";
-        func += "else Paint.numcheck = 0; ";
-    Paint.interval = window.setInterval(func, 1000);
-  }
-  catch (er) {
-    // skip the firefox 3- fallback method if RenderDone is handled somewhere else
-    if (!skipFallback) {
-      if (RenderDoneTO) window.clearTimeout(RenderDoneTO);
-      RenderDoneTO = window.setTimeout("RenderFrame.contentDocument.defaultView.setTimeout(\"window.setTimeout('RenderDone = true;', MainWin.WAIT);\", 1);", 1);
-    }
-  }
-}
-
-// set's SRC of image, but only if it is changing.
-// also increments LoadingImages such that only after the new src
-// has loaded will LoadingImages again be zero.
-function setImgSrc(img, src) {
-  var osrc = img.getAttribute("src");
-  if (!osrc || osrc != src) {
-    // can't use "RenderFrame" here because it may not be set yet
-    document.getElementById("render").contentDocument.defaultView.LoadingImages++;
-    img.setAttribute("src", src);
-  }
-}
-
+var PaintCount;
+var PaintCheck;
+var PaintExit;
 function waitRenderDoneThenDo(funcString) {
-  //if (DrawInterval) window.clearInterval(DrawInterval);
-  //DrawInterval = window.setInterval("if (RenderFrame.contentDocument.defaultView.RenderDone) {window.clearInterval(DrawInterval); " + funcString + ";}", 10);
-  window.setTimeout(funcString, MainWin.WAIT);
+  
+  PaintCount = RenderFrame.contentDocument.defaultView.window.mozPaintCount;
+  PaintExit = funcString;
+  
+  if (PaintCheck) window.clearInterval(PaintCheck);
+  
+  // Keep looping until there are 0 paint events within the chosen loop delay.
+  // No paint events within such time is the indicator that painting has
+  // finished, and the loop ends by calling the exit function.
+  PaintCheck = window.setInterval(function() {
+    
+      if (RenderFrame.contentDocument.defaultView.window.mozPaintCount == PaintCount) {
+        window.clearInterval(PaintCheck);
+        window.setTimeout(PaintExit, 1);
+      }
+      else PaintCount = RenderFrame.contentDocument.defaultView.window.mozPaintCount;
+      
+    }, 100);
+
 }
 
 function unloadedRender() {

@@ -11,8 +11,9 @@ body {
   color:rgb(60,60,0);
 }
 body:not([masktype="none"]) {
-  /* this color should contrast with the highlight and select masks
-     and should be converted to transparent after screen capture */
+  /* the following color should be anything which contrasts with the 
+     highlight and select button masks, because it is converted to 
+     transparent after screen capture */
   background-color:rgb(0,0,255);
   background-image:none;
 }
@@ -32,7 +33,7 @@ body:not([masktype="none"]) .menu-header {
 }
 
 /* NOTE: if a page has visibility=hidden, then the menu and text renderer
-will not write to that page. But images may still appear on those pages
+will not write to that page. But images may still be put on those pages
 using project.css */
 .page {
   position:absolute;
@@ -41,7 +42,7 @@ using project.css */
   padding-bottom:12px;
 }
 
-/* make pagebreaks visible when viewed directly in browser */
+/* make pagebreaks visible only when viewed directly in browser */
 body:not([pagetype]) .pagebreak,
 body:not([pagetype]) .pagebreak-both {
   display:block;
@@ -68,8 +69,8 @@ body[pagename="name-of-a-page"]:before {
   content:url(an-image-url);
 }
 
-You can also have the renderer skip the left or right
-half of any page by adding this into your project.css:
+You can also make the renderer skip the left or right
+page of any screen by adding this into your project.css:
 
 body[pagename="name-of-a-page"] #left-page {
   visibility:hidden;
@@ -151,14 +152,9 @@ the desired width. */
   position:relative;
   left:14px; /* approx (width-of-audio-icon.png + margin-left)/2 */
 }
-
-.hasAudio div:first-child:after{
+.hasAudio div:first-child:after {
   content: url(../resource/audio-icon.png);
   margin-left:7px;
-}
-
-.custombutton {
-  font-weight:bold;
 }
 
 .chapter-button-col {
@@ -167,6 +163,7 @@ the desired width. */
   display:table-cell;
   vertical-align:middle;
 }
+
 .button {
   font-size:20px;
   text-align:center;
@@ -185,11 +182,23 @@ the desired width. */
   background-position:center; 
   position:relative;
 }
+/* Different highlight and select images can be used by duplicating
+the following CSS rules in project.css, changing the image URLs 
+and rules as desired */
 .button-mask {
-/* this is for menuUnderline images */
   background-image:none;
   height:16px;
   top:-4px;
+}
+#p1b9.arrow .button-mask {
+  background-image:url(../resource/menuArrowL.png);
+  height:42px;
+  top:-32px;
+}
+#p2b9.arrow .button-mask {
+  background-image:url(../resource/menuArrowR.png);
+  height:42px;
+  top:-32px;
 }
 body[masktype="highlight"] .button-mask {
   background-image:url(../resource/menuUnderline-HIGH.png);
@@ -197,20 +206,17 @@ body[masktype="highlight"] .button-mask {
 body[masktype="select"] .button-mask {
   background-image:url(../resource/menuUnderline-SEL.png);
 }
-.button.arrow .button-mask {
-/* this is for menuArrow images */
-  background-image:url(../resource/menuArrow.png);
-  height:42px;
-  top:-32px;
+body[masktype="highlight"] #p1b9.arrow .button-mask {
+  background-image:url(../resource/menuArrowL-HIGH.png);
 }
-#p1b9.arrow .button-mask {
-  transform:scaleX(-1);
+body[masktype="select"] #p1b9.arrow .button-mask {
+  background-image:url(../resource/menuArrowL-SEL.png);
 }
-body[masktype="highlight"] .button.arrow .button-mask {
-  background-image:url(../resource/menuArrow-HIGH.png);
+body[masktype="highlight"] #p2b9.arrow .button-mask {
+  background-image:url(../resource/menuArrowR-HIGH.png);
 }
-body[masktype="select"] .button.arrow .button-mask {
-  background-image:url(../resource/menuArrow-SEL.png);
+body[masktype="select"] #p2b9.arrow .button-mask {
+  background-image:url(../resource/menuArrowR-SEL.png);
 }
 
 
@@ -223,37 +229,34 @@ body[masktype="select"] .button.arrow .button-mask {
   background-repeat:no-repeat;
 }
 .text .page {
-  overflow:auto;
+  overflow:auto; /* required for renderer to work */
+  top:0px;
+  bottom:45px;
 }
 .text #left-page {
   margin-right:18px;
-  top:0px;
   right:50%;
-  bottom:45px;
   left:0px;
 }
 .text #right-page {
   margin-left:18px;
-  top:0px;
   right:0px;
-  bottom:45px;
   left:50%;
 }
 
-body.text:before {
-  content:url(../resource/textButtons.png);
+.text #text-controls {
+  background-image:url(../resource/textButtons.png);
   position:absolute;
   left:0px;
   top:0px;
   width:100%;
 }
-body.text[masktype="highlight"]:before {
+body.text[masktype="highlight"] #text-controls {
   content:url(../resource/textButtons-HIGH.png);
 }
-body.text[masktype="select"]:before {
+body.text[masktype="select"] #text-controls {
   content:url(../resource/textButtons-SEL.png);
 }
-
 
 /* NOTE: if "max-width" is specified here in px, it will 
 actually be removed from the CSS rules, and will instead be 
@@ -293,7 +296,6 @@ the desired width. */
 
 .paragraph-start {
   display:inline-block;
-  /*height:1em;*/
   width:16px;
 }
 

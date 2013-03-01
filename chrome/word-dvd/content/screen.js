@@ -3,20 +3,12 @@ const SPACE = " ";
 var PageElem1, PageElem2;
 var DebugChapter=0;
 var DebugPage=0;
-var RenderDone;
 
 var CSSHeading1Color, CSSHeading2Color;
   
 function init() {
   PageElem1 = RenderFrame.contentDocument.getElementById("left-page");
   PageElem2 = RenderFrame.contentDocument.getElementById("right-page");
-
-  // firefox 3- needs a fallback waitRender method (simple delay) so test and do if needed
-  try {
-    if ((UseRenderDoneFallback) || RenderFrame.contentDocument.defaultView.mozPaintCount===undefined) throw true;
-    var test = mozPaintCount;
-  }
-  catch (er) {RenderFrame.contentDocument.defaultView.setTimeout("window.setTimeout('RenderDone = true;',0);", MainWin.WAIT);}
 }
 
 function fitScreen(book, chapter, subchapters, aPage, skipPage1, skipPage2) {
@@ -86,13 +78,6 @@ MainWin.jsdump("Chapter=" + Number(chapter+subchapters) + ", Pagenumber=" + aPag
   }
   
 //MainWin.jsdump("PageElem1:" + PageElem1.innerHTML + "\nPageElem2:" + PageElem2.innerHTML);
-
-  // firefox 3- needs a fallback waitRender method (simple delay) so test and do if needed
-  try {
-    if ((UseRenderDoneFallback) || RenderFrame.contentDocument.defaultView.mozPaintCount===undefined) throw true;
-    var test = mozPaintCount;
-  }
-  catch (er) {RenderFrame.contentDocument.defaultView.setTimeout("window.setTimeout('RenderDone = true;',0);", MainWin.WAIT);}
   return true;
 }
 

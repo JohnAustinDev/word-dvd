@@ -16,5 +16,7 @@
 #   You should have received a copy of the GNU General Public License
 #   along with Word-DVD.  If not, see <http://www.gnu.org/licenses/>.
 
-import $1 $2 "$3" >> "$4"
+import $1 $2 "$3" >> "$5"
+
+convert "$3" -fuzz 10% -transparent "$4" "$3" >> "$5"
 
