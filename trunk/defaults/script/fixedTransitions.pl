@@ -29,7 +29,7 @@ require "$scriptdir/shared.pl";
 
 # NEVER EVER EVER LOSE THE ORIGINAL!!!!!
 $pageTimingFile = "$indir/pageTiming.txt";
-my $save = $pageTimingFile;
+my $save = "$backupdir/$pageTimingFile";
 my $n = 1;
 my $fn = sprintf("%02i", $n);
 $save =~ s/(-bak\d+)?(\.txt)/-bak$fn$2/;

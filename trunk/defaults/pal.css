@@ -58,32 +58,6 @@ body:not([pagetype]) .pagebreak-both {
   border-bottom:2px dashed red;
 }
 
-/****************************/
-/* MENU AND TEXT IMAGES CSS */
-/****************************/
-
-/* An overlay image can be placed on any menu or text 
-page by adding the following into your project.css file:
-
-body[pagename="name-of-a-page"]:before {
-  content:url(an-image-url);
-}
-
-You can also make the renderer skip the left or right
-page of any screen by adding this into your project.css:
-
-body[pagename="name-of-a-page"] #left-page {
-  visibility:hidden;
-}
-
-or 
-
-body[pagename="name-of-a-page"] #right-page {
-  visibility:hidden;
-}
-
-*/
-
 body:before {
   position:absolute;
   top:0px;
@@ -97,7 +71,7 @@ body:before {
 /******************/
 
 .menu {
-  background-image: url(../resource/menu.jpg);
+  background-image: url(./resource/menu.jpg);
   background-repeat:no-repeat;
 }
 .menu .page {
@@ -153,7 +127,7 @@ the desired width. */
   left:14px; /* approx (width-of-audio-icon.png + margin-left)/2 */
 }
 .hasAudio div:first-child:after {
-  content: url(../resource/audio-icon.png);
+  content: url(./resource/audio-icon.png);
   margin-left:7px;
 }
 
@@ -182,7 +156,7 @@ the desired width. */
   background-position:center; 
   position:relative;
 }
-/* Different highlight and select images can be used by duplicating
+/* Different button images can be used by duplicating
 the following CSS rules in project.css, changing the image URLs 
 and rules as desired */
 .button-mask {
@@ -191,32 +165,32 @@ and rules as desired */
   top:-4px;
 }
 #p1b9.arrow .button-mask {
-  background-image:url(../resource/menuArrowL.png);
+  background-image:url(./resource/menuArrowL.png);
   height:42px;
   top:-32px;
 }
 #p2b9.arrow .button-mask {
-  background-image:url(../resource/menuArrowR.png);
+  background-image:url(./resource/menuArrowR.png);
   height:42px;
   top:-32px;
 }
 body[masktype="highlight"] .button-mask {
-  background-image:url(../resource/menuUnderline-HIGH.png);
+  background-image:url(./resource/menuUnderline-HIGH.png);
 }
 body[masktype="select"] .button-mask {
-  background-image:url(../resource/menuUnderline-SEL.png);
+  background-image:url(./resource/menuUnderline-SEL.png);
 }
 body[masktype="highlight"] #p1b9.arrow .button-mask {
-  background-image:url(../resource/menuArrowL-HIGH.png);
+  background-image:url(./resource/menuArrowL-HIGH.png);
 }
 body[masktype="select"] #p1b9.arrow .button-mask {
-  background-image:url(../resource/menuArrowL-SEL.png);
+  background-image:url(./resource/menuArrowL-SEL.png);
 }
 body[masktype="highlight"] #p2b9.arrow .button-mask {
-  background-image:url(../resource/menuArrowR-HIGH.png);
+  background-image:url(./resource/menuArrowR-HIGH.png);
 }
 body[masktype="select"] #p2b9.arrow .button-mask {
-  background-image:url(../resource/menuArrowR-SEL.png);
+  background-image:url(./resource/menuArrowR-SEL.png);
 }
 
 
@@ -225,7 +199,7 @@ body[masktype="select"] #p2b9.arrow .button-mask {
 /******************/
 
 .text {
-  background-image: url(../resource/text.jpg);
+  background-image: url(./resource/text.jpg);
   background-repeat:no-repeat;
 }
 .text .page {
@@ -245,17 +219,17 @@ body[masktype="select"] #p2b9.arrow .button-mask {
 }
 
 .text #text-controls {
-  background-image:url(../resource/textButtons.png);
+  background-image:url(./resource/textButtons.png);
   position:absolute;
   left:0px;
   top:0px;
   width:100%;
 }
 body.text[masktype="highlight"] #text-controls {
-  content:url(../resource/textButtons-HIGH.png);
+  content:url(./resource/textButtons-HIGH.png);
 }
 body.text[masktype="select"] #text-controls {
-  content:url(../resource/textButtons-SEL.png);
+  content:url(./resource/textButtons-SEL.png);
 }
 
 /* NOTE: if "max-width" is specified here in px, it will 

@@ -75,7 +75,7 @@ function startMenuGeneration() {
     MenusFile.append(MainWin.LISTING);
     MenusFile.append(MainWin.MENUSFILE);
     if (MenusFile.exists()) MenusFile.remove(false);
-    MainWin.write2File(MenusFile, "#<menu-name>.images, image.png, image-HIGH.png, image-SEL.png\n#<menu-name>.button-<n>, target-menu, x0, y0, x1, y1\n"); 
+    MainWin.write2File(MenusFile, "#<menu-name>.images, image.png, image-NORM.png, image-HIGH.png, image-SEL.png\n#<menu-name>.button-<n>, target-menu, x0, y0, x1, y1\n"); 
     
     // CREATE TABLE OF CONTENTS
     MenuEntries = [];
@@ -530,7 +530,14 @@ function writeMenuData() {
   
   // write data for images and button mask positions
   var b = ButtonArrayL[1];
-  var data  = b.pagename + ".images, " + b.pagename + ".jpg, " + b.pagename + "-HIGH.png, " + b.pagename + "-SEL.png\n";
+  
+  // image paths are relative to the MenusFile itself
+  var data;
+  data  = b.pagename + ".images, ";
+  data += "../" + MainWin.IMGDIR + "/" + b.pagename + ".jpg, ";
+  data += "../" + MainWin.IMGDIR + "/" + MainWin.TRANSIMAGE + ", ";
+  data += "../" + MainWin.IMGDIR + "/" + MainWin.MASKDIR + "/" + b.pagename + "-HIGH.png, ";
+  data += "../" + MainWin.IMGDIR + "/" + MainWin.MASKDIR + "/" + b.pagename + "-SEL.png\n";
   MainWin.write2File(MenusFile, data, true);
   
   for (var i=1; i<=9; i++) {
