@@ -9,18 +9,13 @@ body[pagename="toc-m1"]:before {
   content:url(./images/myimage.png);
 }
 
-You can also make the renderer skip the left or right
-page of any screen by adding this:
+You can also make the text writer skip the left and/or right
+page of any screen by adding something like this:
 
-body[pagename="book1-1-1"] #left-page {
-  visibility:hidden;
+body[pagename="book1-1-1"] #writing-left {
+  display:none;
 }
 
-or 
-
-body[pagename="book2-4-5"] #right-page {
-  visibility:hidden;
-}
 */
 
 /**************************/

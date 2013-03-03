@@ -218,7 +218,7 @@ function renderMenuSection() {
     // initialize button arrays (includes all dvd menu buttons)
     ButtonArrayL = [null]; // button array indexes correspond to their HTML id number, which starts at 1, so index 0 is null and unused
     ButtonArrayR = [null];
-    
+  
     for (var i=1; i<=9; i++) {
     
       var id = "p1b" + String(i);
@@ -234,12 +234,13 @@ function renderMenuSection() {
     
     // Handle left page...
     // using RenderFrameWindow.getComputedStyle waits for the pagename update (unlike window.getComputedStyle)
-    var skipPage = RenderFrame.contentDocument.defaultView.getComputedStyle(RenderFrame.contentDocument.getElementById("left-page"));
-    if (skipPage.visibility != "hidden") populateButtonColumn(ButtonArrayL, true);
+    var mdoc = RenderFrame.contentDocument;
+    var skipPage = mdoc.defaultView.getComputedStyle(mdoc.getElementById("writing-left"));
+    if (skipPage.display != "none") populateButtonColumn(ButtonArrayL, true);
     
     // Handle right page...
-    skipPage = RenderFrame.contentDocument.defaultView.getComputedStyle(RenderFrame.contentDocument.getElementById("right-page"));
-    if (skipPage.visibility != "hidden") populateButtonColumn(ButtonArrayR, false);
+    skipPage = mdoc.defaultView.getComputedStyle(mdoc.getElementById("writing-right"));
+    if (skipPage.display != "none") populateButtonColumn(ButtonArrayR, false);
     
     // create a new menu
     renderMenu((SectionMenuNumber==1), (MenuEntryIndex>=MenuEntries.length), "renderMenuSection();");
@@ -389,8 +390,8 @@ function renderMenu(isFirstMenu, isLastMenu, returnFun) {
   
     var bk = (MenuType == "CHP" ? MainWin.getLocaleString("FileName:" + Book[Bindex-1].shortName, [Book[Bindex-1].shortName]):null);
 
-    var label = MainWin.getLocaleString(MenuType + locnames[i] + ":" + String(menunumber), [bk, null, null, null]);
-    var target = MainWin.getLocaleString(MenuType + locnames[i] + "T:" + String(menunumber));
+    var label = MainWin.getLocaleString(MenuType + locnames[i] + ":" + menunumber, [bk, null, null, null]);
+    var target = MainWin.getLocaleString(MenuType + locnames[i] + "T:" + menunumber);
     
     switch(locnames[i]) {
     case "topleft":
@@ -400,11 +401,11 @@ function renderMenu(isFirstMenu, isLastMenu, returnFun) {
       headerRight = label;
       break;
     case "bottomright":
-      ButtonArrayR[9].label = label;
+      if (label) ButtonArrayR[9].label = label;
       if (target) ButtonArrayR[9].target = target;
       break;
     case "bottomleft":
-      ButtonArrayL[9].label = label;
+      if (label) ButtonArrayL[9].label = label;
       if (target) ButtonArrayL[9].target = target;
       break;
     }
@@ -665,11 +666,11 @@ function renderNewScreen() {
   ContinueFunc = null;
   var mdoc = RenderFrame.contentDocument;
 
-  var tstyle = mdoc.defaultView.getComputedStyle(mdoc.getElementById("left-page"), null);
-  var skipPage1 = (tstyle.visibility == "hidden"); // this allows single column display by setting page2 visibility=hidden
+  var tstyle = mdoc.defaultView.getComputedStyle(mdoc.getElementById("writing-left"), null);
+  var skipPage1 = (tstyle.display == "none"); // this allows single column display
   
-  tstyle = mdoc.defaultView.getComputedStyle(mdoc.getElementById("right-page"), null);
-  var skipPage2 = (tstyle.visibility == "hidden");
+  tstyle = mdoc.defaultView.getComputedStyle(mdoc.getElementById("writing-right"), null);
+  var skipPage2 = (tstyle.display == "none");
   
   Page.pagebreakboth = false;
   var pageName = Book[Bindex].shortName + (Chapter==0 ? ".intr":"") + "-" + Number(Chapter+SubChapters) + "-" + Page.pagenumber;
