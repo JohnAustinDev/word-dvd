@@ -20,6 +20,7 @@
 # many other scripts.
 
 use Encode;
+use POSIX;
 require "$scriptdir/init.pl";
 
 sub readDataFiles() {
@@ -329,10 +330,10 @@ sub readMenuInformation($) {
       my $y1 = $7;
       
       $AllMenus{$menuName}{"button-".$buttonNum}{"target"} = $target;
-      $AllMenus{$menuName}{"button-".$buttonNum}{"x0"} = $x0;
-      $AllMenus{$menuName}{"button-".$buttonNum}{"y0"} = $y0;
-      $AllMenus{$menuName}{"button-".$buttonNum}{"x1"} = $x1;
-      $AllMenus{$menuName}{"button-".$buttonNum}{"y1"} = $y1;
+      $AllMenus{$menuName}{"button-".$buttonNum}{"x0"} = &ceil($x0/2)*2;
+      $AllMenus{$menuName}{"button-".$buttonNum}{"y0"} = &ceil($y0/2)*2;
+      $AllMenus{$menuName}{"button-".$buttonNum}{"x1"} = &ceil($x1/2)*2;
+      $AllMenus{$menuName}{"button-".$buttonNum}{"y1"} = &ceil($y1/2)*2;
       
       $AllButtons{$menuName."-".$buttonNum} = $target;
       
@@ -519,9 +520,9 @@ sub makeSilentSlide($$) {
     $subdir .= "/";
   }
   
-  `jpeg2yuv -v 0 -n 1 -I p -f 25 -j $imagefile | mpeg2enc -v 0 -f 8 -g 1 -G 1 -o $videodir/videotmp/$leaf.m2v`;
+  `jpeg2yuv -v 0 -n 1 -I p -f 25 -j $imagefile | mpeg2enc -v 0 -f 8 -g 1 -G 1 -o $videodir/videotmp/$pagename.m2v`;
   
-  `mplex -v $Verbosity -V -f 8 $videodir/videotmp/$leaf.m2v $resourcedir/blankaudio.ac3 -o $videodir/$subdir$pagename.mpg`;
+  `mplex -v $Verbosity -V -f 8 $videodir/videotmp/$pagename.m2v $resourcedir/blankaudio.ac3 -o $videodir/$subdir$pagename.mpg`;
   
 }
 
