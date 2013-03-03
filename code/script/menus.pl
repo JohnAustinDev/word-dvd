@@ -28,7 +28,7 @@ $debug = @ARGV[4];
 require "$scriptdir/shared.pl" || die "Can't require shared.pl";
 &readDataFiles();
 
-#PREPARE OUTPUT DIRECTORYS
+# PREPARE OUTPUT DIRECTORYS
 if (!(-e $videodir)) {`mkdir $videodir`;}
 if (!(-e "$videodir/videotmp")) {`mkdir $videodir/videotmp`;}
 if (!(-e "$videodir/menutmp")) {`mkdir $videodir/menutmp`;}
@@ -45,13 +45,13 @@ foreach my $menu (sort {&menuSort($a, $b);} keys %AllMenus) {
   my $xml;
   $xml  = "<subpictures>\n";
   $xml .= "\t<stream>\n";
-  $xml .= "\t\t<spu force=\"yes\" start=\"00:00:00.00\" \n";
+  $xml .= "\t\t<spu force=\"yes\" start=\"00:00:00.00\" end=\"00:00:00.00\" \n";
   $xml .= "\t\timage=\"".$AllMenus{$menu}{"maskNORM"}."\" \n";
   $xml .= "\t\thighlight=\"".$AllMenus{$menu}{"maskHIGH"}."\" \n";
   $xml .= "\t\tselect=\"".$AllMenus{$menu}{"maskSEL"}."\">\n";
   
   foreach my $key (sort keys %{$AllMenus{$menu}}) {
-    if ($key !~ /^button-(\d)$/) {next;}
+    if ($key !~ /^button-(\d+)$/) {next;}
     my $b = $1;
     
     $xml .= "\t\t\t<button name=\"b".$b."\" ";
