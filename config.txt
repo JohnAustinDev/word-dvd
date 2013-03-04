@@ -32,11 +32,11 @@ Hyphen         = [bcdfghjklmnpqrstvwxyz][aeiou]
 
 # DVD AUTOMATED MENU GENERATOR SETTINGS:
 #---------------------------------------
-# The following have the form: PrefixSuffix[:<page-number>]
+# The following have the form: PrefixSuffix[:<menu-page-number>]
 # Prefix is TOC for main-menu pages
 # Prefix is CHP for submenu pages
 # Suffix can be either: topleft, topright, bottomleft or bottomright.
-# TOC suffix can also be leftlast or rightlast to force a page break after such a value.
+# TOC suffix can also be leftbuttons or rightbuttons to limit the number of buttons on a page.
 # Suffixes ending with "T" are menu targets which override the default target.
 # Note: All UI strings may include special codes which will be replaced by values at runtime:
 #   %0$S = becomes current book

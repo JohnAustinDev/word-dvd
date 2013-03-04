@@ -143,14 +143,21 @@ $htmlheader  = "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\"
 $htmlheader .= "<html>";
 $htmlheader .=   "<head>";
 $htmlheader .=     "<meta http-equiv=\"content-type\" content=\"text/html; charset=utf-8\">";
-$htmlheader .=     "<link rel=\"stylesheet\" type=\"text/css\" href=\"pal.css\" />";
+
+<link rel="stylesheet" type="text/css" href="../code/pal.css" />
+<link rel="stylesheet" type="text/css" href="../project.css" /></head>
+<body id="body" class="text dev" pagename="book1-1-1" pagetype="TEXT" masktype="none">
+<div class="usable"><div class="page" id="left-page"><div class="menu-header" id="menu-header-left">Header Left</div>
+
+
+$htmlheader .=     "<link rel=\"stylesheet\" type=\"text/css\" href=\"../code/pal.css\" />";
 $htmlheader .=     "<link rel=\"stylesheet\" type=\"text/css\" href=\"../project.css\" />";
 $htmlheader .=   "</head>";
-$htmlheader .=   "<body class=\"text\" masktype=\"none\">";
+$htmlheader .=   "<body class=\"text dev\" pagename=\"book1-1-1\" pagetype=\"TEXT\" masktype=\"none\">";
 $htmlheader .=     "<div class=\"usable\">";
-$htmlheader .=       "<div id=\"left-page\" class=\"page\" style=\"overflow:visible\">";
+$htmlheader .=       "<div id=\"left-page\" class=\"page\">";
 # NOTE everything up to first \n is stripped off by Word-DVD screen text parser!
-$htmlheader .=          "<div id=\"text-header-left\" class=\"text-header\" style=\"max-width:999px; width:100%;\">THISBK</div>\n";
+$htmlheader .=          "<div id=\"text-header-left\" class=\"text-header\">THISBK</div>\n";
 $htmlfooter  =       "</div>";
 $htmlfooter .=     "</div>";
 $htmlfooter .=   "</body>";
