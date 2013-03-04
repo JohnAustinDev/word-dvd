@@ -272,6 +272,17 @@ function adjustPageBreak(elem, page, sep, widowCheck, minPossibleShift) {
 
 function checkTags(elem, page, sep, widowCheck, minPossibleShift) {
   // check if break is between tags, or inside a tag. If so shift out accordingly.
+  
+  // shift to end of milestone tags
+  var ite = page.passage.indexOf("/>", page.end);
+  if (ite != -1) {
+    var its = page.passage.indexOf("<", page.end);
+    if (its == -1 || its > ite) {
+      page.end = ite + 2;
+    }
+  }
+  
+  // if between tags, shift according to tag name
   var tag = enclosingTag(page.passage, page.end);
   if (tag.name) {
     if (!adjustIndexForTag(elem, page, sep, tag, widowCheck, minPossibleShift, false)) return false;
@@ -290,9 +301,13 @@ function checkTags(elem, page, sep, widowCheck, minPossibleShift) {
 function enclosingTag(passage, index) {
   var tags = [];
   var tag = {name:"", beg:-1};
+  
   // if in end tag, shift out
   var prevET = passage.lastIndexOf("</", index);
-  if (prevET!=-1 && passage.lastIndexOf(">", index-1)<prevET) index = prevET-1; //index-1 is for case when char at index is ">"!
+  if (prevET!=-1 && passage.lastIndexOf(">", index-1) < prevET) {
+    index = prevET-1; //index-1 is for case when char at index is ">"!
+  }
+  
   // for a necessary speedup, don't go beyond current line...
   var prevCR = passage.lastIndexOf("\n", index);
   while (true) {
@@ -301,7 +316,7 @@ function enclosingTag(passage, index) {
     
     var parts = passage.substring(tag.beg).match(/^<(\/)?([^\s>]+)/);
     if (parts && parts[1] == "/") tags.push(parts[2]);
-    else if (parts && parts[2]!="br") {
+    else if (parts && !(/^(br|hr|img|input|button)$/).test(parts[2])) {
       if (tags.length == 0) {
         tag.name = parts[2];
         break;
@@ -322,7 +337,7 @@ function adjustIndexForTag(elem, page, sep, tag, widowCheck, minPossibleShift, o
   var itagE = -1;
   
   // Handle milestone tag(s)
-  if (tag.name == "img") {
+  if ((/^(br|hr|img|input|button)$/).test(tag.name)) {
     itagE = page.passage.indexOf("/>", tag.beg);
     if (itagE == -1) {
       MainWin.logmsg("ERROR(adjustIndexForTag): Could not find milestone end \"" + tag.name + "\" tag.", true);
