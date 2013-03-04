@@ -1,8 +1,8 @@
 // JavaScript Document
 const SPACE = " ";
 var PageElem1, PageElem2;
-var DebugChapter=0;
-var DebugPage=0;
+var DebugChapter=1;
+var DebugPage=1;
 
 var CSSHeading1Color, CSSHeading2Color;
   
@@ -214,7 +214,7 @@ function shiftup(elem, page, sep, widowCheck, minPossibleShift) {
   page.bottomSplitTag = "";
   var startingIndex = page.end;
   var end = page.passage.indexOf(sep, page.end+1);
-jsdump2(page, "Examining break point:" + page.passage.substr(end,16));
+jsdump2(page, "Examining break point at " + end + ":[" + page.passage.substr(end,16) + "]");
   if (end == -1) {
     if (!page.isNotes) MainWin.logmsg("NOTE (shiftup): Could not find next sep.  May be at end of passage.", true);
     return false;
@@ -222,7 +222,7 @@ jsdump2(page, "Examining break point:" + page.passage.substr(end,16));
   page.end = end;
   if (!adjustPageBreak(elem, page, sep, widowCheck, minPossibleShift)) return false;
   if (page.end <= startingIndex) {
-    MainWin.logmsg("ERROR(shiftup): Could not progress before=\"" + startingIndex + "\" after=\"" + page.end + "\"", true);
+    MainWin.logmsg("ERROR(shiftup): Could not progress beyond \"" + page.passage.substr(page.end, 16) + "\". before=\"" + startingIndex + "\" after=\"" + page.end + "\"", true);
     return false;
   }
   formatPage(elem, page, widowCheck);
@@ -319,7 +319,21 @@ function enclosingTag(passage, index) {
 function adjustIndexForTag(elem, page, sep, tag, widowCheck, minPossibleShift, onlySplitTags) {
   page.bottomSplitTag = "";
   
-  var itagE = page.passage.indexOf("</" + tag.name, tag.beg);
+  var itagE = -1;
+  
+  // Handle milestone tag(s)
+  if (tag.name == "img") {
+    itagE = page.passage.indexOf("/>", tag.beg);
+    if (itagE == -1) {
+      MainWin.logmsg("ERROR(adjustIndexForTag): Could not find milestone end \"" + tag.name + "\" tag.", true);
+      return false;
+    }
+  }
+  
+  // Handle regular tags
+  if (itagE==-1) {
+    itagE = page.passage.indexOf("</" + tag.name, tag.beg);
+  }
   if (itagE==-1) {
     MainWin.logmsg("ERROR(adjustIndexForTag): Could not find closing tag \"</" + tag.name + ">\"", true);
     return false;    
@@ -335,7 +349,7 @@ function adjustIndexForTag(elem, page, sep, tag, widowCheck, minPossibleShift, o
   var titles = new RegExp("(" + TITLES + ")", "i");
   var splitdivs = new RegExp("(" + SPLITABLEDIVS + ")", "i");
   var action = "split";
-  if (tag.name=="span" || tag.name=="sup" || tag.name == "i" || tag.name == "b") action="exitTag";
+  if (tag.name=="img" || tag.name=="span" || tag.name=="sup" || tag.name == "i" || tag.name == "b") action="exitTag";
   else if (tag.name=="div" && tagClass && tagClass.match(titles)) action="exitTitles";
   else if (tag.name=="div" && (!tagClass || !tagClass.match(splitdivs))) action="exitTag"; //don't split divs that aren't on splitable div list
  
@@ -355,8 +369,11 @@ function adjustIndexForTag(elem, page, sep, tag, widowCheck, minPossibleShift, o
       }
       consecTitleDiv = indexOfTitleDiv(page.passage, page.end, iAfterNPrintChars(page.passage, page.end, 1, true));
     }
-    // unless this is the first pass, move forward n lines
-    if (!minPossibleShift) page.end = iAfterNPrintChars(page.passage, page.end, 2*APPROXLINE);
+    // unless this is the first pass or end of passage, move forward n lines
+    if (!minPossibleShift) {
+      var etry = iAfterNPrintChars(page.passage, page.end, 2*APPROXLINE);
+      if (etry < page.passage.length) page.end = etry;
+    }
     if (!shiftup(elem, page, sep, widowCheck, minPossibleShift)) {
       MainWin.logmsg("NOTE (exitTitles): Could not shift up n lines after title. May be at end of passage.", true);
       return false;

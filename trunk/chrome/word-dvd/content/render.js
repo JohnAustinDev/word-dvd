@@ -28,7 +28,7 @@ const NOTEREF  = "<span class=\"verseref\"";
 const NOTESYMBOL = "<span class=\"fnsymbol\"";
 const PAGEBREAK = "<span class=\"pagebreak\"></span>";
 const PAGEBREAKBOTH = "<span class=\"pagebreak-both\"></span>";
-const SPLITABLEDIVS = "majorquote|list1|list2|list3|footnote|canonical|x-list-1|x-list-2|x-enumlist-1|x-enumlist-2|x-enumlist-3";
+const SPLITABLEDIVS = "majorquote|list1|list2|list3|footnote|canonical|x-list-1|x-list-2|x-enumlist-1|x-enumlist-2|x-enumlist-3|p";
 const TITLES = "title-1|title-2|book-title|chapter-title|text-header|menu-header";
 const ISMENUIMAGE = 0, ISTEXTIMAGE = 1, ISFOOTNOTEIMAGE = 2;
 const REPAIRLEN = 64; // length of TransitionTiming repair string should be longer than pagebreak tags
@@ -55,8 +55,8 @@ function loadedRender() {
   // The extra width/height should be anything large enough to prevent
   // scrollbars from appearing in the xul iframe. Captured images are
   // not effected by the extra width/height.
-  RenderFrame.style.width = Number(MainWin.PAL.W + 16) + "px";
-  RenderFrame.style.height = Number(MainWin.PAL.H + 16) + "px";
+  RenderFrame.style.width = Number(MainWin.PAL.W + 32) + "px";
+  RenderFrame.style.height = Number(MainWin.PAL.H + 32) + "px";
   
   window.setTimeout("postLoad1();", 1000);
   
@@ -251,9 +251,10 @@ function renderMenuSection() {
 
 function populateButtonColumn(buttonArray, isLeft) {
 
-  var lastEntryOnPage = MainWin.getLocaleString(MenuType + (isLeft ? "left":"right") + "last:" + String(SectionMenuNumber));
+  var buttonCount = MainWin.getLocaleString(MenuType + (isLeft ? "left":"right") + "buttons:" + String(SectionMenuNumber));
+  if (buttonCount === null) buttonCount = 8;
 
-  for (var i=1; i<=8 && MenuEntryIndex < MenuEntries.length; i++) {
+  for (var i=1; i<=buttonCount && MenuEntryIndex < MenuEntries.length; i++) {
     
     buttonArray[i].target = MenuEntries[MenuEntryIndex].target;
     
@@ -264,9 +265,6 @@ function populateButtonColumn(buttonArray, isLeft) {
     }
         
     MenuEntryIndex++;
-
-    if (lastEntryOnPage && buttonArray[i].label == lastEntryOnPage) break;
-    
   }
   
 }

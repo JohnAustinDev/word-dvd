@@ -72,15 +72,11 @@ will also need to update the image locations and button coordinates in
 /*
 .text #text-controls {
   background-image:url(./images/textButtons.png);
-  position:absolute;
-  left:0px;
-  top:0px;
-  width:100%;
 }
 body.text[masktype="highlight"] #text-controls {
-  content:url(./images/textButtons-HIGH.png);
+  background-image:url(./images/textButtons-HIGH.png);
 }
 body.text[masktype="select"] #text-controls {
-  content:url(./images/textButtons-SEL.png);
+  background-image:url(./images/textButtons-SEL.png);
 }
 */
