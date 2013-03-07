@@ -1,0 +1,4 @@
+#labels Featured,Phase-Implementation
+= Adding Images to the DVD =
+
+Images can be placed anywhere, on any DVD menu or text page. All images are placed using HTML and CSS. See the example project [http://code.google.com/p/word-dvd/source/browse/#svn%2Ftrunk%2Fhtml html] and [http://code.google.com/p/word-dvd/source/browse/trunk/project.css CSS] files.
