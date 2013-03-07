@@ -14,7 +14,7 @@ Multiple books can be included on one DVD, and their HTML files are named as fol
 || `<book-name>.fn.html` || the book's footnotes (optional) ||
 
 The HTML markup for the above files must follow some special rules which are necessary for proper rendering of pages to DVD:
- * Line 1 of each file should be identical to the corresponding [http://code.google.com/p/word-dvd/source/browse/#svn%2Ftrunk%2Fhtml example file]. It must remain as a single line, and don't bother updating any attributes, because they are automatically updated at run time. Simply copy line 1 as is.
+ * Line 1 of each file should be identical to the corresponding [http://code.google.com/p/word-dvd/source/browse/#svn%2Ftrunk%2Fhtml example html] file. It must remain as a single line, and don't bother updating any attributes, because they are automatically updated at run time. Simply copy line 1 as is.
  * All other tags within any single line of the HTML file must be closed. So you can't start a `<div>` on one line and end it with `</div>` on a later line. Both the open and close tags must always be on the same line. The first and last lines are the only exceptions.
  * Only one level of nesting is allowed. You can have a `<div>` containing a stylised `<span>`, but the span cannot itself contain its own child tags. However such content may be added using CSS.
  * Page breaks which are added during the rendering process ONLY occur at spaces (at ASCII 32). This means that if a page break possibility is desired before or after HTML tags, then there MUST be a space before and/or after each tag.
