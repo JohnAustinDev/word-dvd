@@ -16,7 +16,7 @@ $tocontent = "chrome/word-dvd"; # content of word-dvd.jar
 
 if (!$dir) {$dir = ".";}
 $dir = File::Spec->rel2abs($dir);
-if (!-e $dir) {die;}
+if (!-e $dir) {print $dir."\n"; die;}
 
 if (`pwd` !~ /\Q$tohere\E\s*$/) {die;} # insure we're run from util dir
 if (!chdir($totrunk)) {die;}
