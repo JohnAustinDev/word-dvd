@@ -22,4 +22,4 @@ ffmpeg -i audioFile.wav -acodec ac3 -ar 48000 audioFile.ac3
 Depending on the content size of your final DVD, you may need to adjust the bitrate of AC3 files to reduce their size. The sum total of audio files should not exceed roughly 3.5GB to be able to fit onto a standard DVD.
 
 == Audio Page Timing==
-Transition points for DVD pages which have audio are calculated automatically. But sometimes inaccuracies in the calculated page timings are noticeable and need manual correction. A tool is provided to do this fairly quickly. Run xtransitions.sh in the `OUTPUTS/script` directory without arguments to see usage info.
+Automatic transition points for DVD chapters which have audio are calculated automatically. But sometimes inaccuracies in the calculated page timings are noticeable and need manual correction. The [http://code.google.com/p/word-dvd/source/browse/trunk/pageTiming.txt pageTiming.txt] file is used to provide exact transition timing values. A tool is provided to fairly quickly add timing values to this file. Run xtransitions.sh in the `OUTPUTS/script` directory without arguments to see usage info.
