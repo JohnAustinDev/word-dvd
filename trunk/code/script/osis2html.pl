@@ -154,6 +154,7 @@ $htmlheader .=     "<link rel=\"stylesheet\" type=\"text/css\" href=\"../code/pa
 $htmlheader .=     "<link rel=\"stylesheet\" type=\"text/css\" href=\"../project.css\" />";
 $htmlheader .=   "</head>";
 $htmlheader .=   "<body class=\"text dev\" pagename=\"book1-1-1\" pagetype=\"TEXT\" masktype=\"none\">";
+$htmlheader .=   "<div id=\"background\"></div>";
 $htmlheader .=     "<div class=\"usable\">";
 $htmlheader .=       "<div id=\"left-page\" class=\"page\">";
 # NOTE everything up to first \n is stripped off by Word-DVD screen text parser!

@@ -10,7 +10,8 @@ body {
   height:576px;
   color:rgb(60,60,0);
 }
-body:not(.dev):not([masktype="none"]) {
+body:not(.dev):not([masktype="none"]),
+body:not(.dev):not([masktype="none"]) #background {
   /* the following color should be anything which contrasts with the 
      highlight and select button masks, because it is converted to 
      transparent after screen capture */
@@ -18,6 +19,7 @@ body:not(.dev):not([masktype="none"]) {
   background-image:none;
 }
 body:not(.dev):not([masktype="none"]):before,
+body:not(.dev):not([masktype="none"]):after,
 body:not(.dev):not([masktype="none"]) .menu-header {
   visibility:hidden;
 }
@@ -75,9 +77,15 @@ body:before {
 /* MENU PAGES CSS */
 /******************/
 
-.menu {
+#background {
   background-image: url(./resource/menu.jpg);
   background-repeat:no-repeat;
+  position:fixed;
+  top:0px;
+  left:0px;
+  height:100%;
+  width:100%;
+  z-index:-2;
 }
 .menu .page {
   top:0px;
@@ -211,7 +219,16 @@ body[masktype="select"] #p2b9.arrow .button-mask {
 /* TEXT PAGES CSS */
 /******************/
 
-.text {
+.text-image-left {
+  float:left;
+  margin-right:10px;
+}
+.text-image-right {
+  float:right;
+  margin:10px 0px 10px 10px;
+}
+
+.text #background {
   background-image: url(./resource/text.jpg);
   background-repeat:no-repeat;
 }
