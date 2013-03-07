@@ -1,9 +1,9 @@
 #labels Featured,Phase-Deploy
 == Word-DVD Installation: ==
-(Tested on Ubuntu 10.04 and 11.04)
+(Tested on Ubuntu 12.04)
 
 === These packages need to be installed: ===
-  * ffmpeg (some non-DVD features require compilation with libmp3lame)
+  * ffmpeg - Some non-DVD features may require compilation with libmp3lame. This is the real [http://www.ffmpeg.org/download.html ffmpeg] and not the avconv derivative which is included in some Linux distributions.
   * dvdauthor
 
 === Word-DVD also uses these and other standard packages ===
@@ -16,22 +16,25 @@
 === Word-DVD utilities and debugging features need these packages installed ===
   * Perl's Term::!ReadKey
   * wmctrl
-  * ffmpeg
   * dvbsnoop
   * eyeD3
-  * sox (some features require compilation with mp3 support)
+  * sox (some features may require compilation with mp3 support)
 
 
-=== Steps ===
+=== Steps to make a DVD ===
 1) Install the modified mjpegtools package using the [http://word-dvd.googlecode.com/files/modified-mjpegtools-i386.deb debian binary package] or compile from source: [http://word-dvd.googlecode.com/files/modified-mjpegtools-2.0.0.tar.gz 2.0.0 on Ubuntu Natty+] or [http://word-dvd.googlecode.com/files/modified-mjpegtools-1.9.0.tar.gz 1.9.0 on older Ubuntu]. This mjpegtools package contains a modified `"mplex"` multiplexer utility which is capable of creating highly compressed slide shows (10's of hours on a single DVD rather than just 1 or 2).
 
 If you get an "illegal instruction" error when running jpeg2yuv, mplex, or mpeg2enc, then your CPU is incompatible with the provided binary and you'll have to compile from source (see above) on your machine.
 
-2) Install the `"Word-DVD-xx.xpi"` Firefox extension included with this distribution. Then, firefox's "Tools" menu will show "Word-DVD...". Click this to start the program.
+2) Install the latest `"Word-DVD-xx.xpi"` Firefox extension found in the [http://code.google.com/p/word-dvd/downloads/list downloads] list. OR, if you would like to easily update to the latest SVN code, do the following: SVN checkout [http://code.google.com/p/word-dvd/source/checkout Word-dvd]. Then run install.sh, and choose option 3: "use proxy extension". Enter the path of a Firefox [http://support.mozilla.org/en-US/kb/profiles-where-firefox-stores-user-data profile directory], and press return. A "proxy extension" will then be installed so that the Word-DVD extension used by Firefox will be the one in your SVN directory. You may then SVN update any time to use the latest code.
 
-3) Click the browse button for the input directory and choose the directory where your input files are located (to use the example inputs, [http://word-dvd.googlecode.com/files/Example-1.4.2.zip download the archive], unzip the folder somewhere, and then choose it).
+3) Firefox's "Tools" menu will now show "Word-DVD..." (a Firefox restart may be needed). Click to open the Word-DVD window.
 
-4) Click Go! You should see a prompt when it's finished. If not, see the [http://code.google.com/p/word-dvd/wiki/Debugging debugging wiki] page for hints.
+4) Click the browse button for the input directory and choose an empty directory to use as the project directory. By default, the OUTPUTS and audio directory will be put beneath the project directory, but custom locations may be chosen if desired.
+
+5) Click Go! You should see a prompt when it's finished, and the DVD files will be in OUTPUTS/dvd. If not, see the [http://code.google.com/p/word-dvd/wiki/Debugging debugging wiki] page for hints, as you may be missing a dependency.
+
+6) Replace the example files with your own [http://code.google.com/p/word-dvd/wiki/TextInput text], and also use your own [http://code.google.com/p/word-dvd/wiki/AudioFiles audio] and [http://code.google.com/p/word-dvd/wiki/Images images] as well if you have them. Update the [http://code.google.com/p/word-dvd/source/browse/trunk/config.txt config.txt] file for the new project. Any arbitrary configuration of custom DVD menus may also be added if you wish, by putting their information in the [http://code.google.com/p/word-dvd/source/browse/trunk/menus/menus.txt menus.txt] file. Re-run Word-DVD.
 
 <br>
 === Testing and Burning to DVD ===
