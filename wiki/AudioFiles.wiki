@@ -10,7 +10,7 @@
  # `<AudioPrefix>-<Book>-<Chapter>.ac3` (for example: en-Mark-1.ac3)
  # `<AudioPrefix>-<Book>-<Chapter1>-<Chapter2>.ac3` (en-Mark-1-5.ac3)
  # `<AudioPrefix>-<Book>-<Chapter>:<Verse1>-<Verse2>.ac3` (en-Mark-1:12-22.ac3)
- # `<AudioPrefix>-<Book>-<Chapter1>:<Verse1>-<Chapter2>:<Verse2>.ac3` (en-Mark-3:6-5:4
+ # `<AudioPrefix>-<Book>-<Chapter1>:<Verse1>-<Chapter2>:<Verse2>.ac3` (en-Mark-3:6-5:4.ac3)
 
 `AudioPrefix` and `Book` must appear in the appropriate place in the config.txt file which is located in the Word-DVD inputs directory.
 
