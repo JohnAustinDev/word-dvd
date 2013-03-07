@@ -10,9 +10,9 @@
  # `<AudioPrefix>-<Book>-<Chapter>.ac3` (for example: en-Mark-1.ac3)
  # `<AudioPrefix>-<Book>-<Chapter1>-<Chapter2>.ac3` (en-Mark-1-5.ac3)
  # `<AudioPrefix>-<Book>-<Chapter>:<Verse1>-<Verse2>.ac3` (en-Mark-1:12-22.ac3)
- # `<AudioPrefix>-<Book>-<Chapter1>:<Verse1>-<Chapter2>:<Verse2>.ac3`
+ # `<AudioPrefix>-<Book>-<Chapter1>:<Verse1>-<Chapter2>:<Verse2>.ac3` (en-Mark-3:6-5:4
 
-`AudioPrefix` and` BookName` must appear in the appropriate place in the config.txt file which is located in the Word-DVD inputs directory.
+`AudioPrefix` and `Book` must appear in the appropriate place in the config.txt file which is located in the Word-DVD inputs directory.
 
 == Converting to AC3 ==
 Included with Word-DVD is a [http://code.google.com/p/word-dvd/source/browse/trunk/script/utilities/mp3towav.pl perl script] which converts mp3 into 48000Hz sampled wav files using sox (sox may need to be compiled locally with mp3 enabled for this script to work). To convert 48000hz sample rate wav files to ac3 you can use ffmpeg. Type "man ffmpeg" to see what all it can do. Here is the simplest case: 
