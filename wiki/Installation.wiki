@@ -26,9 +26,13 @@
 
 If you get an "illegal instruction" error when running jpeg2yuv, mplex, or mpeg2enc, then your CPU is incompatible with the provided binary and you'll have to compile from source (see above) on your machine.
 
-2) Install the latest `"Word-DVD-xx.xpi"` Firefox extension found in the [http://code.google.com/p/word-dvd/downloads/list downloads] list. OR, if you would like to easily update to the latest SVN code, do the following: SVN checkout [http://code.google.com/p/word-dvd/source/checkout Word-dvd]. Then run install.sh, and choose option 3: "use proxy extension". Enter the path of a Firefox [http://support.mozilla.org/en-US/kb/profiles-where-firefox-stores-user-data profile directory], and press return. A "proxy extension" will then be installed so that the Word-DVD extension used by Firefox will be the one in your SVN directory. You may then SVN update any time to use the latest code.
+2) Install the latest `"Word-DVD-xx.xpi"` Firefox extension found in the [http://code.google.com/p/word-dvd/downloads/list downloads] list. 
 
-3) Firefox's "Tools" menu will now show "Word-DVD..." (a Firefox restart may be needed). Click to open the Word-DVD window.
+OR
+
+To use the latest code in the subversion repository, do the following: SVN checkout [http://code.google.com/p/word-dvd/source/checkout Word-dvd]. Then run install.sh, and choose option 3: "use proxy extension". Enter the path of a Firefox [http://support.mozilla.org/en-US/kb/profiles-where-firefox-stores-user-data profile directory], and press return. A "proxy extension" will then be installed so that the Word-DVD extension used by Firefox will be the one in your SVN directory. You may then run "`svn update`" any time to get the latest code.
+
+3) Firefox's "Tools" menu will now show "Word-DVD..." (a restart may be needed). Click to open the Word-DVD window.
 
 4) Click the browse button for the input directory and choose an empty directory to use as the project directory. By default, the OUTPUTS and audio directory will be put beneath the project directory, but custom locations may be chosen if desired.
 
