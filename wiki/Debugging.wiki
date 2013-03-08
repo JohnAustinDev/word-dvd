@@ -13,4 +13,4 @@ There are two log files which save all this information, and both are located un
  * logfile.txt
  * err.txt (holds error messages from the DVD building phase)
 
-The logfile.txt file should be checked after each run. If there are errors, these need to be fixed. Warnings are okay. But some gross errors may not be reported at all. If rendering for DVD, check for valid new DVD files in OUTPUTS/dvd/VIDEO_TS after a successful run.
+The logfile.txt file should be checked after each run. If there are errors, these need to be fixed. Warnings are okay. If rendering for DVD, check for valid new DVD files in OUTPUTS/dvd/VIDEO_TS after a successful run.
