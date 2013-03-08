@@ -357,11 +357,6 @@ function updateAction(elem) {
     document.getElementById("skipfootnotes").checked = false;
     document.getElementById("skiptext").checked = false;
     break;
-
-  case "restoreDefaults":
-    if (elem.checked)
-      window.alert("WARNING!: This will permanently delete any changes you have made to files in the \"" + DEFAULTS + "\" directory.");
-    break;
     
   case "installPrompt":
       window.alert("Your installation directory is:\n" + ExtFile.path);
@@ -545,9 +540,10 @@ function wordDVD() {
   ScreenHTML.append(DEFAULTS);
   ScreenHTML.append(SCREENHTML);
 
-  // EXPORT RESOURCES AND BUILD-CODE TO INDIR
-  exportDir(DEFAULTS, UIfile[INDIR].path, document.getElementById("restoreDefaults").checked);
+  // EXPORT THE CODE DIRECTORY TO INDIR, OVERWRITING ANY PRE-EXISTING CODE DIR
+  exportDir(DEFAULTS, true);
   
+  // THE FOLLOWING ARE EXAMPLE FILES THAT ARE EDITED OR REPLACED IN A NEW PROJECT
   // EXPORT THESE DIRECTORIES ONLY IF THE DESTINATION DIR DOES NOT EXIST
   var test;
   test = UIfile[INDIR].clone(); test.append(MENUSDIR);
@@ -583,8 +579,6 @@ function wordDVD() {
     } catch (er) {}
   }
   document.getElementById("cleanOutDir").checked = false;
-  
-  document.getElementById("restoreDefaults").checked = false; // clear only after final time restoreDefaults is referenced!!
   
   // CREATE OUTPUT AUDIO DIR IF NEEDED
   var outaudio = UIfile[OUTDIR].clone();
