@@ -106,7 +106,6 @@
       <vbox>
         <button id="readme"            label="View ReadMe:"          tooltiptext="Read the ReadMe file." />
         <button id="installPrompt"     label="Install directory:"    tooltiptext="Click to see where Word-DVD is installed." />
-        <checkbox id="restoreDefaults" label="Restore Default Files" tooltiptext="Restore the default image, code, and CSS files which were included with Word-DVD." />
       </vbox>
     </groupbox> 
 
