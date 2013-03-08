@@ -293,6 +293,9 @@ function loadedXUL() {
     }
     catch(er) {InputTextbox[i].value = "";}
   }
+  
+
+  
   if (!InputTextbox[INDIR].value) {
     document.getElementById("browse-1").disabled = true;
     document.getElementById("browse-2").disabled = true;
@@ -302,15 +305,6 @@ function loadedXUL() {
   updateControlPanel();
   sizeToContent();
   
-  // Create backup directory
-  BackupDir = Components.classes["@mozilla.org/file/local;1"].createInstance(Components.interfaces.nsILocalFile);
-  BackupDir.initWithPath(UIfile[OUTDIR].path + "/" + BACKUP);
-  if (!BackupDir.exists()) BackupDir.create(BackupDir.DIRECTORY_TYPE, 511);
-  
-  // Log File
-  DBLogFile = UIfile[OUTDIR].clone();
-  DBLogFile.append(DBLOGFILE);
-  if (DBLogFile.exists()) DBLogFile = moveToBackup(DBLogFile);
 }
 
 function handle(e) {
@@ -716,7 +710,17 @@ function readHtmlFiles() {
 
 function wordDVD2() {
   if (document.getElementById("rendernothing").selected) {stop(); return;}
-    
+  
+  // Create backup directory if needed
+  BackupDir = Components.classes["@mozilla.org/file/local;1"].createInstance(Components.interfaces.nsILocalFile);
+  BackupDir.initWithPath(UIfile[OUTDIR].path + "/" + BACKUP);
+  if (!BackupDir.exists()) BackupDir.create(BackupDir.DIRECTORY_TYPE, 511);
+  
+  // Log File
+  DBLogFile = UIfile[OUTDIR].clone();
+  DBLogFile.append(DBLOGFILE);
+  if (DBLogFile.exists()) DBLogFile = moveToBackup(DBLogFile);
+  
   jsdump("Checking Inputs...");
   for (var i=0; i<NUMINPUTS; i++) {
     if (!UIfile[i]) {
@@ -1009,6 +1013,15 @@ function exportFile(extfile, outDirPath, overwrite) {
 // returns original (to be non-existent) file because the aFile 
 // file object takes on post-move identity.
 function moveToBackup(aFile) {
+  if (!UIfile[OUTDIR]) return null;
+  
+  if (!BackupDir) {
+    // Create backup directory if needed
+    BackupDir = Components.classes["@mozilla.org/file/local;1"].createInstance(Components.interfaces.nsILocalFile);
+    BackupDir.initWithPath(UIfile[OUTDIR].path + "/" + BACKUP);
+    if (!BackupDir.exists()) BackupDir.create(BackupDir.DIRECTORY_TYPE, 511);
+  }
+  
   var orig = aFile.path;
   var back = BackupDir.clone();
   back.append(aFile.leafName); 

@@ -1,8 +1,8 @@
 // JavaScript Document
 const SPACE = " ";
 var PageElem1, PageElem2;
-var DebugChapter=1;
-var DebugPage=1;
+var DebugChapter=0;
+var DebugPage=0;
 
 var CSSHeading1Color, CSSHeading2Color;
   
