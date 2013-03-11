@@ -1,4 +1,4 @@
-# DEFAULT config file (1.4.3)
+# DEFAULT config file 
 
 # WORD-DVD BUILD SETTINGS:
 #-------------------
