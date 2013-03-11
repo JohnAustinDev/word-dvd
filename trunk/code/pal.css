@@ -36,9 +36,6 @@ body:not(.dev):not([masktype="none"]) .button div:first-child {
   z-index:-1;
 }
 
-/* NOTE: if a page has visibility=hidden, then the menu and text renderer
-will not write to that page. But images may still be put on those pages
-using project.css */
 .page {
   position:absolute;
   text-align:left;
