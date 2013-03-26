@@ -8,15 +8,14 @@ body {
   font-size:19px;
   width:720px;
   height:576px;
-  color:rgb(60,60,0);
 }
 body:not(.dev):not([masktype="none"]),
 body:not(.dev):not([masktype="none"]) #background {
   /* the following color should be anything which contrasts with the 
      highlight and select button masks, because it is converted to 
      transparent after screen capture */
-  background-color:rgb(0,0,255);
-  background-image:none;
+  background-color:rgb(0,0,255) !important;
+  background-image:none !important;
 }
 body:not(.dev):not([masktype="none"]):before,
 body:not(.dev):not([masktype="none"]):after,

@@ -32,6 +32,8 @@ const SPLITABLEDIVS = "majorquote|list1|list2|list3|footnote|canonical|x-list-1|
 const TITLES = "title-1|title-2|book-title|chapter-title|text-header|menu-header";
 const ISMENUIMAGE = 0, ISTEXTIMAGE = 1, ISFOOTNOTEIMAGE = 2;
 const REPAIRLEN = 64; // length of TransitionTiming repair string should be longer than pagebreak tags
+const BEGINCONTENT = "<!-- BEGIN-CONTENT !-->";
+const ENDCONTENT = "<!-- END-CONTENT !-->";
 
 var RenderFrame, MainWin;
 var ILastPage;
@@ -728,9 +730,15 @@ function getPassage(book, getIntro, getFootnotes) {
 }
 
 function stripHeaderFooter(html) {
-  html = html.replace(/^<!DOCTYPE HTML PUBLIC.*?\n/, "");
-  html = html.replace(/\n<\/div><\/div><\/body><\/html>\s*$/, "", "m") + "\n";
-  return html;
+
+  var beg = html.indexOf(BEGINCONTENT);
+  if (beg > -1) beg += BEGINCONTENT.length;
+  else beg = 0;
+ 
+  var end = html.lastIndexOf(ENDCONTENT);
+  if (end < beg) end = beg;
+
+  return html.substring(beg, end);
 }
 
 // If a text block is empty then don't save an image for it, only data.

@@ -29,6 +29,8 @@ $infile = "$indir/osis.xml";
 
 $AddChapterNumbers = $localeFile{"AddChNums2Text"};
 
+$BEGINCONTENT = '<!-- BEGIN-CONTENT !-->';
+$ENDCONTENT = '<!-- END-CONTENT !-->';
 $INDENT = "<span class=\"paragraph-start\"></span>";
 $PARAGRAPH = "<br>$INDENT";
 $NEWCHAPTER = "<span name=\"chapter.";
@@ -139,30 +141,31 @@ if (-e $htmldir) {`rm -r -f "$htmldir"`;}
 `mkdir "$htmldir"`;
 
 # Write the html files...
-$htmlheader  = "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\">";
-$htmlheader .= "<html>";
-$htmlheader .=   "<head>";
-$htmlheader .=     "<meta http-equiv=\"content-type\" content=\"text/html; charset=utf-8\">";
-
-<link rel="stylesheet" type="text/css" href="../code/pal.css" />
-<link rel="stylesheet" type="text/css" href="../project.css" /></head>
-<body id="body" class="text dev" pagename="book1-1-1" pagetype="TEXT" masktype="none">
-<div class="usable"><div class="page" id="left-page"><div class="menu-header" id="menu-header-left">Header Left</div>
-
-
-$htmlheader .=     "<link rel=\"stylesheet\" type=\"text/css\" href=\"../code/pal.css\" />";
-$htmlheader .=     "<link rel=\"stylesheet\" type=\"text/css\" href=\"../project.css\" />";
-$htmlheader .=   "</head>";
-$htmlheader .=   "<body class=\"text dev\" pagename=\"book1-1-1\" pagetype=\"TEXT\" masktype=\"none\">";
-$htmlheader .=   "<div id=\"background\"></div>";
-$htmlheader .=     "<div class=\"usable\">";
-$htmlheader .=       "<div id=\"left-page\" class=\"page\">";
-# NOTE everything up to first \n is stripped off by Word-DVD screen text parser!
-$htmlheader .=          "<div id=\"text-header-left\" class=\"text-header\">THISBK</div>\n";
-$htmlfooter  =       "</div>";
-$htmlfooter .=     "</div>";
-$htmlfooter .=   "</body>";
-$htmlfooter .= "</html>";
+$htmlheader = '<!DOCTYPE html>';
+$htmlheader .= '<html>';
+$htmlheader .= '  <head>';
+$htmlheader .= '    <meta http-equiv="content-type" content="text/html; charset=utf8">';
+$htmlheader .= '    <meta name="text-page" content="displays menu pages">';
+$htmlheader .= '    <title>text-page</title>';
+$htmlheader .= '    <link type="text/css" rel="stylesheet" href="../code/pal.css">';
+$htmlheader .= '    <link type="text/css" rel="stylesheet" href="../project.css">';
+$htmlheader .= '  </head>';
+$htmlheader .= '  <body id="body" class="text dev" pagename="book1-1-1" pagetype="TEXT" masktype="none">';
+$htmlheader .= '    <div id="background"></div>';
+$htmlheader .= '    <div class="usable">';
+$htmlheader .= '      <div id="writing-left"></div><div id="writing-right"></div>';
+$htmlheader .= '      <div class="page" id="left-page">';
+$htmlheader .= '        <div class="menu-header" id="menu-header-left">Header Left</div>';
+$htmlheader .= $BEGINCONTENT;
+$htmlfooter  = $ENDCONTENT;
+$htmlfooter .= '      </div> ';
+$htmlfooter .= '      <div class="page" id="right-page">';
+$htmlfooter .= '        <div class="menu-header" id="menu-header-right">Header Right</div>';
+$htmlfooter .= '      </div>';
+$htmlfooter .= '    </div>';
+$htmlfooter .= '    <div id="text-controls"></div>';
+$htmlfooter .= '  </body>';
+$htmlfooter .= '</html>';
 
 $Percent = 80;
 $numbooks = 0;

@@ -630,7 +630,6 @@ function readHtmlFiles() {
     if (!fileName || fileName[2]!="html") continue;
     
     if (!getLocaleLiteral("FileName:" + file.leafName.replace(/(\.[^\.]*)?\.html/, ""))) {
-    window.alert("SDfs");
       logmsg("WARNING: File \"" + file.path + "\" is not listed in config.txt. Skipping...");
       continue;
     }
@@ -936,6 +935,8 @@ function exportDir(extdir, outDirPath, overwrite) {
 // returns true if all files under from directory are successfully copied, false otherwise.
 function copyFiles(from, to, overwrite, recursive) {
   if (!from.exists() || !from.isDirectory()) return false;
+  if ((/^\./).test(from.leafName)) return true; // don't copy hidden files, don't fail either...
+  
   if (!to.exists()) {
     try {to.create(to.DIRECTORY_TYPE, 511);}
     catch(er) {}
@@ -1238,20 +1239,11 @@ function resetGo() {
 }
 
 function viewReadMe() {
-  var readme = "ReadMe.txt";
-  var temp = Components.classes["@mozilla.org/file/directory_service;1"].
-			    getService(Components.interfaces.nsIProperties).
-			    get("TmpD", Components.interfaces.nsIFile);
-  exportFile(readme, temp.path, true);
-  var tr = temp.path;
-  temp.append(readme + ".sh");
-  if (temp.exists()) temp.remove(false);
-  write2File(temp, "#!/bin/sh\n\gedit --new-window \"" + tr + "/" + readme + "\" &", false);
-  var process = Components.classes["@mozilla.org/process/util;1"]
-                    .createInstance(Components.interfaces.nsIProcess);                        
-  process.init(temp);
-  var args = [];
-  process.run(false, args, args.length); 
+  var myUrl = "http://code.google.com/p/word-dvd/";
+  var tBrowser = window.opener.document.getElementById("content");
+  var tab = tBrowser.addTab(myUrl);
+  // use this line to focus the new tab, otherwise it will open in background
+  tBrowser.selectedTab = tab;
 }
 
 function unloadXUL() {
