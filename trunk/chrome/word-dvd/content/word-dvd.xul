@@ -93,7 +93,7 @@
       </vbox>
     </groupbox>
     <vbox></vbox>
-    <groupbox >
+    <groupbox>
       <caption label="Skip"/>
       <vbox>
         <checkbox id="skipmenus"     label="Menu Generation"     tooltiptext="Don't render menus." />
@@ -101,11 +101,11 @@
         <checkbox id="skipfootnotes" label="Footnote Generation" tooltiptext="Don't render footnotes pages." />
       </vbox>
     </groupbox>
-    <groupbox >
+    <groupbox>
       <caption label="Misc"/>
       <vbox>
-        <button id="readme"            label="View ReadMe:"          tooltiptext="Read the ReadMe file." />
         <button id="installPrompt"     label="Install directory:"    tooltiptext="Click to see where Word-DVD is installed." />
+        <button id="readme"            label="Help..."          tooltiptext="Need help?" />
       </vbox>
     </groupbox> 
 
