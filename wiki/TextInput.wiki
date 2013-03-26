@@ -13,10 +13,10 @@ Multiple books can be included on one DVD, and their HTML files are named as fol
 || `<book-name>.intr.html` || the book's introduction (optional) ||
 || `<book-name>.fn.html` || the book's footnotes (optional) ||
 
-The HTML markup for the above files must follow some special rules which are necessary for proper rendering of pages to DVD:
- * Line 1 of each file should be identical to the corresponding [http://code.google.com/p/word-dvd/source/browse/#svn%2Ftrunk%2Fhtml example html] file. It must remain as a single line, and don't bother updating any attributes, because they are automatically updated at run time. Simply copy line 1 as is.
- * All other tags within any single line of the HTML file must be closed. So you can't start a `<div>` on one line and end it with `</div>` on a later line. Both the open and close tags must always be on the same line. The first and last lines are the only exceptions.
- * Only one level of nesting is allowed. You can have a `<div>` containing a stylised `<span>`, but the span cannot itself contain its own child tags. However such content may be added using CSS.
+The HTML content markup for the above files must follow some special rules which are necessary for proper rendering of pages to DVD:
+ * The content must be immediately proceeded by "`<!-- BEGIN-CONTENT !-->`" and followed by "`<!-- END-CONTENT !-->`". This is how the parser knows what content to render. If you want to preview your html files, simply use the [http://code.google.com/p/word-dvd/source/browse/#svn%2Ftrunk%2Fhtml example html] files as your template and view the files using a web browser.
+ * All other tags within any single content line of the HTML file must be closed. So you can't start a `<div>` on one content line and end it with `</div>` on a later line. Both the open and close tags must always be on the same line.
+ * Only one level of nesting is allowed in your content html. You can have a `<div>` containing a stylised `<span>`, but the span cannot itself contain its own child tags. However such content may be added using CSS.
  * Page breaks which are added during the rendering process ONLY occur at spaces (at ASCII 32). This means that if a page break possibility is desired before or after HTML tags, then there MUST be a space before and/or after each tag.
  * Manual pagebreaks can be added with "`<milestone type="x-pagebreak"/>`" in OSIS files or with "`<span class="pagebreak"></span> `" in HTML files. The space after the HTML end tag is REQUIRED. Appending "`-both`" to the above type/class attributes will break both left and right pages together.
  * There are various other tags with predefined CSS classes for creating chapters, titles, verses, images, etc. See the [http://code.google.com/p/word-dvd/source/browse/#svn%2Ftrunk%2Fhtml example html] files and the [http://code.google.com/p/word-dvd/source/browse/trunk/code/pal.css CSS] file.
