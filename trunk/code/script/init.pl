@@ -54,11 +54,6 @@ sub getLocaleString($\@) {
   my $name = shift;
   my $paramsP = shift;
   
-  # handle special PsalmTerm case
-  if ($paramsP && @{$paramsP}[0] eq "Ps") {
-    $name =~ s/^ChapName/PsalmTerm/;
-  }
-  
   # search for the most specific match
   my $done = 0;
   my $result = $localeFile{$name};

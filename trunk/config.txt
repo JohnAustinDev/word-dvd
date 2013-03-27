@@ -58,7 +58,6 @@ IntroLink  = Introduction    # phrase designating introductions
 
 # FileName:<filename> designates the UI name of this book (<filename> is the name of a file in the HTML directory)
 # ChapName[:<filename>[-<chapter-number>]] designates the UI chapter name.
-# PsalmTerm is like ChapName but only applies to the book of Psalms.
 # SubChaptext designates sub-chapter titles which are automatically created if a chapter has partial audio.
 # FileOrder:<filename> must be provided to specify the order books should appear in the TOC menu.
 # Occurences of special codes like %1$S are used to insert values at run time (see note above).

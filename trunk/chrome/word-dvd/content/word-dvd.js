@@ -170,11 +170,6 @@ prefs = prefs.getBranch("wordDVD.");
 // has a Perl implementation in init.pl
 function getLocaleString(name, params) {
 
-  // handle special PsalmTerm case
-  if (params && params.length && params[0] && params[0] == "Ps") {
-      name = name.replace(/^ChapName/, "PsalmTerm");
-  }
-  
   // search for the most specific match
   var done = false;
   var result = getLocaleLiteral(name);
