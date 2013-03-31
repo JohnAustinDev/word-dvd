@@ -617,7 +617,7 @@ var DisplayBook;
 var DisplayChapter;
 var TextHeaders = {};
 function formatPage(elem, page, widowCheck) {
-  resetHTML(elem);
+  //resetHTML(elem);
   var html = (page && page.beg < page.end ? page.passage.substring(page.beg, page.end):"");
   var isNotes = (page ? page.isNotes:false);
   var topSplitTag = (page ? page.topSplitTag:"");

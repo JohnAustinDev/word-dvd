@@ -35,12 +35,26 @@ body:not(.dev):not([masktype="none"]) .button div:first-child {
   z-index:-1;
 }
 
-.page {
+.xscrollbar {
+  /* The purpose of this div is to hide the scrollbars of the .page div
+  contained within. This allows the .page div's scrollbars to always be
+  "on", but clipped and invisible. This is necessary to insure the .page
+  div's usable area does not change when scrollbars are turned off and 
+  on by overflow:auto */
+  
   position:absolute;
   text-align:left;
   padding-top:12px;
   padding-bottom:12px;
 }
+.page {
+  /* The added pixels are to cause the scrollbars to become hidden */
+  width:calc(100% + 14px);
+  height:calc(100% + 26px);
+}
+
+
+body.dev .xscrollbar,
 body.dev .page {
   overflow:visible;
 }
@@ -83,16 +97,17 @@ body:before {
   width:100%;
   z-index:-2;
 }
-.menu .page {
+.menu .xscrollbar {
+  overflow:visible;
   top:0px;
   bottom:45px;
 }
-.menu #left-page {
+.menu #left-xscrollbar {
   margin-right:18px;
   right:50%;
   left:0px;
 }
-.menu #right-page {
+.menu #right-xscrollbar {
   margin-left:18px;
   right:20px;
   left:50%;
@@ -228,17 +243,20 @@ body[masktype="select"] #p2b9.arrow .button-mask {
   background-image: url(./resource/text.jpg);
   background-repeat:no-repeat;
 }
-.text .page {
-  overflow:auto; /* required for renderer to work */
+.text .xscrollbar {
+  overflow:hidden;
   top:0px;
   bottom:45px;
 }
-.text #left-page {
+.text .page {
+  overflow:scroll; /* required for renderer to work properly */
+}
+.text #left-xscrollbar {
   margin-right:18px;
   right:50%;
   left:0px;
 }
-.text #right-page {
+.text #right-xscrollbar {
   margin-left:18px;
   right:0px;
   left:50%;

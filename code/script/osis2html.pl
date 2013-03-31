@@ -154,14 +154,18 @@ $htmlheader .= '  <body id="body" class="text dev" pagename="book1-1-1" pagetype
 $htmlheader .= '    <div id="background"></div>';
 $htmlheader .= '    <div class="usable">';
 $htmlheader .= '      <div id="writing-left"></div><div id="writing-right"></div>';
+$htmlheader .= '      <div class="xscrollbar" id="left-xscrollbar">';
 $htmlheader .= '      <div class="page" id="left-page">';
 $htmlheader .= '        <div class="text-header" id="text-header-left">Header Left</div>';
 $htmlheader .= $BEGINCONTENT;
 $htmlfooter  = $ENDCONTENT;
 $htmlfooter .= '      </div> ';
+$htmlfooter .= '      </div> ';
+$htmlheader .= '      <div class="xscrollbar" id="right-xscrollbar">';
 $htmlfooter .= '      <div class="page" id="right-page">';
 $htmlfooter .= '        <div class="text-header" id="text-header-right">Header Right</div>';
 $htmlfooter .= '      </div>';
+$htmlfooter .= '      </div> ';
 $htmlfooter .= '    </div>';
 $htmlfooter .= '    <div id="text-controls"></div>';
 $htmlfooter .= '  </body>';
