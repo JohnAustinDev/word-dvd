@@ -520,7 +520,7 @@ sub makeSilentSlide($$) {
     $subdir .= "/";
   }
   
-  `jpeg2yuv -v 0 -n 1 -I p -f 25 -j $imagefile | mpeg2enc -v 0 -f 8 -g 1 -G 1 -o $videodir/videotmp/$pagename.m2v`;
+  `jpeg2yuv -v 0 -n 1 -I p -f 25 -j $imagefile | mpeg2enc --no-constraints -V 2000 -b 20000 -v 0 -f 3 -g 1 -G 1 -o $videodir/videotmp/$pagename.m2v`;
   
   `mplex -v $Verbosity -V -f 8 $videodir/videotmp/$pagename.m2v $resourcedir/blankaudio.ac3 -o $videodir/$subdir$pagename.mpg`;
   

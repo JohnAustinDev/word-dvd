@@ -89,7 +89,7 @@ foreach $book (sort {$books{$a}<=>$books{$b}} keys %books) {
         }
         $audiofile = "$audiodir/".$haveAudio{$book."-".$ch};
         if (!$tlen) {print "ERROR: tlen was null!!!\n"; die;}
-        `jpeg2yuv -v 0 -n 1 -I p -f 25 -j $imagedir/$book/$book-$ch-$pg.jpg | mpeg2enc -v 0 -f 8 -g 1 -G 1 -o $videodir/videotmp/$book-$ch-$pg.m2v`;
+        `jpeg2yuv -v 0 -n 1 -I p -f 25 -j $imagedir/$book/$book-$ch-$pg.jpg | mpeg2enc --no-constraints -V 2000 -b 20000 -v 0 -f 3 -g 1 -G 1 -o $videodir/videotmp/$book-$ch-$pg.m2v`;
         $fseekto = ($seekto + $multChapFileOFS);
         
         # NOTE about ffmpeg 0.5: -t is NOT duration as the man page says, it is the time code at which encoding stops.
