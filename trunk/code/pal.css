@@ -4,8 +4,11 @@
 
 body {
   /* Let the background overscan, but restrict the content to title-safe. */
-  font-family:arial, sans-serif;
-  font-size:19px;
+  font-family:verdana, sans-serif;
+  font-size:21px;
+  letter-spacing:0.03em;
+  color:rgb(60,60,0);
+  text-shadow: 0em 0em 0.05em rgb(149,139,90);
   width:720px;
   height:576px;
 }
@@ -24,6 +27,7 @@ body:not(.dev):not([masktype="none"]) .menu-header {
 }
 body:not(.dev):not([masktype="none"]) .button div:first-child {
   color:transparent;
+  text-shadow:none;
 }
 
 .usable {
@@ -119,8 +123,8 @@ enforced dynamically by reducing font-size to acheive
 the desired width. */
 .menu-header {
   max-width:220px;
-  font-weight:bold;
   font-size:24px;
+  font-weight:bold;
   text-align:center;
   white-space:nowrap;
   height:30px;
@@ -167,7 +171,6 @@ body:not([masktype]) .hasAudio div:first-child:after {
 }
 
 .button {
-  font-size:20px;
   text-align:center;
   height:12.5%; /* 100%/8 buttons */
   overflow:visible;
@@ -284,8 +287,8 @@ enforced dynamically by reducing font-size to acheive
 the desired width. */
 .text-header {
   max-width:220px;
-  font-weight:bold;
   font-size:24px;
+  font-weight:bold;
   text-align:center;
   height:30px;
   margin-bottom:35px;
@@ -338,7 +341,8 @@ the desired width. */
 
 .title-1 {
   color:rgb(100,0,0);
-  font-size:19px;
+  font-size:24px;
+  font-weight:bold;
   text-align:center;
   margin-top:1em;
   margin-bottom:1em;
@@ -347,6 +351,7 @@ the desired width. */
 
 .title-2 {
   color:rgb(100,0,0);
+  font-weight:bold;
   text-align:left;
   margin-top:1em;
   clear:both;
@@ -389,5 +394,4 @@ sup {
 
 .verseref {
   color:rgb(100,0,0);
-  font-size:19px;
 }

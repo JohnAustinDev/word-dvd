@@ -28,6 +28,18 @@ $MENUSFILE = "MENU_BUTTONS.csv";
 $framesPS = 25;
 $TSTILL = 2; # KRK was compiled with 1.8
 
+#$JPEG2YUV = "-n 1 -I p -f 25";
+#$MPLEX = "-V -f 8 "; # original
+#$MPEG2ENC = "-f 8 -g 1 -G 1"; # original
+
+#$MPEG2ENC = "--no-constraints -V 2000 -b 20000 -f 3 -g 1 -G 1";
+#$MPEG2ENC = "-b 11500 -f 8 -g 1 -G 1"; # best possible with DVD constraints
+#$MPEG2ENC = "--no-constraints -cbr -V 2000 -b 20000 -f 3 -g 1 -G 1";
+
+$JPEG2YUV = "-I p -f 25 -n 4";
+$MPEG2ENC = "-f 8 -g 4 -G 4 -q 4";
+$MPLEX = "-f 8";
+
 # LOCALIZATION
 if (-e $locale) {
   open (LOC, "<$locale");

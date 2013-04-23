@@ -89,7 +89,7 @@ foreach $book (sort {$books{$a}<=>$books{$b}} keys %books) {
         }
         $audiofile = "$audiodir/".$haveAudio{$book."-".$ch};
         if (!$tlen) {print "ERROR: tlen was null!!!\n"; die;}
-        `jpeg2yuv -v 0 -n 1 -I p -f 25 -j $imagedir/$book/$book-$ch-$pg.jpg | mpeg2enc --no-constraints -V 2000 -b 20000 -v 0 -f 3 -g 1 -G 1 -o $videodir/videotmp/$book-$ch-$pg.m2v`;
+        `jpeg2yuv -v 0 $JPEG2YUV -j $imagedir/$book/$book-$ch-$pg.jpg | mpeg2enc $MPEG2ENC -v 0 -o $videodir/videotmp/$book-$ch-$pg.m2v`;
         $fseekto = ($seekto + $multChapFileOFS);
         
         # NOTE about ffmpeg 0.5: -t is NOT duration as the man page says, it is the time code at which encoding stops.
@@ -102,11 +102,11 @@ foreach $book (sort {$books{$a}<=>$books{$b}} keys %books) {
           if ($pg == $lastPage{$book."-".$ch}) {$seqend = "-E 1";}
           $startPTS = ($seekto+$gap);
           $gap = ($gap+0.040); #this gap insures there is at least 1 frame between last audio and first video packets even after rounding (for dvdauthor)
-          `mplex -v $Verbosity -V $seqend -T $startPTS -f 8 $videodir/videotmp/$book-$ch-$pg.m2v $videodir/videotmp/$book-$ch-$pg.m2a -o $videodir/$book/$book-$ch-$pg.mpg`;
+          `mplex -v $Verbosity $seqend -T $startPTS $MPLEX $videodir/videotmp/$book-$ch-$pg.m2v $videodir/videotmp/$book-$ch-$pg.m2a -o $videodir/$book/$book-$ch-$pg.mpg`;
           #$nextPTS = &readPTS("$videodir/$book/$book-$ch-$pg.mpg") + 0.04;
         }
         else {
-          `mplex -v $Verbosity -V -f 8 $videodir/videotmp/$book-$ch-$pg.m2v $videodir/videotmp/$book-$ch-$pg.m2a -o $videodir/$book/$book-$ch-$pg.mpg`;
+          `mplex -v $Verbosity $MPLEX $videodir/videotmp/$book-$ch-$pg.m2v $videodir/videotmp/$book-$ch-$pg.m2a -o $videodir/$book/$book-$ch-$pg.mpg`;
         }
       }
 
