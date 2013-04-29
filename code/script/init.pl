@@ -28,16 +28,32 @@ $MENUSFILE = "MENU_BUTTONS.csv";
 $framesPS = 25;
 $TSTILL = 2; # KRK was compiled with 1.8
 
-#$JPEG2YUV = "-n 1 -I p -f 25";
-#$MPLEX = "-V -f 8 "; # original
-#$MPEG2ENC = "-f 8 -g 1 -G 1"; # original
+# original: progressive with default 7500 kbit/s video
+#$JPEG2YUV = "-I p -f 25 -n 1";
+#$MPEG2ENC = "-f 8 -g 1 -G 1"; 
 
-#$MPEG2ENC = "--no-constraints -V 2000 -b 20000 -f 3 -g 1 -G 1";
-#$MPEG2ENC = "-b 11500 -f 8 -g 1 -G 1"; # best possible with DVD constraints
-#$MPEG2ENC = "--no-constraints -cbr -V 2000 -b 20000 -f 3 -g 1 -G 1";
+# looks great on computers and TVs, but seems to cause audio clicks,
+# which may mean incorrectly advancing video on some players.
+#$JPEG2YUV = "-I p -f 25 -n 4";
+#$MPEG2ENC = "-f 8 -H -q 1 -g 4 -G 4";
 
-$JPEG2YUV = "-I p -f 25 -n 4";
-$MPEG2ENC = "-f 8 -g 4 -G 4 -q 4";
+# looks quite good on computers and TVs, but not interlaced as PAL should be
+$JPEG2YUV = "-I p -f 25 -n 1";
+$MPEG2ENC = "-f 3 -b 9600 -H -q 1 -g 1 -G 1";
+
+# looks blah on computers and good on TVs, and is interlaced as PAL should be
+#$JPEG2YUV = "-I p -f 25 -n 1 I b -L 1";
+#$MPEG2ENC = "-f 3 -b 9600 -H -q 1 -g 1 -G 1 -I 1";
+
+# MULTI FRAME IMAGES CAUSE CLICKS DURING TRANSITIONS ON MPLAYER
+# looks excellent on computer and on TV, but PAL is not interlaced
+#$JPEG2YUV = "-f 25 -n 4 -I p";
+#$MPEG2ENC = "-f 3 -b 9000 -H -q 1 -g 4 -G 4";
+
+# looks excellent on TV, and ok on computer
+#$JPEG2YUV = "-f 25 -n 4 -I b -L 1";
+#$MPEG2ENC = "-f 3 -b 9000 -H -q 1 -g 4 -G 4 -I 1";
+
 $MPLEX = "-f 8";
 
 # LOCALIZATION
