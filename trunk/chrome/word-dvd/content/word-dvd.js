@@ -755,7 +755,7 @@ function wordDVD2() {
   vscript += "echo >> \"" + DBLogFile.path + "\"\n";
   vscript += "echo ========= FFMPEG VERSION INFO ============== >> \"" + DBLogFile.path + "\"\n";
   vscript += "echo \\$ffmpeg -version >> \"" + DBLogFile.path + "\"\n";
-  vscript += "ffmpeg -version " + " >> \"" + DBLogFile.path + "\"\n";
+  //vscript += "ffmpeg -version | head -n 2" + " >> \"" + DBLogFile.path + "\"\n";
   vscript += "echo >> \"" + DBLogFile.path + "\"\n";
   vscript += "echo ========= DVDAUTHOR VERSION INFO ============== >> \"" + DBLogFile.path + "\"\n";
   vscript += "echo \\$dvdauthor >> \"" + DBLogFile.path + "\"\n";
