@@ -39,7 +39,7 @@ $TSTILL = 2; # KRK was compiled with 1.8
 
 # looks quite good on computers and TVs, but not interlaced as PAL should be
 $JPEG2YUV = "-I p -f 25 -n 1";
-$MPEG2ENC = "-f 3 -b 9600 -H -q 1 -g 1 -G 1";
+$MPEG2ENC = "-f 3 -b 8000 -H -q 1 -g 1 -G 1";
 
 # looks blah on computers and good on TVs, and is interlaced as PAL should be
 #$JPEG2YUV = "-I p -f 25 -n 1 I b -L 1";
