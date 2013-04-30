@@ -546,6 +546,13 @@ function writeMenuData() {
   data += "../" + MainWin.IMGDIR + "/" + MainWin.MASKDIR + "/" + b.pagename + "-SEL.png\n";
   MainWin.write2File(MenusFile, data, true);
   
+  var audiofileName = MainWin.getLocaleString("AudioPrefix") + "-" + b.pagename + ".ac3";
+  var audiofile = MainWin.UIfile[MainWin.AUDIO].clone();
+  audiofile.append(audiofileName);
+  if (audiofile.exists()) {
+    MainWin.write2File(MenusFile, b.pagename + ".audio, " + audiofileName + "\n", true);
+  }
+  
   for (var i=1; i<=9; i++) {
     if (ButtonArrayL[i].target && ButtonArrayL[i].target != "notarget") {
       MainWin.write2File(MenusFile, formatMenuString(ButtonArrayL[i]), true);

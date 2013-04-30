@@ -39,7 +39,12 @@ foreach my $menu (sort {&menuSort($a, $b);} keys %AllMenus) {
   print "Creating menu $menu\n";
   
   # RENDER THE MENU
-  &makeSilentSlide($menu, $AllMenus{$menu}{"image"});
+  if ($AllMenus{$menu}{"audio"}) {
+    &makeAudioSlide($menu, $AllMenus{$menu}{"image"}, $AllMenus{$menu}{"audio"});
+  }
+  else {
+    &makeSilentSlide($menu, $AllMenus{$menu}{"image"});
+  }
 
   # GET SPUMUX XML TO MUX BUTTONS INTO MENU
   my $xml;

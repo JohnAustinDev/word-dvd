@@ -45,7 +45,7 @@ $ffmpgVersion = $1;
 
 #CREATE MPG FILES
 foreach $book (sort {$books{$a}<=>$books{$b}} keys %books) {
-  `mkdir $videodir/$book`;
+  if (!-e "$videodir/$book") {`mkdir $videodir/$book`;}
 
   for ($ch=0; $ch<=$lastChapter{$book}; $ch++) {
     if (!$chapters{"$book-$ch"}) {next;}
@@ -87,27 +87,21 @@ foreach $book (sort {$books{$a}<=>$books{$b}} keys %books) {
           $tlen = ($ts-$tlastchap);
           $tlastchap = $ts;
         }
-        $audiofile = "$audiodir/".$haveAudio{$book."-".$ch};
         if (!$tlen) {print "ERROR: tlen was null!!!\n"; die;}
-        `jpeg2yuv -v 0 $JPEG2YUV -j $imagedir/$book/$book-$ch-$pg.jpg | mpeg2enc $MPEG2ENC -v 0 -o $videodir/videotmp/$book-$ch-$pg.m2v`;
+
         $fseekto = ($seekto + $multChapFileOFS);
         
-        # NOTE about ffmpeg 0.5: -t is NOT duration as the man page says, it is the time code at which encoding stops.
-        if ($ffmpgVersion=~/^0\.5\./) {$ffmpegt = ($tlen+$fseekto);}
-        else {$ffmpegt = $tlen;}
-        `ffmpeg -v $Verbosity -t $ffmpegt -i $audiofile -ss $fseekto -acodec copy -y $videodir/videotmp/$book-$ch-$pg.m2a`;
-        #mux audio and video clips...
+        $mplex = '';
         if ($mpgIsMultiPage{"$book-$ch"} eq "true") {
           $seqend = "-E 0";
           if ($pg == $lastPage{$book."-".$ch}) {$seqend = "-E 1";}
           $startPTS = ($seekto+$gap);
           $gap = ($gap+0.040); #this gap insures there is at least 1 frame between last audio and first video packets even after rounding (for dvdauthor)
-          `mplex -v $Verbosity $seqend -T $startPTS $MPLEX $videodir/videotmp/$book-$ch-$pg.m2v $videodir/videotmp/$book-$ch-$pg.m2a -o $videodir/$book/$book-$ch-$pg.mpg`;
-          #$nextPTS = &readPTS("$videodir/$book/$book-$ch-$pg.mpg") + 0.04;
+          
+          $mplex = "$seqend -T $startPTS";
         }
-        else {
-          `mplex -v $Verbosity $MPLEX $videodir/videotmp/$book-$ch-$pg.m2v $videodir/videotmp/$book-$ch-$pg.m2a -o $videodir/$book/$book-$ch-$pg.mpg`;
-        }
+        
+        &makeAudioSlide("$book-$ch-$pg", "$imagedir/$book/$book-$ch-$pg.jpg", "$audiodir/".$haveAudio{$book."-".$ch}, $tlen, $fseekto, $mplex);
       }
 
       #create silent slides for all footnotes...

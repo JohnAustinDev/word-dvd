@@ -319,6 +319,14 @@ sub readMenuInformation($) {
       $AllMenus{$menuName}{"maskSEL"}  = "$csvdir/$maskSEL";
     }
     
+    #toc-m1.audio, en-toc-m1.ac3
+    elsif ($_ =~ /^\s*([^,]+)\.audio\s*,\s*([^,]+?)\s*$/) {
+      my $menuName = $1;
+      my $audioFile = $2;
+      
+      $AllMenus{$menuName}{"audio"} = "$audiodir/$audioFile";
+    }
+    
     #toc-m1.button-9, more-m1, 84, 470, 342, 486
     elsif ($_ =~ /^\s*([^,]+)\.button-(\d+)\s*,\s*([^,]+)\s*,\s*([^,]+)\s*,\s*([^,]+)\s*,\s*([^,]+)\s*,\s*([^,]+?)\s*$/) {
       my $menuName = $1;
@@ -506,8 +514,9 @@ sub unformatTime($$$) {
 sub makeSilentSlide($$) {
   my $pagename = shift;
   my $imagefile = shift;
-  if (!-e $imagefile) {print "ERROR: Missing image: \"$image\"\n"; die;}
-  if ($imagefile !~ /\.jpg$/) {print "ERROR: Image must be jpg: \"$image\"\n"; die;}
+  
+  if (!-e $imagefile) {print "ERROR: Missing image: \"$pagename\"\n"; die;}
+  if ($imagefile !~ /\.jpg$/) {print "ERROR: Image must be jpg: \"$pagename\"\n"; die;}
   if (!-e $videodir) {`mkdir $videodir`;}
   
   # is this a chapter image?
@@ -523,6 +532,45 @@ sub makeSilentSlide($$) {
   `jpeg2yuv -v 0 $JPEG2YUV -j $imagefile | mpeg2enc $MPEG2ENC -v 0 -o $videodir/videotmp/$pagename.m2v`;
   
   `mplex -v $Verbosity $MPLEX $videodir/videotmp/$pagename.m2v $resourcedir/blankaudio.ac3 -o $videodir/$subdir$pagename.mpg`;
+  
+}
+
+#CREATE A SLIDE WITH AUDIO FROM A SINGLE JPG IMAGE AND AUDIO FILE
+sub makeAudioSlide($$$$$) {
+  my $pagename = shift;
+  my $imagefile = shift;
+  my $audiofile = shift;
+  my $tlen = shift;
+  my $seekto = shift;
+  my $mplex = shift; # used to create special mpg files which can be concatenated
+  
+  if (!-e $videodir) {`mkdir $videodir`;}
+    
+  # get subdirectory for this page
+  my $subdir = "";
+  if    ($pagename =~ /^fn-(.*?)-(\d+)-(\d+)-(\d+)/) {$subdir = $1;}
+  elsif ($pagename =~ /^(.*?)-(\d+)-(\d+)/) {$subdir = $1;}
+  
+  if ($subdir) {
+    if (!-e "$videodir/$subdir") {`mkdir "$videodir/$subdir"`;}
+    $subdir .= "/";
+  }
+  
+  if (!-e $imagefile) {print "ERROR: Missing image: \"$imagefile\"\n"; die;}
+  if ($imagefile !~ /\.jpg$/) {print "ERROR: Image must be jpg: \"$imagefile\"\n"; die;}
+  if (!-e $audiofile) {print "ERROR: Missing audio file: \"$audiofile\"\n"; die;}
+  if ($audiofile !~ /\.ac3$/i) {print "ERROR: Audio must be AC3: \"$audiofile\"\n"; die;}
+  
+  # MAKE VIDEO FOR SLIDE
+  `jpeg2yuv -v 0 $JPEG2YUV -j $imagefile | mpeg2enc $MPEG2ENC -v 0 -o $videodir/videotmp/$pagename.m2v`;
+  
+  # MAKE AUDIO FOR SLIDE
+  if (defined($tlen)) {$tlen = "-t $tlen";}
+  if (defined($seekto)) {$seekto = "-ss $seekto";}
+  `ffmpeg -v $Verbosity $tlen -i $audiofile $seekto -acodec copy -y $videodir/videotmp/$pagename.m2a`;
+  
+  # MUX AUDIO AND VIDEO TOGETHER
+  `mplex -v $Verbosity $mplex $MPLEX $videodir/videotmp/$pagename.m2v $videodir/videotmp/$pagename.m2a -o $videodir/$subdir$pagename.mpg`;
   
 }
 
