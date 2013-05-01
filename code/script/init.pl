@@ -32,27 +32,18 @@ $TSTILL = 2; # KRK was compiled with 1.8
 #$JPEG2YUV = "-I p -f 25 -n 1";
 #$MPEG2ENC = "-f 8 -g 1 -G 1"; 
 
-# looks great on computers and TVs, but seems to cause audio clicks,
-# which may mean incorrectly advancing video on some players.
+# looks great on computers and TVs, does NOT require modified mpeg2enc, but is untested in practice.
 #$JPEG2YUV = "-I p -f 25 -n 4";
 #$MPEG2ENC = "-f 8 -H -q 1 -g 4 -G 4";
 
-# looks quite good on computers and TVs, but not interlaced as PAL should be
+# looks excellent on computers and TVs, uses modified mpeg2enc, matches NKJV encoding, but is not interlaced as PAL normally is
+# note: -W > 140 causes frame data under-run errors during mplex. Not sure if this is real or not...
 $JPEG2YUV = "-I p -f 25 -n 1";
-$MPEG2ENC = "-f 3 -b 8000 -H -q 1 -g 1 -G 1";
+$MPEG2ENC = "-f 3 -b 8000 -H -q 1 -g 1 -G 1 -W 130";
 
-# looks blah on computers and good on TVs, and is interlaced as PAL should be
-#$JPEG2YUV = "-I p -f 25 -n 1 I b -L 1";
-#$MPEG2ENC = "-f 3 -b 9600 -H -q 1 -g 1 -G 1 -I 1";
-
-# MULTI FRAME IMAGES CAUSE CLICKS DURING TRANSITIONS ON MPLAYER
-# looks excellent on computer and on TV, but PAL is not interlaced
-#$JPEG2YUV = "-f 25 -n 4 -I p";
-#$MPEG2ENC = "-f 3 -b 9000 -H -q 1 -g 4 -G 4";
-
-# looks excellent on TV, and ok on computer
-#$JPEG2YUV = "-f 25 -n 4 -I b -L 1";
-#$MPEG2ENC = "-f 3 -b 9000 -H -q 1 -g 4 -G 4 -I 1";
+# same as previous, but interlaced
+#$JPEG2YUV = "-I b -L 1 -f 25 -n 1";
+#$MPEG2ENC = "-I 1 -f 3 -b 8000 -H -q 1 -g 1 -G 1 -W 130";
 
 $MPLEX = "-f 8";
 
