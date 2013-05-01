@@ -1523,7 +1523,6 @@ function initFootnotes() {
     fffile.append(Book[b].shortName + ".fn.txt");
     if (fffile.exists()) {
       fffile = MainWin.readFile(fffile);
-      fffile = (fffile ? stripHeaderFooter(fffile):"");
       var data = fffile.split(Ffsep);
       for (var i=1; i<data.length; i=i+4) {
         PageWithFootnotes.push(new Object());
