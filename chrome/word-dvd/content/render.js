@@ -82,7 +82,7 @@ function startMenuGeneration() {
     MenusFile.append(MainWin.LISTING);
     MenusFile.append(MainWin.MENUSFILE);
     if (MenusFile.exists()) MenusFile.remove(false);
-    MainWin.write2File(MenusFile, "#menu-name.images, image-file, image-NORM.png, image-HIGH.png, image-SEL.png\n#menu-name.button-n, target, x0, y0, x1, y1\n"); 
+    MainWin.write2File(MenusFile, "#menu-name.images, atMenuEnd, image-file, image-NORM.png, image-HIGH.png, image-SEL.png\n#menu-name.button-n, target, x0, y0, x1, y1\n"); 
     
     // CREATE TABLE OF CONTENTS
     MenuEntries = [];
@@ -253,7 +253,7 @@ function renderMenuSection() {
 
 function populateButtonColumn(buttonArray, isLeft) {
 
-  var buttonCount = MainWin.getLocaleString(MenuType + (isLeft ? "left":"right") + "buttons:" + String(SectionMenuNumber));
+  var buttonCount = MainWin.getLocaleString((isLeft ? "MenuLeftButtons":"MenuRightButtons") + ":" + (MenuType == "TOC" ? "toc":Basename) + "-m" + SectionMenuNumber);
   if (buttonCount === null) buttonCount = 8;
 
   for (var i=1; i<=buttonCount && MenuEntryIndex < MenuEntries.length; i++) {
@@ -301,7 +301,7 @@ function renderChapterMenus() {
         
           var entry = { label:"", target:"", className:"" };
           
-          if (c == 0) entry.label = MainWin.getLocaleString("IntroLink");
+          if (c == 0) entry.label = MainWin.getLocaleString("IntroText:" + Book[Bindex].shortName);
           else entry.label = MainWin.getLocaleString("ChapName:" + Book[Bindex].shortName + "-" + c, [Book[Bindex].shortName, c]);
           
           // We have subchapters and want a heading, but the heading should not be selectable
@@ -385,26 +385,26 @@ function renderMenu(isFirstMenu, isLastMenu, returnFun) {
   ButtonArrayL[9].target = (isFirstMenu ? (menubase=="toc" ? "":"toc-m1"):prevmenu);
   ButtonArrayR[9].target = (isLastMenu ? "":nextmenu);
   
-  const locnames  = ["topleft", "topright", "bottomright", "bottomleft"];
+  const locnames  = ["MenuTopLeft", "MenuTopRight", "MenuBottomRight", "MenuBottomLeft"];
   for (var i=0; i<locnames.length; i++) {
   
     var bk = (MenuType == "CHP" ? MainWin.getLocaleString("FileName:" + Book[Bindex-1].shortName, [Book[Bindex-1].shortName]):null);
 
-    var label = MainWin.getLocaleString(MenuType + locnames[i] + ":" + menunumber, [bk, null, null, null]);
-    var target = MainWin.getLocaleString(MenuType + locnames[i] + "T:" + menunumber);
+    var label = MainWin.getLocaleString(locnames[i] + ":" + menuname, (MenuType == "CHP" ? [Book[Bindex-1].shortName]:null));
+    var target = MainWin.getLocaleString(locnames[i] + "Target:" + menuname);
     
     switch(locnames[i]) {
-    case "topleft":
+    case "MenuTopLeft":
       headerLeft = label;
       break;
-    case "topright":
+    case "MenuTopRight":
       headerRight = label;
       break;
-    case "bottomright":
+    case "MenuBottomRight":
       if (label) ButtonArrayR[9].label = label;
       if (target) ButtonArrayR[9].target = target;
       break;
-    case "bottomleft":
+    case "MenuBottomLeft":
       if (label) ButtonArrayL[9].label = label;
       if (target) ButtonArrayL[9].target = target;
       break;
@@ -537,9 +537,21 @@ function writeMenuData() {
   // write data for images and button mask positions
   var b = ButtonArrayL[1];
   
+  var atMenuEnd = MainWin.getLocaleString("AtMenuEnd:" + b.pagename);
+  if (!atMenuEnd) atMenuEnd = "default";
+  if (atMenuEnd == "continue") {
+    MainWin.logmsg("ERROR: atMenuEnd value:\"" + atMenuEnd + "\" not supported.\n");
+    atMenuEnd = "default";    
+  }
+  if (!(/^(loop|pause|default)$/).test(atMenuEnd)) {
+    MainWin.logmsg("ERROR: Bad atMenuEnd value:\"" + atMenuEnd + "\"\n");
+    atMenuEnd = "default";
+  }
+  
   // image paths are relative to the MenusFile itself
   var data;
   data  = b.pagename + ".images, ";
+  data += atMenuEnd + ", ";
   data += "../" + MainWin.IMGDIR + "/" + b.pagename + ".jpg, ";
   data += "../" + MainWin.IMGDIR + "/" + MainWin.TRANSIMAGE + ", ";
   data += "../" + MainWin.IMGDIR + "/" + MainWin.MASKDIR + "/" + b.pagename + "-HIGH.png, ";
@@ -686,8 +698,8 @@ function renderNewScreen() {
     
   waitRenderDoneThenDo("screenDrawComplete()");
   
-//MainWin.jsdump("Finished fit left:" + RenderFrame.contentDocument.defaultView.Page1.innerHTML);
-//MainWin.jsdump("Finished fit right:" + RenderFrame.contentDocument.defaultView.Page2.innerHTML);
+//MainWin.jsdump("LEFT:" + RenderFrame.contentDocument.getElementById("left-page").innerHTML);
+//MainWin.jsdump("RIGHT:" + RenderFrame.contentDocument.getElementById("right-page").innerHTML);
 }
 
 function screenDrawComplete() {
@@ -1385,7 +1397,7 @@ function writeStats(book, chapterstats, overwrite) {
 	var file = MainWin.StatsFile.clone();
 	file.append(book + ".csv");
   if (file.exists() && overwrite) file.remove(false);
-  if (!file.exists()) MainWin.write2File(file, "#Page,Calculated_Chapter_Fraction,Audio_File,Number_of_Titles,Calculated_Total_Length,Absolute_Time\n", false);
+  if (!file.exists()) MainWin.write2File(file, "#Page,AtPageEnd,Calculated_Chapter_Fraction,Audio_File,Number_of_Titles,Calculated_Total_Length,Absolute_Time\n", false);
   MainWin.write2File(file, statstring, true);
 	
   // write the book's transitions file
@@ -1397,8 +1409,14 @@ function writeStats(book, chapterstats, overwrite) {
 }
 
 function formatStatString(s, total) {
+  var atPageEnd = MainWin.getLocaleString("AtPageEnd:" + s.name);
+  if (!atPageEnd) atPageEnd = "default";
+  if (!(/^(loop|continue|pause|default)$/).test(atPageEnd)) {
+    MainWin.logmsg("ERROR: Bad atPageEnd value:\"" + atPageEnd + "\"\n");
+    atPageEnd = "default";
+  }
   var rellen = Number(Math.round(10000000*s.len/total)/10000000);
-  return s.name + ", " + rellen + ", " + s.hasAudio + ", " + s.numtitles + ", " + s.len + (s.realtime ? ", " + s.realtime:"") + "\n"; 
+  return s.name + ", " + atPageEnd + ", " + rellen + ", " + s.hasAudio + ", " + s.numtitles + ", " + s.len + (s.realtime ? ", " + s.realtime:"") + "\n"; 
 }
 
 function calculateReadingLength(info, html, lang, book, chapter) {
