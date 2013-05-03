@@ -255,7 +255,9 @@ foreach $book (sort {$books{$a}<=>$books{$b}} keys %books) {
       $TITLEofCHAP{$book."-".$ch} = $TITLE;
       $FILE{$VTS."-".$TITLE."-".$VOB} = "$outdir/video/$book/fin-$book-$ch.mpg";
       $CHAPTERS{$VTS."-".$TITLE."-".$VOB} = $Chapterlist{$book."-".$ch};
-      $PAUSE{$VTS."-".$TITLE."-".$VOB} = "";
+      my $after = $AtPageEnd{"$book-$ch-".$lastPage{"$book-$ch"}};
+      if (!$after) {$after = "continue";} # default
+      $AFTER_VOB_END{$VTS."-".$TITLE."-".$VOB} = $after;
       $PROGRAM = $PROGRAM+@pages;
       $MAXPROGRAM{$VTS."-".$TITLE} = $PROGRAM-1;
       $VOB++;
@@ -265,7 +267,9 @@ foreach $book (sort {$books{$a}<=>$books{$b}} keys %books) {
         if (!(exists $pages{"$book-$ch-$pg"})) {next;}
         $FILE{$VTS."-".$TITLE."-".$VOB} = "$outdir/video/$book/fin-$book-$ch-$pg.mpg";
         $CHAPTERS{$VTS."-".$TITLE."-".$VOB} = "00:00:00.00";
-        $PAUSE{$VTS."-".$TITLE."-".$VOB} = "pause=\"inf\" ";
+        my $after = $AtPageEnd{"$book-$ch-$pg"};
+        if (!$after) {$after = "pause";} # default
+        $AFTER_VOB_END{$VTS."-".$TITLE."-".$VOB} = $after;
         #if page "1" is missing, the previous page should be referenced as the first page of this chapter
         if (!exists($PROGRAMofCHAP{$book."-".$ch})) {
           if (($PROGRAM-$pg+1) == 0) {
@@ -385,7 +389,12 @@ foreach $menu (sort {&menuSort($a, $b);} keys %AllMenus) {
     }
     print XML "\t\t\t\t<button name=\"b".$b."\">".$command."</button>\n";
   }
-  print XML "\t\t\t\t<vob file=\"$outdir/video/fin-".$menu.".mpg\" pause=\"inf\" />\n";  
+  my $pause = "inf";
+  if ($AllMenus{$menu}{"atMenuEnd"} eq "loop") {$pause = "1";}    
+  print XML "\t\t\t\t<vob file=\"$outdir/video/fin-".$menu.".mpg\" pause=\"$pause\" />\n";
+  if ($AllMenus{$menu}{"atMenuEnd"} eq "loop") {
+    print XML "\t\t\t\t<post>{ jump cell 1 }</post>\n";
+  }
   print XML "\t\t\t</pgc>\n";
 }
 
@@ -456,8 +465,13 @@ else {
     print XML "\t\t\t\t<pre>\n\t\t\t\t\t{\n";
     print XML "\t\t\t\t\t\ts8=".$gHILB."; ".$gTYPE."=".$defType."; ".$gMTNM."=".$numVMGMmenus."; ".$gMRNM."=0; ".$gMRHI."=1024;".&resetdest()."\n";
     print XML "\t\t\t\t\t}\n\t\t\t\t</pre>\n";
-    &writeMenuButtonsVMGM($menu, ($menuVMGM{$tocmenu}+1));    
-    print XML "\t\t\t\t<vob file=\"$outdir/video/fin-$menu.mpg\" pause=\"inf\" />\n";
+    &writeMenuButtonsVMGM($menu, ($menuVMGM{$tocmenu}+1));
+    my $pause = "inf";
+    if ($AllMenus{$menu}{"atMenuEnd"} eq "loop") {$pause = "1";}    
+    print XML "\t\t\t\t<vob file=\"$outdir/video/fin-$menu.mpg\" pause=\"$pause\" />\n";
+    if ($AllMenus{$menu}{"atMenuEnd"} eq "loop") {
+      print XML "\t\t\t\t<post>{ jump cell 1 }</post>\n";
+    }
     print XML "\t\t\t</pgc>\n";
   }
 }
@@ -546,7 +560,12 @@ for ($vts=1; $vts<=$LASTVTS; $vts++) {
         print XML "\t\t\t\t\t\ts8=".$gHILB."; ".$gTYPE."=".$defType."; ".$gMRNM."=".$nummenus.";".&resetdest()."\n";
         print XML "\t\t\t\t\t}\n\t\t\t\t</pre>\n";
         &writeMenuButtonsVTS($menu);
-        print XML "\t\t\t\t<vob file=\"$outdir/video/fin-$menu.mpg\" pause=\"inf\" />\n";
+        my $pause = "inf";
+        if ($AllMenus{$menu}{"atMenuEnd"} eq "loop") {$pause = "1";}
+        print XML "\t\t\t\t<vob file=\"$outdir/video/fin-$menu.mpg\" pause=\"$pause\" />\n";
+        if ($AllMenus{$menu}{"atMenuEnd"} eq "loop") {
+          print XML "\t\t\t\t<post>{ jump cell 1 }</post>\n";
+        }
         print XML "\t\t\t</pgc>\n";
       }
       if ($nomenu eq "true") {
@@ -1062,50 +1081,27 @@ sub writeTitlePGC {
   #generate video contents        
   for ($vob=1; exists $FILE{$RELtextVTS{$vts}."-".$pgc."-".$vob}; $vob++) {
     $file = $FILE{$RELtextVTS{$vts}."-".$pgc."-".$vob};
-    #is VOB file multiple pages or a single page?
-    if ($file =~ /([^-]+)-(\d+)-(\d+)\.mpg$/) {
-      my $bk = $1;
-      my $ch = $2;
-      my $pg = $3;
-      
-      if ($haveAudio{$bk."-".$ch} ne "still") {
-        #Using a cell with start AND end time seems to fix the problem of early switching to next page's slide image,
-        #as long as end time is at least one frame before the actual end. However, this causes a noticeable audio glitch.
-        my $end = "00:00:00.00";
-        my $ps = 0;
-        my $pe = 0;
-        @chaps = split(/,/, $Chapterlist{$bk."-".$ch});
-        $ps = &unformatTime($chaps[$pg-1]);
-        if ($pg == $lastPage{$bk."-".$ch}) {
-          $pe = $Chapterlength{$bk."-".$ch};
-        }
-        else {$pe = &unformatTime($chaps[$pg]);}
-        $pe = ($pe - 0.04); #shorten cell by one frame to ensure cell plays to completeion before showing next video frame
-        $end = &formatTime($pe-$ps);
 
-        if ($end eq "00:00:00.00") {die "Missing chapter length for $bk-$ch";} 
-        print XML "\t\t\t\t<vob file=\"".$file."\" ><cell chapter=\"1\" start=\"00:00:00.00\" end=\"".$end."\" /></vob>\n";
-      }
-      else {
-        print XML "\t\t\t\t<vob file=\"".$file."\" chapters=\"00:00:00.00\" pause=\"inf\" ></vob>\n";
-      }
+    #a 1 frame gap was added between each page for DVDAUTHOR, so we must add that to chapter times as well
+    @chaps = split(/,/, $CHAPTERS{$RELtextVTS{$vts}."-".$pgc."-".$vob});
+    my $gap = 0;
+    foreach $chap (@chaps) {
+      $chap = (&unformatTime($chap)+$gap);
+      $gap = ($gap + 0.040);
+      $chap = &formatTime($chap);
     }
-    else {
-      #a 1 frame gap was added between each page for DVDAUTHOR, so we must add that to chapter times as well
-      @chaps = split(/,/, $CHAPTERS{$RELtextVTS{$vts}."-".$pgc."-".$vob});
-      my $gap = 0;
-      foreach $chap (@chaps) {
-        $chap = (&unformatTime($chap)+$gap);
-        $gap = ($gap + 0.040);
-        $chap = &formatTime($chap);
-      }
-      #1 second pause is necessary so that early switching to next chapter does not occur
-      print XML "\t\t\t\t<vob file=\"".$file."\" chapters=\"".join(",", @chaps)."\" pause=\"1\" ></vob>\n";
-    }
+    #1 second pause is necessary so that early switching to next chapter does not occur
+    my $pause = "1";
+    if ($AFTER_VOB_END{$vts."-".$pgc."-".$vob} eq "pause") {$pause = "inf";}
+    print XML "\t\t\t\t<vob file=\"".$file."\" chapters=\"".join(",", @chaps)."\" pause=\"".$pause."\" ></vob>\n";
+
   }
   
   #post commands (important for audio chapters)...
-  if ($pgc == $MAXTITLE{$RELtextVTS{$vts}}) {
+  if ($AFTER_VOB_END{$vts."-".$pgc."-".$vob} eq "loop") {
+    $post = "{ jump cell 1 }";
+  }
+  elsif ($pgc == $MAXTITLE{$RELtextVTS{$vts}}) {
     $mvts = findNextVTS($vts, "false");
     if ($mvts == 0) {$post = "{".&jumpTo("default", "noregs", "noresume", "nohilt", "calltitle")."}";}
     else {$post = "{".&jumpTo("text", "stitle".$STITLE{($vts+1)}."-1", "noresume", $btext{"bnext"}, "calltitle")."}";}

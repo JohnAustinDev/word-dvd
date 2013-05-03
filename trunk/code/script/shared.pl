@@ -191,40 +191,8 @@ sub readPageInformation {
     if ($_ =~ /^\s*\#/) {next;}
     $order++;
     
-    #Ruth-1-4, 0.1545505, still, 1, 3845
-    if ($_ =~ /^\s*(.*)-(\d+)-(\d+)\s*,\s*([\d\.]+)\s*,\s*(\S+)\s*,\s*(\d+)\s*,\s*(\d+)\s*$/) {
-      $book = $1;
-      $ch = $2;
-      $pg = $3;
-      $res = $4;
-      $audio = $5;
-      $numtitles = $6;
-      $rellen = $7;
-      
-      if ($pg == 1 && $numtitles >=1 && $pageTimingEntry{"TitlesAreRead"} ne "true") {$numtitles--;}
-  
-      if (!(exists $books{$book})) {$books{$book} = 1;}
-      $chapters{"$book-$ch"}++;
-      $pageRelLen{"$book-$ch-$pg"} = $rellen;
-      if (!$lastChapter{$book} || $ch>$lastChapter{$book}) {$lastChapter{$book}=$ch;}
-      if (!$lastPage{$book."-".$ch} || $pg>$lastPage{$book."-".$ch}) {$lastPage{$book."-".$ch}=$pg;}
-      if (!(exists $haveAudio{$book."-".$ch})) {
-        $haveAudio{$book."-".$ch} = $audio;
-
-        # assign "mpgIsMultiPage" value...
-        #$mpgIsMultiPage{$book."-".$ch} = "false";
-        if (!$separatePages && $haveAudio{$book."-".$ch} ne "still") {$mpgIsMultiPage{$book."-".$ch} = "true";}
-        else {$mpgIsMultiPage{$book."-".$ch} = "false";}
-      }
-      $totalTitles{$book."-".$ch} = ($totalTitles{$book."-".$ch} + $numtitles);
-      $pageTitles{"$book-$ch-$pg"} = $numtitles;
-      $pages{"$book-$ch-$pg"} = $res;
-      
-    
-      #print "Read:$_";
-    }
     #Titus-1-4a, 0.211183, en-Titus-01.ac3, 1, 457, 1:07
-    elsif ($_ =~ /^\s*(.*)-(\d+)-(\d+)[ab]\s*,\s*([\-\d\.]+)\s*,\s*(\S+)\s*,\s*(\d+)\s*,\s*(\d+)\s*,\s*(.*?)\s*$/) {
+    if ($_ =~ /^\s*(.*)-(\d+)-(\d+)[ab]\s*,\s*([\-\d\.]+)\s*,\s*(\S+)\s*,\s*(\d+)\s*,\s*(\d+)\s*,\s*(.*?)\s*$/) {
       my $bkt = $1;
       my $cht = $2;
       my $pgt = $3;
@@ -241,6 +209,48 @@ sub readPageInformation {
       if ($res) { # res=0 is an error condition
         $correctPageChap{$order."-".$bkt."-".$cht."-".$pgt."-".$type} = "$res,$numtitles,$abstime";
       }
+    }
+    
+    #Ruth-1-4, default, 0.1545505, still, 1, 3845
+    elsif ($_ =~ /^\s*(.*)-(\d+)-(\d+)\s*,\s*(\S+)\s*,\s*([\d\.]+)\s*,\s*(\S+)\s*,\s*(\d+)\s*,\s*(\d+)\s*$/) {
+      $book = $1;
+      $ch = $2;
+      $pg = $3;
+      my $atPageEnd = $4;
+      $res = $5;
+      $audio = $6;
+      $numtitles = $7;
+      $rellen = $8;
+      
+      if ($pg == 1 && $numtitles >=1 && $pageTimingEntry{"TitlesAreRead"} ne "true") {$numtitles--;}
+  
+      if (!(exists $books{$book})) {$books{$book} = 1;}
+      $chapters{"$book-$ch"}++;
+      $pageRelLen{"$book-$ch-$pg"} = $rellen;
+      if (!$lastChapter{$book} || $ch>$lastChapter{$book}) {$lastChapter{$book}=$ch;}
+      if (!$lastPage{$book."-".$ch} || $pg>$lastPage{$book."-".$ch}) {$lastPage{$book."-".$ch}=$pg;}
+      if (!(exists $haveAudio{$book."-".$ch})) {
+        $haveAudio{$book."-".$ch} = $audio;
+
+        # assign "mpgIsMultiPage" value...
+        if (!$separatePages && $haveAudio{$book."-".$ch} ne "still") {
+          $mpgIsMultiPage{$book."-".$ch} = "true";
+        }
+        else {
+          $mpgIsMultiPage{$book."-".$ch} = "false";
+        }
+      }
+      $totalTitles{$book."-".$ch} = ($totalTitles{$book."-".$ch} + $numtitles);
+      $pageTitles{"$book-$ch-$pg"} = $numtitles;
+      $pages{"$book-$ch-$pg"} = $res;
+      if ($atPageEnd ne "default") {
+        $AtPageEnd{"$book-$ch-$pg"} = $atPageEnd;
+        if ($pg < $lastPage{$book."-".$ch} && $atPageEnd ne "continue") {
+          $mpgIsMultiPage{$book."-".$ch} = "false";
+        }
+      }
+
+      #print "Read:$_";
     }
     elsif ($_ =~ /^\s*(.*?)-maxChapter=(\d+)\s*$/) {
       # This entry is only used for shorter than single page, final chapters,
@@ -302,21 +312,26 @@ sub readMenuInformation($) {
     if ($_ =~ /^\s*\#/) {next;}
     elsif ($_ =~ /^\s*$/) {next;}
     
-    #toc-m1.images, ../images/toc-m1.jpg, ../images/transparent.png, ../images/masks/toc-m1-HIGH.png, ../images/masks/toc-m1-SEL.png
-    elsif ($_ =~ /^\s*([^,]+)\.images\s*,\s*([^,]+)\s*,\s*([^,]+)\s*,\s*([^,]+)\s*,\s*([^,]+?)\s*$/) {
+    #toc-m1.images, default, ../images/toc-m1.jpg, ../images/transparent.png, ../images/masks/toc-m1-HIGH.png, ../images/masks/toc-m1-SEL.png
+    elsif ($_ =~ /^\s*([^,]+)\.images\s*,\s*([^,]+)\s*,\s*([^,]+)\s*,\s*([^,]+)\s*,\s*([^,]+)\s*,\s*([^,]+?)\s*$/) {
       my $menuName = $1;
-      my $image = $2;
-      my $maskNORM = $3;
-      my $maskHIGH = $4;
-      my $maskSEL = $5;
+      my $atMenuEnd = $2;
+      my $image = $3;
+      my $maskNORM = $4;
+      my $maskHIGH = $5;
+      my $maskSEL = $6;
       
       my $csvdir = $menucsv;
       $csvdir =~ s/[\/\\][^\/\\]*$//;
       
-      $AllMenus{$menuName}{"image"}    = "$csvdir/$image";
-      $AllMenus{$menuName}{"maskNORM"} = "$csvdir/$maskNORM";
-      $AllMenus{$menuName}{"maskHIGH"} = "$csvdir/$maskHIGH";
-      $AllMenus{$menuName}{"maskSEL"}  = "$csvdir/$maskSEL";
+      $AllMenus{$menuName}{"image"}     = "$csvdir/$image";
+      $AllMenus{$menuName}{"maskNORM"}  = "$csvdir/$maskNORM";
+      $AllMenus{$menuName}{"maskHIGH"}  = "$csvdir/$maskHIGH";
+      $AllMenus{$menuName}{"maskSEL"}   = "$csvdir/$maskSEL";
+      
+      if ($atMenuEnd ne "default") {
+        $AllMenus{$menuName}{"atMenuEnd"} = $atMenuEnd;
+      }
     }
     
     #toc-m1.audio, en-toc-m1.ac3

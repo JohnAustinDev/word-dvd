@@ -1,7 +1,7 @@
 # DEFAULT config file 
 
 # WORD-DVD BUILD SETTINGS:
-#-------------------
+#-------------------------
 AudioPrefix       = en      # audio files begin with this optional prefix
 LangCode          = en      # DVD language code.
 DontBreakBooks    = false   # disallow breaking books between VTS?
@@ -30,35 +30,42 @@ AddChNums2Text = true     # insert chapter numbers before each chapter?
 Hyphen         = [bcdfghjklmnpqrstvwxyz][aeiou]
 
 
-# DVD AUTOMATED MENU GENERATOR SETTINGS:
-#---------------------------------------
-# The following have the form: PrefixSuffix[:<menu-page-number>]
-# Prefix is TOC for main-menu pages
-# Prefix is CHP for submenu pages
-# Suffix can be either: topleft, topright, bottomleft or bottomright.
-# TOC suffix can also be leftbuttons or rightbuttons to limit the number of buttons on a page.
-# Suffixes ending with "T" are menu targets which override the default target.
-# Note: All UI strings may include special codes which will be replaced by values at runtime:
+# USER INTERFACE PHRASES:
+#------------------------
+# Note: Many UI strings allow these special codes which will be replaced by values at runtime:
 #   %0$S = becomes current book
 #   %1$S = becomes current chapter
 #   %2$S = becomes current verse
 #   %3$S = becomes current last-verse
 
-#TOCbottomleft:1  = About this DVD 
-#TOCbottomleftT:1 = more-m1
-TOCtopleft:1      = WORD-DVD
-TOCtopright:1     = Table of Contents
-CHPtopleft        = %0$S
-CHPtopright       = %0$S
+# DVD menu user interface:
+# <MENU> designates one or more DVD menus with the form :toc|<filename>[-m<menu-page-number>]
+# More specific <MENU> designators always override less specific <MENU> designators.
 
+# MenuTopLeft[<MENU>] designates text at menu top left.
+# MenuTopRight[<MENU>] designates text at menu top right.
+# MenuBottomLeft[<MENU>] designates text at menu bottom left.
+# MenuBottomRight[<MENU>] designates text at menu bottom right.
+# The above 4 designators, when suffixed with "Target", designate the target menu for the button(s).
 
-USER INTERFACE PHRASES:
------------------------
-IntroLink  = Introduction    # phrase designating introductions
+# MenuLeftButtons[<MENU>] designates the maximum number of buttons on the left side of menu (8 is default).
+# MenuRightButtons[<MENU>] designates the maximum number of buttons on the right side of menu (8 is default).
+
+#MenuBottomLeft:toc-m1       = About this DVD 
+#MenuBottomLeftTarget:toc-m1 = more-m1
+MenuTopLeft:toc              = WORD-DVD
+MenuTopRight:toc             = Table of Contents
+MenuTopLeft                  = %0$S
+MenuTopRight                 = %0$S
+
+# DVD pages user interface:
+# <PAGE> designates one or more DVD pages with the form :<filename>[-<chapter-number>[-<page-number>]]
+# More specific <PAGE> designators always override less specific <PAGE> designators.
 
 # FileName:<filename> designates the UI name of this book (<filename> is the name of a file in the HTML directory)
-# ChapName[:<filename>[-<chapter-number>]] designates the UI chapter name.
-# SubChaptext designates sub-chapter titles which are automatically created if a chapter has partial audio.
+# ChapName[<PAGE>] designates the UI chapter titles.
+# SubChaptext[<PAGE>] designates UI sub-chapter titles which are automatically created if a chapter has partial audio.
+# IntroText[:<filename>] designates UI introduction titles
 # FileOrder:<filename> must be provided to specify the order books should appear in the TOC menu.
 # Occurences of special codes like %1$S are used to insert values at run time (see note above).
 
@@ -67,6 +74,14 @@ FileName:book2   = Second Book
 ChapName         = Chapter %1$S
 ChapName:5       = Conclusion
 SubChaptext      = Chapter %1$S verse %2$S
+IntroText        = Introduction
 FileOrder:book1  = 0
 FileOrder:book2  = 1
 
+
+# SPECIAL DVD MENU/PAGE INSTRUCTIONS:
+#------------------------------------
+# These instructions operate on particular pages or menus of the DVD.
+# AtPageEnd[<PAGE>] is either "loop", "pause", or "continue" (default is "continue" for audio chapters, "pause" otherwise)
+# AtMenuEnd[<MENU>] is either "loop" or "pause" (default is "pause")
+AtMenuEnd = loop
