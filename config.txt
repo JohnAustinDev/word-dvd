@@ -82,6 +82,7 @@ FileOrder:book2  = 1
 # SPECIAL DVD MENU/PAGE INSTRUCTIONS:
 #------------------------------------
 # These instructions operate on particular pages or menus of the DVD.
-# AtPageEnd[<PAGE>] is either "loop", "pause", or "continue" (default is "continue" for audio chapters, "pause" otherwise)
-# AtMenuEnd[<MENU>] is either "loop" or "pause" (default is "pause")
+# AtPageEnd[<PAGE>] is either "loop", "pause", or "continue" (default is "continue" for audio chapters, "pause" otherwise). 
+# AtMenuEnd[<MENU>] is either "loop" or "pause" (default is "pause").
+# An optional delay in seconds, between parenthesis, may be suffixed to loop and pause in the above two instructions.
 AtMenuEnd = loop
