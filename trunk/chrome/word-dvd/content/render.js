@@ -390,7 +390,10 @@ function renderMenu(isFirstMenu, isLastMenu, returnFun) {
   
     var bk = (MenuType == "CHP" ? MainWin.getLocaleString("FileName:" + Book[Bindex-1].shortName, [Book[Bindex-1].shortName]):null);
 
-    var label = MainWin.getLocaleString(locnames[i] + ":" + menuname, (MenuType == "CHP" ? [Book[Bindex-1].shortName]:null));
+    var label = MainWin.getLocaleString(
+      locnames[i] + ":" + menuname, 
+      (MenuType == "CHP" ? [MainWin.getLocaleString("FileName:" + Book[Bindex-1].shortName)]:null)
+    );
     var target = MainWin.getLocaleString(locnames[i] + "Target:" + menuname);
     
     switch(locnames[i]) {
@@ -543,7 +546,7 @@ function writeMenuData() {
     MainWin.logmsg("ERROR: atMenuEnd value:\"" + atMenuEnd + "\" not supported.\n");
     atMenuEnd = "default";    
   }
-  if (!(/^(loop|pause|default)$/).test(atMenuEnd)) {
+  if (!(/^(loop|pause|default)(\([\d\.]+\))?$/).test(atMenuEnd)) {
     MainWin.logmsg("ERROR: Bad atMenuEnd value:\"" + atMenuEnd + "\"\n");
     atMenuEnd = "default";
   }
@@ -715,6 +718,7 @@ function screenDrawComplete() {
     SubChap = imginfo.subchap;
     Page.pagenumber = 1; // needs increment below!
   }
+  if (imginfo.skippedLastPage) Page.pagenumber--; // adjust because this page was skipped!
   if (Page.complete) {
     if (Chapter == 0) {
       initBookGlobals(true);
@@ -813,6 +817,7 @@ function saveScreenImages(bkobj, chapter, subchap, subchapters, page, ilastPage)
   // now re-loop, process and save image and data for tblock(s)
   var imgfile, footNotesSaved;
   var keepold = MainWin.getLocaleLiteral("NonAudioEndStop"); 
+  var skippedLastTblock = false;
   for (var i=0; i<tblocks.length; i++) {
     var pagename = book + "-" + Number(tblocks[i].chapter + tblocks[i].subchapters) + "-" + tblocks[i].pagenumber;
   
@@ -852,6 +857,8 @@ function saveScreenImages(bkobj, chapter, subchap, subchapters, page, ilastPage)
         if (!footNotesSaved) saveFootnotes(book, pagename, page.passage.substring(ilastPage, page.end));
         footNotesSaved = true;
       }
+      // if we just skipped the last tblock, then our return values should be those of the last good one!
+      else if (i == tblocks.length-1) skippedLastTblock = true;
       
 		}
     
@@ -862,8 +869,8 @@ function saveScreenImages(bkobj, chapter, subchap, subchapters, page, ilastPage)
       bkobj.overwriteStats = false;
     }
   }
-	  
-  return {chapter:tblock.chapter, subchap:tblock.subchap, subchapters:tblock.subchapters};
+  
+  return {chapter:tblock.chapter, subchap:tblock.subchap, subchapters:tblock.subchapters, skippedLastPage:skippedLastTblock};
 }
 
 // Sets the .hasAudio, .end, and .endType parameters of the passed tblock.
@@ -1411,7 +1418,7 @@ function writeStats(book, chapterstats, overwrite) {
 function formatStatString(s, total) {
   var atPageEnd = MainWin.getLocaleString("AtPageEnd:" + s.name);
   if (!atPageEnd) atPageEnd = "default";
-  if (!(/^(loop|continue|pause|default)$/).test(atPageEnd)) {
+  if (!(/^(loop|continue|pause|default)(\([\d\.]+\))?$/).test(atPageEnd)) {
     MainWin.logmsg("ERROR: Bad atPageEnd value:\"" + atPageEnd + "\"\n");
     atPageEnd = "default";
   }

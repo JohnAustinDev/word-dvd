@@ -191,15 +191,15 @@ sub readPageInformation {
     if ($_ =~ /^\s*\#/) {next;}
     $order++;
     
-    #Titus-1-4a, 0.211183, en-Titus-01.ac3, 1, 457, 1:07
-    if ($_ =~ /^\s*(.*)-(\d+)-(\d+)[ab]\s*,\s*([\-\d\.]+)\s*,\s*(\S+)\s*,\s*(\d+)\s*,\s*(\d+)\s*,\s*(.*?)\s*$/) {
+    #Titus-1-4a, default, 0.211183, en-Titus-01.ac3, 1, 457, 1:07
+    if ($_ =~ /^\s*(.*)-(\d+)-(\d+)[ab]\s*,\s*(\S+)\s*,\s*([\-\d\.]+)\s*,\s*(\S+)\s*,\s*(\d+)\s*,\s*(\d+)\s*,\s*(.*?)\s*$/) {
       my $bkt = $1;
       my $cht = $2;
       my $pgt = $3;
-      $res = $4;
-      my $audiot = $5;
-      $numtitles = $6;
-      $abstime = &unformatTime($8, "noFrameCheck");
+      $res = $5;
+      my $audiot = $6;
+      $numtitles = $7;
+      $abstime = &unformatTime($9, "noFrameCheck");
       
       # save everything
       $type = "absVerseTime";      
@@ -243,12 +243,16 @@ sub readPageInformation {
       $totalTitles{$book."-".$ch} = ($totalTitles{$book."-".$ch} + $numtitles);
       $pageTitles{"$book-$ch-$pg"} = $numtitles;
       $pages{"$book-$ch-$pg"} = $res;
-      if ($atPageEnd ne "default") {
-        $AtPageEnd{"$book-$ch-$pg"} = $atPageEnd;
-        if ($pg < $lastPage{$book."-".$ch} && $atPageEnd ne "continue") {
-          $mpgIsMultiPage{$book."-".$ch} = "false";
-        }
+      
+      if ($atPageEnd eq "default") {
+        $atPageEnd = $haveAudio{$book."-".$ch} eq "still" ? "pause":"continue"; # default
       }
+      my $delay = $haveAudio{$book."-".$ch} eq "still" ? "inf":"1"; # default
+      if ($atPageEnd =~ s/\(([\d\.]+)\)$//) {
+        $delay = $1;
+      }
+      $AtPageEnd{"$book-$ch-$pg"} = $atPageEnd;
+      $AtPageEndDelay{"$book-$ch-$pg"} = $delay;
 
       #print "Read:$_";
     }
@@ -273,6 +277,18 @@ sub readPageInformation {
     else {print "Could not parse timingstat: $_"; die;}
   }
   close(INF);
+  
+  # If we're pausing or looping any page within a chapter, we cannot use multi-page mpgs!
+  foreach my $book (sort {$books{$a}<=>$books{$b}} keys %books) {
+    for (my $ch=0; $ch<=$lastChapter{$book}; $ch++) {
+      for (my $pg=1; $pg<=$lastPage{$book."-".$ch}; $pg++) {
+        if ($mpgIsMultiPage{$book."-".$ch} eq "true" && $AtPageEnd{"$book-$ch-$pg"} ne "continue") {
+          $mpgIsMultiPage{$book."-".$ch} = "false";
+        }
+      }
+    }
+  }
+  
 }
 
 sub addTitles($$$$) {
@@ -330,7 +346,12 @@ sub readMenuInformation($) {
       $AllMenus{$menuName}{"maskSEL"}   = "$csvdir/$maskSEL";
       
       if ($atMenuEnd ne "default") {
+        my $delay = 1;
+        if ($atMenuEnd =~ s/\(([\d\.]+)\)$//) {
+          $delay = $1;
+        }
         $AllMenus{$menuName}{"atMenuEnd"} = $atMenuEnd;
+        $AllMenus{$menuName}{"atMenuEndDelay"} = $delay;
       }
     }
     

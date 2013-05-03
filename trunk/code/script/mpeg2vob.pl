@@ -255,9 +255,8 @@ foreach $book (sort {$books{$a}<=>$books{$b}} keys %books) {
       $TITLEofCHAP{$book."-".$ch} = $TITLE;
       $FILE{$VTS."-".$TITLE."-".$VOB} = "$outdir/video/$book/fin-$book-$ch.mpg";
       $CHAPTERS{$VTS."-".$TITLE."-".$VOB} = $Chapterlist{$book."-".$ch};
-      my $after = $AtPageEnd{"$book-$ch-".$lastPage{"$book-$ch"}};
-      if (!$after) {$after = "continue";} # default
-      $AFTER_VOB_END{$VTS."-".$TITLE."-".$VOB} = $after;
+      $AT_VOB_END{$VTS."-".$TITLE."-".$VOB} = $AtPageEnd{"$book-$ch-".$lastPage{"$book-$ch"}};
+      $AT_VOB_END_DELAY{$VTS."-".$TITLE."-".$VOB} = $AtPageEndDelay{"$book-$ch-".$lastPage{"$book-$ch"}};
       $PROGRAM = $PROGRAM+@pages;
       $MAXPROGRAM{$VTS."-".$TITLE} = $PROGRAM-1;
       $VOB++;
@@ -267,9 +266,8 @@ foreach $book (sort {$books{$a}<=>$books{$b}} keys %books) {
         if (!(exists $pages{"$book-$ch-$pg"})) {next;}
         $FILE{$VTS."-".$TITLE."-".$VOB} = "$outdir/video/$book/fin-$book-$ch-$pg.mpg";
         $CHAPTERS{$VTS."-".$TITLE."-".$VOB} = "00:00:00.00";
-        my $after = $AtPageEnd{"$book-$ch-$pg"};
-        if (!$after) {$after = "pause";} # default
-        $AFTER_VOB_END{$VTS."-".$TITLE."-".$VOB} = $after;
+        $AT_VOB_END{$VTS."-".$TITLE."-".$VOB} = $AtPageEnd{"$book-$ch-$pg"};
+        $AT_VOB_END_DELAY{$VTS."-".$TITLE."-".$VOB} = $AtPageEndDelay{"$book-$ch-$pg"};
         #if page "1" is missing, the previous page should be referenced as the first page of this chapter
         if (!exists($PROGRAMofCHAP{$book."-".$ch})) {
           if (($PROGRAM-$pg+1) == 0) {
@@ -390,10 +388,18 @@ foreach $menu (sort {&menuSort($a, $b);} keys %AllMenus) {
     print XML "\t\t\t\t<button name=\"b".$b."\">".$command."</button>\n";
   }
   my $pause = "inf";
-  if ($AllMenus{$menu}{"atMenuEnd"} eq "loop") {$pause = "1";}    
+  if ($AllMenus{$menu}{"atMenuEnd"} eq "loop") {
+    $pause = "1";
+    # The following is useless, because although the pause is honored,
+    # the loop repetition begins immediately (the pause just cuts off
+    # the beginning of the repeat.
+    #if ($AllMenus{$menu}{"atMenuEndDelay"}) {
+    #  $pause = $AllMenus{$menu}{"atMenuEndDelay"};
+    #}
+  }    
   print XML "\t\t\t\t<vob file=\"$outdir/video/fin-".$menu.".mpg\" pause=\"$pause\" />\n";
   if ($AllMenus{$menu}{"atMenuEnd"} eq "loop") {
-    print XML "\t\t\t\t<post>{ jump cell 1 }</post>\n";
+    print XML "\t\t\t\t<post>{ jump cell 1; }</post>\n";
   }
   print XML "\t\t\t</pgc>\n";
 }
@@ -467,10 +473,18 @@ else {
     print XML "\t\t\t\t\t}\n\t\t\t\t</pre>\n";
     &writeMenuButtonsVMGM($menu, ($menuVMGM{$tocmenu}+1));
     my $pause = "inf";
-    if ($AllMenus{$menu}{"atMenuEnd"} eq "loop") {$pause = "1";}    
+    if ($AllMenus{$menu}{"atMenuEnd"} eq "loop") {
+      $pause = "1";
+      # The following is useless, because although the pause is honored,
+      # the loop repetition begins immediately (the pause just cuts off
+      # the beginning of the repeat.
+      #if ($AllMenus{$menu}{"atMenuEndDelay"}) {
+      #  $pause = $AllMenus{$menu}{"atMenuEndDelay"};
+      #}
+    }    
     print XML "\t\t\t\t<vob file=\"$outdir/video/fin-$menu.mpg\" pause=\"$pause\" />\n";
     if ($AllMenus{$menu}{"atMenuEnd"} eq "loop") {
-      print XML "\t\t\t\t<post>{ jump cell 1 }</post>\n";
+      print XML "\t\t\t\t<post>{ jump cell 1; }</post>\n";
     }
     print XML "\t\t\t</pgc>\n";
   }
@@ -561,10 +575,18 @@ for ($vts=1; $vts<=$LASTVTS; $vts++) {
         print XML "\t\t\t\t\t}\n\t\t\t\t</pre>\n";
         &writeMenuButtonsVTS($menu);
         my $pause = "inf";
-        if ($AllMenus{$menu}{"atMenuEnd"} eq "loop") {$pause = "1";}
+        if ($AllMenus{$menu}{"atMenuEnd"} eq "loop") {
+          $pause = "1";
+          # The following is useless, because although the pause is honored,
+          # the loop repetition begins immediately (the pause just cuts off
+          # the beginning of the repeat.
+          #if ($AllMenus{$menu}{"atMenuEndDelay"}) {
+          #  $pause = $AllMenus{$menu}{"atMenuEndDelay"};
+          #}
+        }
         print XML "\t\t\t\t<vob file=\"$outdir/video/fin-$menu.mpg\" pause=\"$pause\" />\n";
         if ($AllMenus{$menu}{"atMenuEnd"} eq "loop") {
-          print XML "\t\t\t\t<post>{ jump cell 1 }</post>\n";
+          print XML "\t\t\t\t<post>{ jump cell 1; }</post>\n";
         }
         print XML "\t\t\t</pgc>\n";
       }
@@ -1090,18 +1112,25 @@ sub writeTitlePGC {
       $gap = ($gap + 0.040);
       $chap = &formatTime($chap);
     }
-    #1 second pause is necessary so that early switching to next chapter does not occur
-    my $pause = "1";
-    if ($AFTER_VOB_END{$vts."-".$pgc."-".$vob} eq "pause") {$pause = "inf";}
-    print XML "\t\t\t\t<vob file=\"".$file."\" chapters=\"".join(",", @chaps)."\" pause=\"".$pause."\" ></vob>\n";
-
+    # A 1+ second pause is necessary so that early switching to next chapter does not occur
+    if ($AT_VOB_END{$vts."-".$pgc."-".$vob} eq "loop") {
+      print XML "\t\t\t\t<vob file=\"".$file."\" >";
+      my $cell = 0;
+      for (my $v=1; $v<=$vob; $v++) {
+        my @chc = split(/,/, $CHAPTERS{$RELtextVTS{$vts}."-".$pgc."-".$v});
+        $cell += @chc;
+      }
+      print XML "<cell chapter=\"on\">{ jump cell ".$cell."; }</cell>";
+      print XML "</vob>\n";
+    }
+    else {
+      print XML "\t\t\t\t<vob file=\"".$file."\" chapters=\"".join(",", @chaps)."\" pause=\"".$AT_VOB_END_DELAY{$vts."-".$pgc."-".$vob}."\" ></vob>\n";
+    }
+    
   }
   
   #post commands (important for audio chapters)...
-  if ($AFTER_VOB_END{$vts."-".$pgc."-".$vob} eq "loop") {
-    $post = "{ jump cell 1 }";
-  }
-  elsif ($pgc == $MAXTITLE{$RELtextVTS{$vts}}) {
+  if ($pgc == $MAXTITLE{$RELtextVTS{$vts}}) {
     $mvts = findNextVTS($vts, "false");
     if ($mvts == 0) {$post = "{".&jumpTo("default", "noregs", "noresume", "nohilt", "calltitle")."}";}
     else {$post = "{".&jumpTo("text", "stitle".$STITLE{($vts+1)}."-1", "noresume", $btext{"bnext"}, "calltitle")."}";}
