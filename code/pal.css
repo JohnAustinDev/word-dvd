@@ -39,7 +39,7 @@ body:not(.dev):not([masktype="none"]) .button div:first-child {
   z-index:-1;
 }
 
-.xscrollbar {
+.renderbox {
   /* The purpose of this div is to hide the scrollbars of the .page div
   contained within. This allows the .page div's scrollbars to always be
   "on", but clipped and invisible. This is necessary to insure the .page
@@ -58,9 +58,12 @@ body:not(.dev):not([masktype="none"]) .button div:first-child {
 }
 
 
-body.dev .xscrollbar,
+body.dev .renderbox,
 body.dev .page {
   overflow:visible;
+}
+body.dev .page {
+  width:100%;
 }
 
 /* make pagebreaks visible only when viewed directly in browser */
@@ -101,17 +104,17 @@ body:before {
   width:100%;
   z-index:-2;
 }
-.menu .xscrollbar {
+.menu .renderbox {
   overflow:visible;
   top:0px;
   bottom:45px;
 }
-.menu #left-xscrollbar {
+.menu #left-renderbox {
   margin-right:18px;
   right:50%;
   left:0px;
 }
-.menu #right-xscrollbar {
+.menu #right-renderbox {
   margin-left:18px;
   right:20px;
   left:50%;
@@ -233,6 +236,10 @@ body[masktype="select"] #p2b9.arrow .button-mask {
 /* TEXT PAGES CSS */
 /******************/
 
+.page-image-center {
+  width:265px;
+  text-align:center;
+}
 .text-image-left {
   float:left;
   margin-right:10px;
@@ -246,7 +253,7 @@ body[masktype="select"] #p2b9.arrow .button-mask {
   background-image: url(./resource/text.jpg);
   background-repeat:no-repeat;
 }
-.text .xscrollbar {
+.text .renderbox {
   overflow:hidden;
   top:0px;
   bottom:45px;
@@ -254,12 +261,12 @@ body[masktype="select"] #p2b9.arrow .button-mask {
 .text .page {
   overflow:scroll; /* required for renderer to work properly */
 }
-.text #left-xscrollbar {
+.text #left-renderbox {
   margin-right:18px;
   right:50%;
   left:0px;
 }
-.text #right-xscrollbar {
+.text #right-renderbox {
   margin-left:18px;
   right:0px;
   left:50%;
