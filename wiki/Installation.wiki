@@ -22,9 +22,7 @@
 
 
 === Steps to make a DVD ===
-1) Install the modified mjpegtools package using the [http://word-dvd.googlecode.com/files/modified-mjpegtools-i386.deb debian binary package] or compile from source: [http://word-dvd.googlecode.com/files/modified-mjpegtools-2.0.0.tar.gz 2.0.0 on Ubuntu Natty+] or [http://word-dvd.googlecode.com/files/modified-mjpegtools-1.9.0.tar.gz 1.9.0 on older Ubuntu]. This mjpegtools package contains a modified `"mplex"` multiplexer utility which is capable of creating highly compressed slide shows (10's of hours on a single DVD rather than just 1 or 2).
-
-If you get an "illegal instruction" error when running jpeg2yuv, mplex, or mpeg2enc, then your CPU is incompatible with the provided binary and you'll have to compile from source (see above) on your machine.
+1) Install the latest modified mjpegtools package provided in the downloads section. This mjpegtools package contains modified `"mplex"` and `"mpeg2enc"`programs which are capable of creating highly compressed slide shows (10's of hours on a single DVD rather than just 1 or 2).
 
 2) Install the latest `"Word-DVD-xx.xpi"` Firefox extension found in the [http://code.google.com/p/word-dvd/downloads/list downloads] list. 
 
