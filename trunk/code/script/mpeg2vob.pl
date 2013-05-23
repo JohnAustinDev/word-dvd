@@ -24,6 +24,8 @@
 # Menu entry=title can only be used in VMGM (???)
 # All jumps to a title must only specify the title number (not chapter, cell, etc.)
 # All jumps to a chapter must only specify the chapter number (not the title, etc.)
+# You can only execute a "call" from a title to a menu; all other forms are illegal.
+# The instruction "jump cell xx" does NOT work on many players!
 
 #usage mpeg2vob.pl scriptDir inputDir outputDir audioDir controlFlag(1 = skip dvdauthor.xml creation, 2 = don't run dvdauthor)
 
@@ -399,7 +401,7 @@ foreach $menu (sort {&menuSort($a, $b);} keys %AllMenus) {
   }    
   print XML "\t\t\t\t<vob file=\"$outdir/video/fin-".$menu.".mpg\" pause=\"$pause\" />\n";
   if ($AllMenus{$menu}{"atMenuEnd"} eq "loop") {
-    print XML "\t\t\t\t<post>{ jump cell 1; }</post>\n";
+    print XML "\t\t\t\t<post>{ ".$gHILB."=s8; jump menu ".$menuVMGM{$menu}."; }</post>\n";
   }
   print XML "\t\t\t</pgc>\n";
 }
@@ -484,7 +486,7 @@ else {
     }    
     print XML "\t\t\t\t<vob file=\"$outdir/video/fin-$menu.mpg\" pause=\"$pause\" />\n";
     if ($AllMenus{$menu}{"atMenuEnd"} eq "loop") {
-      print XML "\t\t\t\t<post>{ jump cell 1; }</post>\n";
+      print XML "\t\t\t\t<post>{ ".$gHILB."=s8; jump menu ".$numVMGMmenus."; }</post>\n";
     }
     print XML "\t\t\t</pgc>\n";
   }
@@ -586,7 +588,7 @@ for ($vts=1; $vts<=$LASTVTS; $vts++) {
         }
         print XML "\t\t\t\t<vob file=\"$outdir/video/fin-$menu.mpg\" pause=\"$pause\" />\n";
         if ($AllMenus{$menu}{"atMenuEnd"} eq "loop") {
-          print XML "\t\t\t\t<post>{ jump cell 1; }</post>\n";
+          print XML "\t\t\t\t<post>{ ".$gMRHI."=s8; ".$gTYPE."=2; jump menu ".$nummenus."; }</post>\n";
         }
         print XML "\t\t\t</pgc>\n";
       }
@@ -1115,12 +1117,12 @@ sub writeTitlePGC {
     # A 1+ second pause is necessary so that early switching to next chapter does not occur
     if ($AT_VOB_END{$vts."-".$pgc."-".$vob} eq "loop") {
       print XML "\t\t\t\t<vob file=\"".$file."\" >";
-      my $cell = 0;
+      my $chapter = 0;
       for (my $v=1; $v<=$vob; $v++) {
         my @chc = split(/,/, $CHAPTERS{$RELtextVTS{$vts}."-".$pgc."-".$v});
-        $cell += @chc;
+        $chapter += @chc;
       }
-      print XML "<cell chapter=\"on\">{ jump cell ".$cell."; }</cell>";
+      print XML "<cell chapter=\"on\" pause=\"1\">{ jump title ".$vts." chapter ".$chapter."; }</cell>";
       print XML "</vob>\n";
     }
     else {
