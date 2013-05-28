@@ -687,6 +687,10 @@ function renderNewScreen() {
 
   ContinueFunc = null;
   var mdoc = RenderFrame.contentDocument;
+  
+  Page.pagebreakboth = false;
+  var pageName = Book[Bindex].shortName + (Chapter==0 ? ".intr":"") + "-" + Number(Chapter+SubChapters) + "-" + Page.pagenumber;
+  RenderFrame.contentDocument.getElementById("body").setAttribute("pagename", pageName);
 
   var tstyle = mdoc.defaultView.getComputedStyle(mdoc.getElementById("writing-left"), null);
   var skipPage1 = (tstyle.display == "none"); // this allows single column display
@@ -694,9 +698,6 @@ function renderNewScreen() {
   tstyle = mdoc.defaultView.getComputedStyle(mdoc.getElementById("writing-right"), null);
   var skipPage2 = (tstyle.display == "none");
   
-  Page.pagebreakboth = false;
-  var pageName = Book[Bindex].shortName + (Chapter==0 ? ".intr":"") + "-" + Number(Chapter+SubChapters) + "-" + Page.pagenumber;
-  RenderFrame.contentDocument.getElementById("body").setAttribute("pagename", pageName);
   fitScreen(Book[Bindex].shortName, Chapter, SubChapters, Page, skipPage1, skipPage2);
     
   waitRenderDoneThenDo("screenDrawComplete()");
