@@ -20,7 +20,6 @@ $imagedir = "$outdir/images";
 $listdir = "$outdir/listing";
 $dvddir = "$outdir/dvd";
 $backupdir = "$outdir/backup";
-$resourcedir = "$outdir/word-dvd/resource";
 
 $MENUSFILE = "MENU_BUTTONS.csv";
 

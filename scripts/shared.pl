@@ -567,7 +567,7 @@ sub makeSilentSlide($$) {
   
   `jpeg2yuv -v 0 $JPEG2YUV -j $imagefile | mpeg2enc $MPEG2ENC -v 0 -o $videodir/videotmp/$pagename.m2v`;
   
-  `mplex -v $Verbosity $MPLEX $videodir/videotmp/$pagename.m2v $resourcedir/blankaudio.ac3 -o $videodir/$subdir$pagename.mpg`;
+  `mplex -v $Verbosity $MPLEX $videodir/videotmp/$pagename.m2v $audiodir/blankaudio.ac3 -o $videodir/$subdir$pagename.mpg`;
   
 }
 

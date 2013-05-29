@@ -452,7 +452,7 @@ function captureMask() {
   
   // capture and save the mask
   var capture = Components.classes["@mozilla.org/file/local;1"].createInstance(Components.interfaces.nsILocalFile);
-  capture.initWithPath(MainWin.UIfile[MainWin.OUTDIR].path + "/" + MainWin.WORDDVDFILES + "/" + MainWin.CODE + "/" + MainWin.CAPTUREMASK);
+  capture.initWithPath(MainWin.UIfile[MainWin.OUTDIR].path + "/" + MainWin.SCRIPT + "/" + MainWin.SCRIPTDIR + "/" + MainWin.CAPTUREMASK);
   
   var imageName = ButtonArrayL[1].pagename + (isHighlight ? "-HIGH":"-SEL") + ".png";
       
@@ -1263,7 +1263,7 @@ function captureImage(imageName, imageType, returnFun) {
 	}
 	
   var capture = Components.classes["@mozilla.org/file/local;1"].createInstance(Components.interfaces.nsILocalFile);
-  capture.initWithPath(MainWin.UIfile[MainWin.OUTDIR].path + "/" + MainWin.WORDDVDFILES + "/" + MainWin.CODE + "/" + MainWin.CAPTURE);
+  capture.initWithPath(MainWin.UIfile[MainWin.OUTDIR].path + "/" + MainWin.SCRIPT + "/" + MainWin.SCRIPTDIR + "/" + MainWin.CAPTURE);
  
   imageName += ".jpg";
       

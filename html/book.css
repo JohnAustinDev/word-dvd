@@ -21,15 +21,13 @@ body:not(.dev):not([masktype="none"]) #background {
   background-image:none !important;
 }
 body:not(.dev):not([masktype="none"]):before,
-body:not(.dev):not([masktype="none"]):after,
-body:not(.dev):not([masktype="none"]) .menu-header {
+body:not(.dev):not([masktype="none"]):after {
   visibility:hidden;
 }
 body:not(.dev):not([masktype="none"]) .button div:first-child {
   color:transparent;
   text-shadow:none;
 }
-
 .usable {
   position: relative;
   left:62px;
@@ -38,7 +36,6 @@ body:not(.dev):not([masktype="none"]) .button div:first-child {
   height:460px;
   z-index:-1;
 }
-
 .renderbox {
   /* The purpose of this div is to hide the scrollbars of the .page div
   contained within. This allows the .page div's scrollbars to always be
@@ -56,8 +53,6 @@ body:not(.dev):not([masktype="none"]) .button div:first-child {
   width:calc(100% + 14px);
   height:calc(100% + 26px);
 }
-
-
 body.dev .renderbox,
 body.dev .page {
   overflow:visible;
@@ -81,7 +76,6 @@ body.dev .pagebreak-both {
   margin:0px 00px 50px 00px;
   border-bottom:2px dashed red;
 }
-
 body:before {
   position:absolute;
   top:0px;
@@ -89,148 +83,6 @@ body:before {
   width:100%;
   height:100%;
 }
-
-/******************/
-/* MENU PAGES CSS */
-/******************/
-
-#background {
-  background-image: url(./resource/menu.jpg);
-  background-repeat:no-repeat;
-  position:fixed;
-  top:0px;
-  left:0px;
-  height:100%;
-  width:100%;
-  z-index:-2;
-}
-.menu .renderbox {
-  overflow:visible;
-  top:0px;
-  bottom:45px;
-}
-.menu #left-renderbox {
-  margin-right:18px;
-  right:50%;
-  left:0px;
-}
-.menu #right-renderbox {
-  margin-left:18px;
-  right:20px;
-  left:50%;
-}
-
-/* NOTE: if "max-width" is specified here in px, it will 
-actually be removed from the CSS rules, and will instead be 
-enforced dynamically by reducing font-size to acheive
-the desired width. */
-.menu-header {
-  max-width:220px;
-  font-size:24px;
-  font-weight:bold;
-  text-align:center;
-  white-space:nowrap;
-  height:30px;
-  margin:0px auto 35px auto;
-}
-
-.menu-header div {
-  display:inline;
-  height:100%;
-  border:1px solid transparent; /* otherwise height is ignored! */
-}
-
-.menu-header span {
-  vertical-align:middle;
-}
-
-/* adjusting for example "book" background image */
-#menu-header-left {}
-
-/* adjusting for example "book" background image */
-#menu-header-right {
-  position:relative;
-  top:-2px;
-}
-
-.hasAudio {
-  position:relative;
-  left:14px; /* approx (width-of-audio-icon.png + margin-left)/2 */
-}
-body[masktype="none"] .hasAudio div:first-child:after,
-body:not([masktype]) .hasAudio div:first-child:after {
-  content: url(./resource/audio-icon.png);
-  margin-left:7px;
-}
-
-.chapter-button-col {
-  height:272px; /* 34*8 */
-  width:342px; /* 720/2-18 px */
-  display:table-cell;
-  vertical-align:middle;
-}
-.text .button {
-  display:none;
-}
-
-.button {
-  text-align:center;
-  height:12.5%; /* 100%/8 buttons */
-  overflow:visible;
-  white-space:nowrap;
-}
-#p1b9, #p2b9 {
-  margin-top:36px;
-}
-.button.notarget {
-  display:none;
-}
-.button div:first-child {
-  display:inline-block;
-  height:1em;
-}
-.button-mask {
-  background-repeat:no-repeat;
-  background-position:center; 
-  position:relative;
-}
-/* Different button images can be used by duplicating
-the following CSS rules in project.css, changing the image URLs 
-and rules as desired */
-.button-mask {
-  background-image:none;
-  height:16px;
-  top:-4px;
-}
-#p1b9.arrow .button-mask {
-  background-image:url(./resource/menuArrowL.png);
-  height:42px;
-  top:-32px;
-}
-#p2b9.arrow .button-mask {
-  background-image:url(./resource/menuArrowR.png);
-  height:42px;
-  top:-32px;
-}
-body[masktype="highlight"] .button-mask {
-  background-image:url(./resource/menuUnderline-HIGH.png);
-}
-body[masktype="select"] .button-mask {
-  background-image:url(./resource/menuUnderline-SEL.png);
-}
-body[masktype="highlight"] #p1b9.arrow .button-mask {
-  background-image:url(./resource/menuArrowL-HIGH.png);
-}
-body[masktype="select"] #p1b9.arrow .button-mask {
-  background-image:url(./resource/menuArrowL-SEL.png);
-}
-body[masktype="highlight"] #p2b9.arrow .button-mask {
-  background-image:url(./resource/menuArrowR-HIGH.png);
-}
-body[masktype="select"] #p2b9.arrow .button-mask {
-  background-image:url(./resource/menuArrowR-SEL.png);
-}
-
 
 /******************/
 /* TEXT PAGES CSS */
@@ -248,10 +100,15 @@ body[masktype="select"] #p2b9.arrow .button-mask {
   float:right;
   margin:10px 0px 10px 10px;
 }
-
-.text #background {
-  background-image: url(./resource/text.jpg);
+#background {
+  background-image: url(../images/text.jpg);
   background-repeat:no-repeat;
+  position:fixed;
+  top:0px;
+  left:0px;
+  height:100%;
+  width:100%;
+  z-index:-2;
 }
 .text .renderbox {
   overflow:hidden;
@@ -271,9 +128,8 @@ body[masktype="select"] #p2b9.arrow .button-mask {
   right:0px;
   left:50%;
 }
-
 .text #text-controls {
-  background-image:url(./resource/textButtons.png);
+  background-image:url(../images/textButtons.png);
   background-repeat:no-repeat;
   position:fixed;
   left:0px;
@@ -282,10 +138,10 @@ body[masktype="select"] #p2b9.arrow .button-mask {
   height:100%;
 }
 body.text[masktype="highlight"] #text-controls {
-  background-image:url(./resource/textButtons-HIGH.png);
+  background-image:url(../images/textButtons-HIGH.png);
 }
 body.text[masktype="select"] #text-controls {
-  background-image:url(./resource/textButtons-SEL.png);
+  background-image:url(../images/textButtons-SEL.png);
 }
 
 /* NOTE: if "max-width" is specified here in px, it will 
@@ -301,35 +157,29 @@ the desired width. */
   margin-bottom:35px;
   white-space:nowrap;
 }
-
 .text-header div {
   display:inline;
   height:100%;
   border:1px solid transparent; /* otherwise height is ignored! */
 }
-
 .text-header span {
   vertical-align:middle;
 }
-
 /* adjusting for example "book" background image */
 #text-header-left {
   position:relative;
   top:-2px;
   left:10px
 }
-
 /* adjusting for example "book" background image */
 #text-header-right {
   position:relative;
   left:30px;
 }
-
 .paragraph-start {
   display:inline-block;
   width:16px;
 }
-
 .book-title {
   color:rgb(100,0,0);
   font-size:24px;
@@ -337,7 +187,6 @@ the desired width. */
   padding-top:10px;
   margin-bottom:-1em;
 }
-
 .chapter-title {
   color:rgb(100,0,0);
   font-size:24px;
@@ -345,7 +194,6 @@ the desired width. */
   margin-top:2em;
   margin-bottom:1em;
 }
-
 .title-1 {
   color:rgb(100,0,0);
   font-size:24px;
@@ -355,7 +203,6 @@ the desired width. */
   margin-bottom:1em;
   clear:both;
 }
-
 .title-2 {
   color:rgb(100,0,0);
   font-weight:bold;
@@ -363,17 +210,13 @@ the desired width. */
   margin-top:1em;
   clear:both;
 }
-
 .majorquote {
   padding-left:24px;
   padding-top:0.5em;
   padding-bottom:0.5em;
 }
-
 .list1 {}
-
 .list2 {}
-
 .listitem {
   margin-bottom:1em;
   text-indent:-1em;
@@ -391,14 +234,12 @@ sup {
   margin-top:1em;
   margin-bottom:1em;
 }
-
 .fnsymbol:after {
   content: "\00D7 ";
   vertical-align:top;
   font-size-adjust:0.35 !important;
   color:rgb(200,0,0);
 }
-
 .verseref {
   color:rgb(100,0,0);
 }

@@ -3,7 +3,7 @@
 #   name.button-n, target, x0, y0, x1, y1
 
 # Navigation control buttons are defined here.
-textoverlay.images, default, textoverlay, ../code/resource/transparent.png, ../code/resource/textButtons-HIGH.png, ../code/resource/textButtons-SEL.png
+textoverlay.images, default, textoverlay, ../images/transparent.png, ../images/textButtons-HIGH.png, ../images/textButtons-SEL.png
 textoverlay.button-1, bhelp,      45,  476, 105, 516
 textoverlay.button-2, bmainmenu,  140, 476, 200, 516
 textoverlay.button-3, bsubmenu,   208, 476, 268, 516
@@ -13,6 +13,6 @@ textoverlay.button-6, bnext,      555, 476, 615, 516
 
 # Define your custom menus here. All menu names must begin with "cm-".
 # The menu "cm-help-m1" is a required menu.
-cm-help-m1.images, default, ./help-m1.jpg, ../code/resource/transparent.png, ../code/resource/transparent.png, ./help-m1-SEL.png
+cm-help-m1.images, default, ../images/help-m1.jpg, ../images/transparent.png, ../images/transparent.png, ./help-m1-SEL.png
 cm-help-m1.button-1, toc-m1, 50, 466, 124, 538
 
