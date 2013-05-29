@@ -48,11 +48,16 @@ function loadedRender() {
   StartingBindex = MainWin.StartingBindex;
   RenderFrame = document.getElementById("render");
 
+  loadHTML(MainWin.ScreenHTML.path, "startMenuGeneration();", { pagetype:"TOC", masktype:"none", className:"menu" })
+}
+
+function loadHTML(path, runWhenDone, body) {
+
   // This is the user's copy of screen.html and therefore has lower
   // security priviledges for Javascript. But it's important to give 
   // the user access to this file so that project CSS can be more
   // easily developed and tested.
-  RenderFrame.contentDocument.defaultView.location.assign("file://" + MainWin.ScreenHTML.path);
+  RenderFrame.contentDocument.defaultView.location.assign("file://" + path);
   
   // The extra width/height should be anything large enough to prevent
   // scrollbars from appearing in the xul iframe. Captured images are
@@ -60,17 +65,23 @@ function loadedRender() {
   RenderFrame.style.width = Number(MainWin.PAL.W + 32) + "px";
   RenderFrame.style.height = Number(MainWin.PAL.H + 32) + "px";
   
-  window.setTimeout("postLoad1();", 1000);
+  window.setTimeout("postLoad1('" + runWhenDone + "', '" + uneval(body) + "');", 1000);
   
-} function postLoad1() {
+} function postLoad1(runWhenDone, bodyobj) {
+  var bodyobj = eval(bodyobj);
   
   init(); // in screen.js
+  
+  var body = RenderFrame.contentDocument.getElementById("body");
+  body.setAttribute("pagetype", bodyobj.pagetype);
+  body.setAttribute("masktype", bodyobj.masktype);
+  body.className = bodyobj.className;
   
   window.sizeToContent();
   
   //window.resizeTo(RenderFrame.boxObject.width, document.getElementById("body").boxObject.height);
 
-  waitRenderDoneThenDo("startMenuGeneration();");
+  waitRenderDoneThenDo(runWhenDone);
 }
 
 function startMenuGeneration() {
@@ -131,17 +142,6 @@ function startMenuGeneration() {
 }
 
 function startTextGeneration() {
-MainWin.logmsg("startTextGeneration");
-  // switch from menu to text background
-  
-  var body = RenderFrame.contentDocument.getElementById("body");
-  body.setAttribute("pagetype", "TEXT");
-  body.setAttribute("masktype", "none");
-  body.className = "text";
-  
-  waitRenderDoneThenDo("startTextGeneration2();");
-  
-} function startTextGeneration2() {
   
   if (!MainWin.document.getElementById("skiptext").checked) {
     readPageTiming();
@@ -657,20 +657,28 @@ function renderAllPages() {
   // Open a window to render to
   Bindex = StartingBindex;
   initBookGlobals();
-
-  if (MainWin.Aborted) return;
-  else if (!MainWin.Paused) renderNewScreen();
-  else ContinueFunc = "renderNewScreen();";
 }
 
-function initBookGlobals(skipExistingIntroduction) {
+function initBookGlobals(finishedIntro) {
+  finishedIntro = (finishedIntro ? true:false);
+
   Page = {passage:"", beg:0, end:0, complete:false, pagenumber:1, isNotes:false, topSplitTag:null, bottomSplitTag:null, matchTransition:null};
   ILastPage = 0;
   
+  var bookfile = MainWin.UIfile[MainWin.INDIR].clone();
+  bookfile.append(MainWin.HTMLDIR);
+  bookfile.append(Book[Bindex].shortName + ".html");
+  if (!finishedIntro) {
+    loadHTML(bookfile.path, "initBookGlobals2(" + finishedIntro + ");", { pagetype:"TEXT", masktype:"none", className:"text" });
+  }
+  else initBookGlobals2(finishedIntro);
+  
+} function initBookGlobals2(finishedIntro) {
+
   SubChapters = 0;
   SubChap = 0;
   var intro = getPassage(Book[Bindex].shortName, true);
-  if (!intro || skipExistingIntroduction) {
+  if (!intro || finishedIntro) {
     Chapter = 1;
     Page.passage = getPassage(Book[Bindex].shortName);
   }
@@ -678,8 +686,13 @@ function initBookGlobals(skipExistingIntroduction) {
     Chapter = 0;
     Page.passage = intro;
   }
-  if (!skipExistingIntroduction) Book[Bindex].overwriteStats = true;
+  if (!finishedIntro) Book[Bindex].overwriteStats = true;
   MainWin.logmsg("Rendering Pages for Book:" + Book[Bindex].shortName + "...");
+  
+  if (MainWin.Aborted) return;
+  else if (!MainWin.Paused) renderNewScreen();
+  else ContinueFunc = "renderNewScreen();";
+  
 }
 
 function renderNewScreen() {
@@ -723,6 +736,7 @@ function screenDrawComplete() {
   if (Page.complete) {
     if (Chapter == 0) {
       initBookGlobals(true);
+      return;
     }
     else {
       writeBookEnd(Bindex);
@@ -732,7 +746,8 @@ function screenDrawComplete() {
         startFootnoteGeneration();
         return;
       }
-      initBookGlobals()
+      initBookGlobals();
+      return;
     }
   }
   else {Page.pagenumber++;}
