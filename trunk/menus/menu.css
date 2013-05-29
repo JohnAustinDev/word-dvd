@@ -95,7 +95,7 @@ body:before {
 /******************/
 
 #background {
-  background-image: url(./resource/menu.jpg);
+  background-image: url(../images/menu.jpg);
   background-repeat:no-repeat;
   position:fixed;
   top:0px;
@@ -159,7 +159,7 @@ the desired width. */
 }
 body[masktype="none"] .hasAudio div:first-child:after,
 body:not([masktype]) .hasAudio div:first-child:after {
-  content: url(./resource/audio-icon.png);
+  content: url(../images/audio-icon.png);
   margin-left:7px;
 }
 
@@ -203,202 +203,30 @@ and rules as desired */
   top:-4px;
 }
 #p1b9.arrow .button-mask {
-  background-image:url(./resource/menuArrowL.png);
+  background-image:url(../images/menuArrowL.png);
   height:42px;
   top:-32px;
 }
 #p2b9.arrow .button-mask {
-  background-image:url(./resource/menuArrowR.png);
+  background-image:url(../images/menuArrowR.png);
   height:42px;
   top:-32px;
 }
 body[masktype="highlight"] .button-mask {
-  background-image:url(./resource/menuUnderline-HIGH.png);
+  background-image:url(../images/menuUnderline-HIGH.png);
 }
 body[masktype="select"] .button-mask {
-  background-image:url(./resource/menuUnderline-SEL.png);
+  background-image:url(../images/menuUnderline-SEL.png);
 }
 body[masktype="highlight"] #p1b9.arrow .button-mask {
-  background-image:url(./resource/menuArrowL-HIGH.png);
+  background-image:url(../images/menuArrowL-HIGH.png);
 }
 body[masktype="select"] #p1b9.arrow .button-mask {
-  background-image:url(./resource/menuArrowL-SEL.png);
+  background-image:url(../images/menuArrowL-SEL.png);
 }
 body[masktype="highlight"] #p2b9.arrow .button-mask {
-  background-image:url(./resource/menuArrowR-HIGH.png);
+  background-image:url(../images/menuArrowR-HIGH.png);
 }
 body[masktype="select"] #p2b9.arrow .button-mask {
-  background-image:url(./resource/menuArrowR-SEL.png);
-}
-
-
-/******************/
-/* TEXT PAGES CSS */
-/******************/
-
-.page-image-center {
-  width:265px;
-  text-align:center;
-}
-.text-image-left {
-  float:left;
-  margin-right:10px;
-}
-.text-image-right {
-  float:right;
-  margin:10px 0px 10px 10px;
-}
-
-.text #background {
-  background-image: url(./resource/text.jpg);
-  background-repeat:no-repeat;
-}
-.text .renderbox {
-  overflow:hidden;
-  top:0px;
-  bottom:45px;
-}
-.text .page {
-  overflow:scroll; /* required for renderer to work properly */
-}
-.text #left-renderbox {
-  margin-right:18px;
-  right:50%;
-  left:0px;
-}
-.text #right-renderbox {
-  margin-left:18px;
-  right:0px;
-  left:50%;
-}
-
-.text #text-controls {
-  background-image:url(./resource/textButtons.png);
-  background-repeat:no-repeat;
-  position:fixed;
-  left:0px;
-  top:0px;
-  width:100%;
-  height:100%;
-}
-body.text[masktype="highlight"] #text-controls {
-  background-image:url(./resource/textButtons-HIGH.png);
-}
-body.text[masktype="select"] #text-controls {
-  background-image:url(./resource/textButtons-SEL.png);
-}
-
-/* NOTE: if "max-width" is specified here in px, it will 
-actually be removed from the CSS rules, and will instead be 
-enforced dynamically by reducing font-size to acheive
-the desired width. */
-.text-header {
-  max-width:220px;
-  font-size:24px;
-  font-weight:bold;
-  text-align:center;
-  height:30px;
-  margin-bottom:35px;
-  white-space:nowrap;
-}
-
-.text-header div {
-  display:inline;
-  height:100%;
-  border:1px solid transparent; /* otherwise height is ignored! */
-}
-
-.text-header span {
-  vertical-align:middle;
-}
-
-/* adjusting for example "book" background image */
-#text-header-left {
-  position:relative;
-  top:-2px;
-  left:10px
-}
-
-/* adjusting for example "book" background image */
-#text-header-right {
-  position:relative;
-  left:30px;
-}
-
-.paragraph-start {
-  display:inline-block;
-  width:16px;
-}
-
-.book-title {
-  color:rgb(100,0,0);
-  font-size:24px;
-  text-align:left;
-  padding-top:10px;
-  margin-bottom:-1em;
-}
-
-.chapter-title {
-  color:rgb(100,0,0);
-  font-size:24px;
-  text-align:left;
-  margin-top:2em;
-  margin-bottom:1em;
-}
-
-.title-1 {
-  color:rgb(100,0,0);
-  font-size:24px;
-  font-weight:bold;
-  text-align:center;
-  margin-top:1em;
-  margin-bottom:1em;
-  clear:both;
-}
-
-.title-2 {
-  color:rgb(100,0,0);
-  font-weight:bold;
-  text-align:left;
-  margin-top:1em;
-  clear:both;
-}
-
-.majorquote {
-  padding-left:24px;
-  padding-top:0.5em;
-  padding-bottom:0.5em;
-}
-
-.list1 {}
-
-.list2 {}
-
-.listitem {
-  margin-bottom:1em;
-  text-indent:-1em;
-  padding-left:1em;
-}
-sup {
-  vertical-align:top;
-}
-
-/********************/
-/* FOOTNOTE RELATED */
-/********************/
-
-.footnote {
-  margin-top:1em;
-  margin-bottom:1em;
-}
-
-.fnsymbol:after {
-  content: "\00D7 ";
-  vertical-align:top;
-  font-size-adjust:0.35 !important;
-  color:rgb(200,0,0);
-}
-
-.verseref {
-  color:rgb(100,0,0);
+  background-image:url(../images/menuArrowR-SEL.png);
 }

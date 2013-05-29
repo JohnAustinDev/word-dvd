@@ -46,11 +46,7 @@ const VIDEOFILES="word-video.sh";
 const IMAGEEXT="jpg";
 const CONVERSIONDONE="conversion-finished";
 const OSISPROGRESS="osis2html-progress";
-const WORDDVDFILES = "word-dvd";
-const RESOURCE="resource";
-const CODE="script";
-const SCREENHTML="screen.html";
-const PALCSS="pal.css";
+const SCREENHTML="menu.html";
 const CAPTURE="import.sh";
 const CAPTUREMASK="importMask.sh";
 // Input directory
@@ -60,6 +56,7 @@ const PAGETIMING="pageTiming.txt";
 const PROJECTCSS="project.css";
 const HTMLDIR="html";
 const MENUSDIR="menus";
+const SCRIPTDIR="scripts";
 const INAUDIODIR="audio";
 const INIMAGEDIR="images";
 
@@ -536,8 +533,8 @@ function wordDVD() {
   }
   document.getElementById("cleanOutDir").checked = false;
 
-  ScreenHTML = UIfile[OUTDIR].clone();
-  ScreenHTML.append(WORDDVDFILES);
+  ScreenHTML = UIfile[INDIR].clone();
+  ScreenHTML.append(MENUSDIR);
   ScreenHTML.append(SCREENHTML);
   
   // THE FOLLOWING ARE EXAMPLE FILES THAT ARE EDITED OR REPLACED IN A NEW PROJECT
@@ -557,16 +554,17 @@ function wordDVD() {
   exportFile(LOCALEFILE, UIfile[INDIR].path, false);
   exportFile(PAGETIMING, UIfile[INDIR].path, false);
   
-  // EXPORT THE WORD-DVD DIRECTORY TO OUTDIR, OVERWRITING ANY PRE-EXISTING DIR
-  exportDir(WORDDVDFILES, UIfile[OUTDIR].path, true);
-  var projcss = UIfile[INDIR].clone();
-  projcss.append(PROJECTCSS);
-  projcss.copyTo(UIfile[OUTDIR], null); // needed by screen.html
-
   // Create LocaleFile var
   LocaleFile = UIfile[INDIR].clone();
   LocaleFile.append(LOCALEFILE);
   LocaleFile = readFile(LocaleFile);
+  
+  // MAKE OUTPUT SCRIPT DIR
+  var file = UIfile[OUTDIR].clone(); 
+  file.append(SCRIPT);
+  if (file.exists()) file.remove(true);
+  file.create(file.DIRECTORY_TYPE, 511);
+  exportDir(SCRIPTDIR, file.path, true);
   
   // CREATE OUTPUT AUDIO DIR IF NEEDED
   var outaudio = UIfile[OUTDIR].clone();
@@ -778,9 +776,8 @@ function wordDVD2() {
   var imgdir = UIfile[OUTDIR].clone();
   imgdir.append(IMGDIR);
   if (!imgdir.exists()) imgdir.create(imgdir.DIRECTORY_TYPE, 511);
-  var transparentImage = UIfile[OUTDIR].clone();
-  transparentImage.append(WORDDVDFILES);
-  transparentImage.append(RESOURCE);
+  var transparentImage = UIfile[INDIR].clone();
+  transparentImage.append(INIMAGEDIR);
   transparentImage.append(TRANSIMAGE);
   var transparentImageDest = UIfile[OUTDIR].clone();
   transparentImageDest.append(IMGDIR);
@@ -1067,14 +1064,9 @@ function writeRunScripts() {
    "timeAnalysis.pl", "createiso.pl", "audacity.pl", 
    "transitions.pl", "burnverify.sh", "imgs2web.pl",
    FIXEDTRANSITIONS];
-  
-  // MAKE OUTPUT SCRIPT DIR
-  var file = Components.classes["@mozilla.org/file/local;1"].createInstance(Components.interfaces.nsILocalFile);
-  file.initWithPath(UIfile[OUTDIR].path + "/" + SCRIPT);
-  if (!file.exists()) file.create(file.DIRECTORY_TYPE, 511);
-  
+
   var scriptdir = Components.classes["@mozilla.org/file/local;1"].createInstance(Components.interfaces.nsILocalFile);
-  scriptdir.initWithPath(UIfile[OUTDIR].path + "/" + WORDDVDFILES + "/" + CODE);
+  scriptdir.initWithPath(UIfile[OUTDIR].path + "/" + SCRIPT + "/" + SCRIPTDIR);
   
   var rundir = Components.classes["@mozilla.org/file/local;1"].createInstance(Components.interfaces.nsILocalFile);
   rundir.initWithPath(UIfile[OUTDIR].path + "/" + SCRIPT);
@@ -1132,7 +1124,7 @@ function getPathOrRelativePath(aFile, rFile, rootFile) {
 
 function getTempRunScript(script) {
   var scriptdir = Components.classes["@mozilla.org/file/local;1"].createInstance(Components.interfaces.nsILocalFile);
-  scriptdir.initWithPath(UIfile[OUTDIR].path + "/" + WORDDVDFILES + "/" + CODE);
+  scriptdir.initWithPath(UIfile[OUTDIR].path + "/" + SCRIPT + "/" + SCRIPTDIR);
   var temp = Components.classes["@mozilla.org/file/directory_service;1"].
 			    getService(Components.interfaces.nsIProperties).
 			    get("TmpD", Components.interfaces.nsIFile);		      

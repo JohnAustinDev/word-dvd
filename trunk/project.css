@@ -2,8 +2,8 @@
 /* ADDING MENU AND TEXT IMAGES */
 /*******************************/
 
-/* An image can be placed on any menu or text page by adding the 
-following into your project.css file:*/
+/* An image can be placed on any menu or text page by adding it to 
+the appropriate html file, or else by using css as follows:*/
 /*
 body[pagename="toc-m1"]:before {
   content:url(./images/myimage.png);
@@ -18,65 +18,9 @@ body[pagename="book1-1-1"] #writing-left {
 
 */
 
-/**************************/
-/* CHANGING BUTTON IMAGES */
-/**************************/
+/* IMPORTANT:
+The total number of colors which can be used in any -HIGH or -SEL 
+images is very limited. If too many colors are used, errors will result 
+when the DVD menus are created. */
 
-/* Different button images can be used with the following CSS rules.
-Note that the total number of colors which can be used in the -HIGH 
-and -SEL images is very limited. If more than 4 or 5 colors are used,
-errors will result when the DVD menus are created. */
-/*
-.button-mask {
-  background-image:none;
-  height:16px;
-  top:-4px;
-}
-#p1b9.arrow .button-mask {
-  background-image:url(./images/menuArrowL.png);
-  height:42px;
-  top:-32px;
-}
-#p2b9.arrow .button-mask {
-  background-image:url(./images/menuArrowR.png);
-  height:42px;
-  top:-32px;
-}
-body[masktype="highlight"] .button-mask {
-  background-image:url(./images/menuUnderline-HIGH.png);
-}
-body[masktype="select"] .button-mask {
-  background-image:url(./images/menuUnderline-SEL.png);
-}
-body[masktype="highlight"] #p1b9.arrow .button-mask {
-  background-image:url(./images/menuArrowL-HIGH.png);
-}
-body[masktype="select"] #p1b9.arrow .button-mask {
-  background-image:url(./images/menuArrowL-SEL.png);
-}
-body[masktype="highlight"] #p2b9.arrow .button-mask {
-  background-image:url(./images/menuArrowR-HIGH.png);
-}
-body[masktype="select"] #p2b9.arrow .button-mask {
-  background-image:url(./images/menuArrowR-SEL.png);
-}
-*/
 
-/*********************************/
-/* CHANGING TEXT CONTROL BUTTONS */
-/*********************************/
-
-/* The buttons on text pages can be changed with the following CSS. You
-will also need to update the image locations and button coordinates in
-/menus/menus.txt. See note about buttom mask colors above. */
-/*
-.text #text-controls {
-  background-image:url(./images/textButtons.png);
-}
-body.text[masktype="highlight"] #text-controls {
-  background-image:url(./images/textButtons-HIGH.png);
-}
-body.text[masktype="select"] #text-controls {
-  background-image:url(./images/textButtons-SEL.png);
-}
-*/
