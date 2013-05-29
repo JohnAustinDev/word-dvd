@@ -775,13 +775,14 @@ function wordDVD2() {
   // IMAGE DIRECTORY
   var imgdir = UIfile[OUTDIR].clone();
   imgdir.append(IMGDIR);
+  window.alert("SDf");
   if (!imgdir.exists()) imgdir.create(imgdir.DIRECTORY_TYPE, 511);
+  window.alert("SDf");
   var transparentImage = UIfile[INDIR].clone();
   transparentImage.append(INIMAGEDIR);
   transparentImage.append(TRANSIMAGE);
-  var transparentImageDest = UIfile[OUTDIR].clone();
-  transparentImageDest.append(IMGDIR);
-  transparentImage.copyTo(transparentImageDest, null);
+window.alert(transparentImage.path);
+  transparentImage.copyTo(imgdir, null);
 
   // LISTING DIRECTORY
   var listdir = UIfile[OUTDIR].clone();
