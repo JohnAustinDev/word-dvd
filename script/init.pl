@@ -11,7 +11,6 @@ $outdir =~ s/\/\s*$//; # remove any trailing slash
 $audiodir =~ s/\/\s*$//; # remove any trailing slash
 
 $projmenusdir = "$indir/menus";
-$resourcedir = "$indir/code/resource";
 $locale = "$indir/config.txt";
 $htmldir = "$indir/html";
 $outaudiodir = "$outdir/audio";
@@ -21,6 +20,7 @@ $imagedir = "$outdir/images";
 $listdir = "$outdir/listing";
 $dvddir = "$outdir/dvd";
 $backupdir = "$outdir/backup";
+$resourcedir = "$outdir/word-dvd/resource";
 
 $MENUSFILE = "MENU_BUTTONS.csv";
 

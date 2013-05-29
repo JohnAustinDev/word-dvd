@@ -243,7 +243,6 @@ var LocaleFile;
 var RenderWin;
 var DBLogFile;
 var BackupDir;
-var OUTFILERE = new RegExp("(" + OUTDIRNAME + ")(\\/|$)");
 var Book;
 var StartingBindex;
 
@@ -333,15 +332,11 @@ function updateAction(elem) {
     else return;
     document.getElementById("browse-1").disabled = false;
     document.getElementById("browse-2").disabled = false;
-    if (input == OUTDIR) {
-      if (!kFilePicker.file.path.match(OUTFILERE)) {
-        window.alert("Output directory must be have \"" + OUTDIRNAME + "\" somewhere in its path.");
-        return;
-      }
-    }  
-    UIfile[input] = kFilePicker.file;
-    InputTextbox[input].value = kFilePicker.file.path;
-    if (input == INDIR) setInputDirsToDefault();
+    var file = kFilePicker.file.clone();
+    if (input == OUTDIR) file.append(OUTDIRNAME);
+    UIfile[input] = file;
+    InputTextbox[input].value = file.path;
+    if (input == INDIR) setDirsToDefault();
     checkAudioDir();
     break;
 
@@ -486,7 +481,7 @@ function updateControlPanel() {
   }
 }
 
-function setInputDirsToDefault() {
+function setDirsToDefault() {
   if (!UIfile[INDIR] || !UIfile[INDIR].exists()) {
     for (var i=0; i<NUMINPUTS; i++) {
       UIfile[i] = "";
@@ -531,12 +526,19 @@ var MessageWin;
 var Osis2HtmlInterval;
 function wordDVD() {
 
+  // Check output directory and clean if needed
+  if (!UIfile[OUTDIR].exists()) UIfile[OUTDIR].create(UIfile[OUTDIR].DIRECTORY_TYPE, 511);
+  else if (document.getElementById("cleanOutDir").checked) {
+    try {
+      UIfile[OUTDIR].remove(true);
+      UIfile[OUTDIR].create(UIfile[OUTDIR].DIRECTORY_TYPE, 511);
+    } catch (er) {}
+  }
+  document.getElementById("cleanOutDir").checked = false;
+
   ScreenHTML = UIfile[OUTDIR].clone();
   ScreenHTML.append(WORDDVDFILES);
   ScreenHTML.append(SCREENHTML);
-
-  // EXPORT THE CODE DIRECTORY TO INDIR, OVERWRITING ANY PRE-EXISTING CODE DIR
-  exportDir(WORDDVDFILES, UIfile[OUTDIR].path, true);
   
   // THE FOLLOWING ARE EXAMPLE FILES THAT ARE EDITED OR REPLACED IN A NEW PROJECT
   // EXPORT THESE DIRECTORIES ONLY IF THE DESTINATION DIR DOES NOT EXIST
@@ -554,26 +556,17 @@ function wordDVD() {
   exportFile(PROJECTCSS, UIfile[INDIR].path, false);
   exportFile(LOCALEFILE, UIfile[INDIR].path, false);
   exportFile(PAGETIMING, UIfile[INDIR].path, false);
+  
+  // EXPORT THE WORD-DVD DIRECTORY TO OUTDIR, OVERWRITING ANY PRE-EXISTING DIR
+  exportDir(WORDDVDFILES, UIfile[OUTDIR].path, true);
+  var projcss = UIfile[INDIR].clone();
+  projcss.append(PROJECTCSS);
+  projcss.copyTo(UIfile[OUTDIR], null); // needed by screen.html
 
   // Create LocaleFile var
   LocaleFile = UIfile[INDIR].clone();
   LocaleFile.append(LOCALEFILE);
   LocaleFile = readFile(LocaleFile);
-  
-  // Check output directory and clean if needed
-  if (!UIfile[OUTDIR].path.match(OUTFILERE)) {
-    window.alert("STOPPING!: Output directory must be have \"" + OUTDIRNAME + "\" somewhere in its path.");
-    quit(true);
-    return;
-  }
-  if (!UIfile[OUTDIR].exists()) UIfile[OUTDIR].create(UIfile[OUTDIR].DIRECTORY_TYPE, 511);
-  else if (document.getElementById("cleanOutDir").checked) {
-    try {
-      UIfile[OUTDIR].remove(true);
-      UIfile[OUTDIR].create(UIfile[OUTDIR].DIRECTORY_TYPE, 511);
-    } catch (er) {}
-  }
-  document.getElementById("cleanOutDir").checked = false;
   
   // CREATE OUTPUT AUDIO DIR IF NEEDED
   var outaudio = UIfile[OUTDIR].clone();
@@ -1157,6 +1150,7 @@ function quit(quiet) {
   if (!quiet) logmsg("Quitting Word-DVD imager at " + endDate.toTimeString() + " " + endDate.toDateString());  
   if (!quiet) window.alert("Quitting Word-DVD renderer.");
   resetGo();
+  deleteTemporaryFiles();
 }
 
 function stop() {
@@ -1222,6 +1216,7 @@ function stop() {
   else window.alert("Skipping image rendering.");
   
   resetGo(); 
+  deleteTemporaryFiles();
 }
 
 function resetGo() {
@@ -1241,12 +1236,19 @@ function viewReadMe() {
   tBrowser.selectedTab = tab;
 }
 
-function unloadXUL() {
-  Running = false;
+function deleteTemporaryFiles() {
+  var projcss = UIfile[OUTDIR].clone();
+  projcss.append(PROJECTCSS);
+  if (projcss.exists()) projcss.remove(false);
+  
   var tmp = UIfile[OUTDIR].clone();
   tmp.append(LISTING);
   tmp.append("tmp");
   if (tmp.exists()) tmp.remove(true);
+}
+
+function unloadXUL() {
+  Running = false;
   
   for (var i=0; i<NUMINPUTS; i++) {
     if (!UIfile[i]) continue;
