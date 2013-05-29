@@ -46,6 +46,13 @@ const VIDEOFILES="word-video.sh";
 const IMAGEEXT="jpg";
 const CONVERSIONDONE="conversion-finished";
 const OSISPROGRESS="osis2html-progress";
+const WORDDVDFILES = "word-dvd";
+const RESOURCE="resource";
+const CODE="script";
+const SCREENHTML="screen.html";
+const PALCSS="pal.css";
+const CAPTURE="import.sh";
+const CAPTUREMASK="importMask.sh";
 // Input directory
 const LOCALEFILE="config.txt";
 const OSISFILE = "osis.xml";
@@ -55,13 +62,6 @@ const HTMLDIR="html";
 const MENUSDIR="menus";
 const INAUDIODIR="audio";
 const INIMAGEDIR="images";
-const DEFAULTS = "code";
-const SCREENHTML="screen.html";
-const PALCSS="pal.css";
-const RESOURCE="resource";
-const CODE="script";
-const CAPTURE="import.sh";
-const CAPTUREMASK="importMask.sh";
 
 var ScreenHTML;
 
@@ -531,12 +531,12 @@ var MessageWin;
 var Osis2HtmlInterval;
 function wordDVD() {
 
-  ScreenHTML = UIfile[INDIR].clone();
-  ScreenHTML.append(DEFAULTS);
+  ScreenHTML = UIfile[OUTDIR].clone();
+  ScreenHTML.append(WORDDVDFILES);
   ScreenHTML.append(SCREENHTML);
 
   // EXPORT THE CODE DIRECTORY TO INDIR, OVERWRITING ANY PRE-EXISTING CODE DIR
-  exportDir(DEFAULTS, UIfile[INDIR].path, true);
+  exportDir(WORDDVDFILES, UIfile[OUTDIR].path, true);
   
   // THE FOLLOWING ARE EXAMPLE FILES THAT ARE EDITED OR REPLACED IN A NEW PROJECT
   // EXPORT THESE DIRECTORIES ONLY IF THE DESTINATION DIR DOES NOT EXIST
@@ -785,8 +785,8 @@ function wordDVD2() {
   var imgdir = UIfile[OUTDIR].clone();
   imgdir.append(IMGDIR);
   if (!imgdir.exists()) imgdir.create(imgdir.DIRECTORY_TYPE, 511);
-  var transparentImage = UIfile[INDIR].clone();
-  transparentImage.append(DEFAULTS);
+  var transparentImage = UIfile[OUTDIR].clone();
+  transparentImage.append(WORDDVDFILES);
   transparentImage.append(RESOURCE);
   transparentImage.append(TRANSIMAGE);
   var transparentImageDest = UIfile[OUTDIR].clone();
@@ -1081,7 +1081,7 @@ function writeRunScripts() {
   if (!file.exists()) file.create(file.DIRECTORY_TYPE, 511);
   
   var scriptdir = Components.classes["@mozilla.org/file/local;1"].createInstance(Components.interfaces.nsILocalFile);
-  scriptdir.initWithPath(UIfile[INDIR].path + "/" + DEFAULTS + "/" + CODE);
+  scriptdir.initWithPath(UIfile[OUTDIR].path + "/" + WORDDVDFILES + "/" + CODE);
   
   var rundir = Components.classes["@mozilla.org/file/local;1"].createInstance(Components.interfaces.nsILocalFile);
   rundir.initWithPath(UIfile[OUTDIR].path + "/" + SCRIPT);
@@ -1139,7 +1139,7 @@ function getPathOrRelativePath(aFile, rFile, rootFile) {
 
 function getTempRunScript(script) {
   var scriptdir = Components.classes["@mozilla.org/file/local;1"].createInstance(Components.interfaces.nsILocalFile);
-  scriptdir.initWithPath(UIfile[INDIR].path + "/" + DEFAULTS + "/" + CODE);
+  scriptdir.initWithPath(UIfile[OUTDIR].path + "/" + WORDDVDFILES + "/" + CODE);
   var temp = Components.classes["@mozilla.org/file/directory_service;1"].
 			    getService(Components.interfaces.nsIProperties).
 			    get("TmpD", Components.interfaces.nsIFile);		      
