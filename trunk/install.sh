@@ -1,7 +1,7 @@
 #!/bin/bash
 sleep 0.25s
 
-cd ./code/script/utilities
+cd ./word-dvd/script/utilities
 echo 0 = create word-dvd-xx xpi file
 echo 1 = use word-dvd.jar
 echo 2 = copy flat files
@@ -20,4 +20,3 @@ fi
 eval fpath=$fpath
 
 ./src2xpi.pl $fpath/extensions $fb
-
