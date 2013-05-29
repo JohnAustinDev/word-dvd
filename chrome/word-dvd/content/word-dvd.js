@@ -46,7 +46,7 @@ const VIDEOFILES="word-video.sh";
 const IMAGEEXT="jpg";
 const CONVERSIONDONE="conversion-finished";
 const OSISPROGRESS="osis2html-progress";
-const SCREENHTML="menu.html";
+const MENUHTML="menu.html";
 const CAPTURE="import.sh";
 const CAPTUREMASK="importMask.sh";
 // Input directory
@@ -535,7 +535,7 @@ function wordDVD() {
 
   ScreenHTML = UIfile[INDIR].clone();
   ScreenHTML.append(MENUSDIR);
-  ScreenHTML.append(SCREENHTML);
+  ScreenHTML.append(MENUHTML);
   
   // THE FOLLOWING ARE EXAMPLE FILES THAT ARE EDITED OR REPLACED IN A NEW PROJECT
   // EXPORT THESE DIRECTORIES ONLY IF THE DESTINATION DIR DOES NOT EXIST
