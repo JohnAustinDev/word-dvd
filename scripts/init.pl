@@ -27,25 +27,6 @@ $MENUSFILE = "MENU_BUTTONS.csv";
 $framesPS = 25;
 $TSTILL = 2; # KRK was compiled with 1.8
 
-# original: progressive with default 7500 kbit/s video
-#$JPEG2YUV = "-I p -f 25 -n 1";
-#$MPEG2ENC = "-f 8 -g 1 -G 1"; 
-
-# looks great on computers and TVs, does NOT require modified mpeg2enc, but is untested in practice.
-#$JPEG2YUV = "-I p -f 25 -n 4";
-#$MPEG2ENC = "-f 8 -H -q 1 -g 4 -G 4";
-
-# looks excellent on computers and TVs, uses modified mpeg2enc, matches NKJV encoding, but is not interlaced as PAL normally is
-# note: -W > 140 causes frame data under-run errors during mplex. Not sure if this is real or not...
-$JPEG2YUV = "-I p -f 25 -n 1";
-$MPEG2ENC = "-f 3 -b 8000 -H -q 1 -g 1 -G 1 -W 130";
-
-# same as previous, but interlaced
-#$JPEG2YUV = "-I b -L 1 -f 25 -n 1";
-#$MPEG2ENC = "-I 1 -f 3 -b 8000 -H -q 1 -g 1 -G 1 -W 130";
-
-$MPLEX = "-f 8";
-
 # LOCALIZATION
 if (-e $locale) {
   open (LOC, "<$locale");
@@ -62,6 +43,28 @@ if (-e $locale) {
   }
   close(LOC);
 }
+
+# original: progressive with default 7500 kbit/s video
+#$JPEG2YUV = "-I p -f 25 -n 1";
+#$MPEG2ENC = "-f 8 -g 1 -G 1"; 
+
+# looks great on computers and TVs, does NOT require modified mpeg2enc, but is untested in practice.
+#$JPEG2YUV = "-I p -f 25 -n 4";
+#$MPEG2ENC = "-f 8 -H -q 1 -g 4 -G 4";
+
+$MAX_STILL_IMAGE_SIZE = $localeFile{"MaxStillImageSize"};
+if (!$MAX_STILL_IMAGE_SIZE) {$MAX_STILL_IMAGE_SIZE = 130;}
+
+# looks excellent on computers and TVs, uses modified mpeg2enc, matches NKJV encoding, but is not interlaced as PAL normally is
+# note: -W > 140 causes frame data under-run errors during mplex. Not sure if this is real or not...
+$JPEG2YUV = "-I p -f 25 -n 1";
+$MPEG2ENC = "-f 3 -b 8000 -H -q 1 -g 1 -G 1 -W $MAX_STILL_IMAGE_SIZE";
+
+# same as previous, but interlaced
+#$JPEG2YUV = "-I b -L 1 -f 25 -n 1";
+#$MPEG2ENC = "-I 1 -f 3 -b 8000 -H -q 1 -g 1 -G 1 -W $MAX_STILL_IMAGE_SIZE";
+
+$MPLEX = "-f 8";
 
 # Looks for a string labeled by $name in config.txt file. If $name is
 # not there, a less specific version is sought. Runtime values can be 
