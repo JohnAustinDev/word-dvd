@@ -2,13 +2,17 @@
 
 # WORD-DVD BUILD SETTINGS:
 #-------------------------
+LogFileVerbosity  = 1
 AudioPrefix       = en      # audio files begin with this optional prefix
 LangCode          = en      # DVD language code.
 DontBreakBooks    = false   # disallow breaking books between VTS?
 AllBooksStartVTS  = false   # force each book to start in a new VTS?
 MattewStartsVTS   = false   # force the book of Matthew to start a VTS?
 FootnotesInOwnVTS = false   # place footnotes in seprate dedicated VTS?
-LogFileVerbosity  = 1
+MaxStillImageSize = 130     # max size of DVD still image Iframes in kb.
+                            # NOTE: MaxStillImageSize and audio file bit  
+                            # rate are the two primary factors which 
+                            # determine the final size of dvd.iso.
 
 
 # OSIS TO HTML CONVERSION SETTINGS:
