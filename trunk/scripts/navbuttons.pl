@@ -94,6 +94,9 @@ CONCAT:
 #CONCATENATE PAGE MPGs INTO CHAPTER MPGs
 &mpgPages2Chapter($videodir, "fin-");
 
-if (!$debug)  {`rm -f -r $videodir/videotmp`;}
+if (!$debug)  {
+  `rm -f -r $videodir/videotmp`;
+  `rm $outdir/spumux.xml`;
+}
 
 
