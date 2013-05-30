@@ -85,4 +85,4 @@ FileOrder:book2  = 1
 # AtPageEnd[<PAGE>] is either "loop", "pause", or "continue" (default is "continue" for audio chapters, "pause" otherwise). 
 # AtMenuEnd[<MENU>] is either "loop" or "pause" (default is "pause").
 # An optional delay in seconds, between parenthesis, may be suffixed to loop and pause in the above two instructions.
-AtMenuEnd = loop
+AtMenuEnd = pause
