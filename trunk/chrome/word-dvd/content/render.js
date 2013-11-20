@@ -561,7 +561,10 @@ function writeMenuData() {
   data += "../" + MainWin.IMGDIR + "/" + MainWin.MASKDIR + "/" + b.pagename + "-SEL.png\n";
   MainWin.write2File(MenusFile, data, true);
   
-  var audiofileName = MainWin.getLocaleString("AudioPrefix") + "-" + b.pagename + ".ac3";
+  var audiofileName = MainWin.getLocaleString("AudioPrefix");
+  if (audiofileName) audiofileName += "-";
+  audiofileName += b.pagename + ".ac3";
+  
   var audiofile = MainWin.UIfile[MainWin.AUDIO].clone();
   audiofile.append(audiofileName);
   if (audiofile.exists()) {
@@ -993,45 +996,7 @@ function getAudioFile(book, chapter, index) {
     AudioFiles = {};
     var audiodir = MainWin.UIfile[MainWin.AUDIO].clone();
     if (!audiodir.exists()) return null;
-    var files = audiodir.directoryEntries;
-    while (files.hasMoreElements()) {
-      var file = files.getNext().QueryInterface(Components.interfaces.nsIFile);
-      
-      var audiofile = getAudioFileCoverage(file.leafName);
-      
-      if (!audiofile) {
-        MainWin.logmsg("WARNING: Skipping file in audio directory: \"" + file.leafName + "\"");
-        continue;
-      }
-      
-      var ap = MainWin.getLocaleString("AudioPrefix");
-      if (ap && audiofile.ap!=ap) {
-        MainWin.logmsg("WARNING: Skipping audio file. Audio code is other than specified in config.txt (AudioPrefix = " + ap + "): \"" + file.leafName + "\"");
-        continue;      
-      }
-      
-      var bkobj = Book[getBindexFromBook(audiofile.bk)];
-      for (var ch = audiofile.chs; ch <= audiofile.che; ch++) {
-        if (audiofile.type == "chapter" || audiofile.type == "multi-chapter") 
-            recordFileAs(audiofile.bk, ch, 0, file.leafName);
-            
-        else if (audiofile.type == "sub-chapter") 
-            insertAudioSubInCh(audiofile.bk, ch, file.leafName);
-            
-        else if (audiofile.type == "multi-chapter-incomplete") {
-          if (ch == audiofile.chs) {
-            if (audiofile.vs == bkobj["ch" + audiofile.chs + "MinVerse"])
-                recordFileAs(audiofile.bk, ch, 0, file.leafName);
-            else insertAudioSubInCh(audiofile.bk, ch, file.leafName);
-          }
-          else if (ch == audiofile.che) {
-            if (audiofile.ve == bkobj["ch" + audiofile.che + "MaxVerse"]) recordFileAs(audiofile.bk, ch, 0, file.leafName);
-            else insertAudioSubInCh(audiofile.bk, ch, file.leafName);          
-          }
-          else recordFileAs(audiofile.bk, ch, 0, file.leafName);
-        }
-      }
-    }
+    recordDirectoryAudioFiles(audiodir, audiodir.path);
   }
   
   // return the corresponding audio file name...
@@ -1049,11 +1014,58 @@ function getAudioFile(book, chapter, index) {
 	return (AudioFiles[book + "-" + chapter + "-" + index] ? AudioFiles[book + "-" + chapter + "-" + index]:null);  
 }
 
+function recordDirectoryAudioFiles(audiodir, root) {
+	var files = audiodir.directoryEntries;
+	while (files.hasMoreElements()) {
+		var file = files.getNext().QueryInterface(Components.interfaces.nsIFile);
+		if (file.isDirectory()) {
+			recordDirectoryAudioFiles(file, root);
+			continue;
+		}
+		
+		var audiofile = getAudioFileCoverage(file.leafName);
+		var audioSubPath = file.path.replace(root + "/", "");
+		
+		if (!audiofile) {
+			MainWin.logmsg("WARNING: Skipping file in audio directory: \"" + audioSubPath + "\"");
+			continue;
+		}
+		
+		var ap = MainWin.getLocaleString("AudioPrefix");
+		if (ap && audiofile.ap!=ap) {
+			MainWin.logmsg("WARNING: Skipping audio file. Audio code is other than specified in config.txt (AudioPrefix = " + ap + "): \"" + audioSubPath + "\"");
+			continue;      
+		}
+		
+		var bkobj = Book[getBindexFromBook(audiofile.bk)];
+		for (var ch = audiofile.chs; ch <= audiofile.che; ch++) {
+			if (audiofile.type == "chapter" || audiofile.type == "multi-chapter") 
+					recordFileAs(audiofile.bk, ch, 0, audioSubPath);
+					
+			else if (audiofile.type == "sub-chapter") 
+					insertAudioSubInCh(audiofile.bk, ch, audioSubPath);
+					
+			else if (audiofile.type == "multi-chapter-incomplete") {
+				if (ch == audiofile.chs) {
+					if (audiofile.vs == bkobj["ch" + audiofile.chs + "MinVerse"])
+							recordFileAs(audiofile.bk, ch, 0, audioSubPath);
+					else insertAudioSubInCh(audiofile.bk, ch, audioSubPath);
+				}
+				else if (ch == audiofile.che) {
+					if (audiofile.ve == bkobj["ch" + audiofile.che + "MaxVerse"]) recordFileAs(audiofile.bk, ch, 0, audioSubPath);
+					else insertAudioSubInCh(audiofile.bk, ch, audioSubPath);          
+				}
+				else recordFileAs(audiofile.bk, ch, 0, audioSubPath);
+			}
+		}
+	}
+}
+
 // parses all audio file names and returns an object with complete coverage information
 // does sanity checking and reporting as well
 function getAudioFileCoverage(filename) {
-  var AudioFileRE1 = new RegExp(/^([^-]+)-([^-]+)-(\d+):(\d+)-(\d+):(\d+)\.ac3$/);
-  var AudioFileRE2 = new RegExp(/^([^-]+)-([^-]+)-(\d+)(-(\d+)|:(\d+)-(\d+))?\.ac3$/);
+  var AudioFileRE1 = new RegExp(/^(([^-]+)-)?([^-]+)-(\d+):(\d+)-(\d+):(\d+)\.ac3$/);
+  var AudioFileRE2 = new RegExp(/^(([^-]+)-)?([^-]+)-(\d+)(-(\d+)|:(\d+)-(\d+))?\.ac3$/);
 
   var parts = filename.match(AudioFileRE2);
   if (parts) parts[0] = 2;
@@ -1064,65 +1076,65 @@ function getAudioFileCoverage(filename) {
   
   if (!parts) return null;
   
-  var bkobj = Book[getBindexFromBook(parts[2])];
+  var bkobj = Book[getBindexFromBook(parts[3])];
   
   if (!bkobj) return null; // skip this audio file if its book is not being run
 
   var type, ret;
   if (parts[0] == 2) { // AudioFileRE2
-    parts[3] = Number(parts[3]); // starting chapter
-    parts[5] = Number(parts[5]); // ending chapter (?)
-    parts[6] = Number(parts[6]); // starting verse (?)
-    parts[7] = Number(parts[7]); // ending verse (?)
-    if (!ret && !parts[4]) 
+    parts[4] = Number(parts[4]); // starting chapter
+    parts[6] = Number(parts[6]); // ending chapter (?)
+    parts[7] = Number(parts[7]); // starting verse (?)
+    parts[8] = Number(parts[8]); // ending verse (?)
+    if (!ret && !parts[5]) 
       ret = {
         type:"chapter", 
-        ap:parts[1], 
-        bk:parts[2], 
-        chs:parts[3], 
-        che:parts[3], 
-        vs:bkobj["ch" + parts[3] + "MinVerse"], 
-        ve:bkobj["ch" + parts[3] + "MaxVerse"]
+        ap:parts[2], 
+        bk:parts[3], 
+        chs:parts[4], 
+        che:parts[4], 
+        vs:bkobj["ch" + parts[4] + "MinVerse"], 
+        ve:bkobj["ch" + parts[4] + "MaxVerse"]
       };
       
-    if (!ret && parts[5])  
+    if (!ret && parts[6])  
       ret = {
         type:"multi-chapter", 
-        ap:parts[1], 
-        bk:parts[2], 
-        chs:parts[3], 
-        che:parts[5], 
-        vs:bkobj["ch" + parts[3] + "MinVerse"], 
-        ve:bkobj["ch" + parts[5] + "MaxVerse"]
+        ap:parts[2], 
+        bk:parts[3], 
+        chs:parts[4], 
+        che:parts[6], 
+        vs:bkobj["ch" + parts[4] + "MinVerse"], 
+        ve:bkobj["ch" + parts[6] + "MaxVerse"]
       };
     
     if (!ret) {
       type = "sub-chapter";
-      if (parts[6] == bkobj["ch" + parts[3] + "MinVerse"] && parts[7] == bkobj["ch" + parts[3] + "MaxVerse"]) type = "chapter";
+      if (parts[7] == bkobj["ch" + parts[4] + "MinVerse"] && parts[8] == bkobj["ch" + parts[4] + "MaxVerse"]) type = "chapter";
       ret = {
         type:type, 
-        ap:parts[1], 
-        bk:parts[2], 
-        chs:parts[3], 
-        che:parts[3], 
-        vs:parts[6], 
-        ve:parts[7]
+        ap:parts[2], 
+        bk:parts[3], 
+        chs:parts[4], 
+        che:parts[4], 
+        vs:parts[7], 
+        ve:parts[8]
       };
     }
   }
  
   if (parts[0] == 1) {
-    parts[3] = Number(parts[3]);
     parts[4] = Number(parts[4]);
     parts[5] = Number(parts[5]);
     parts[6] = Number(parts[6]);
+    parts[7] = Number(parts[7]);
     type = "multi-chapter-incomplete";
-    if (parts[3] == parts[5]) {
-      if (parts[4] == bkobj["ch" + parts[3] + "MinVerse"] && parts[6] == bkobj["ch" + parts[3] + "MaxVerse"]) type = "chapter";
+    if (parts[4] == parts[6]) {
+      if (parts[5] == bkobj["ch" + parts[4] + "MinVerse"] && parts[7] == bkobj["ch" + parts[4] + "MaxVerse"]) type = "chapter";
       else type = "sub-chapter";
     }
-    else if (parts[4] == bkobj["ch" + parts[3] + "MinVerse"] && parts[6] == bkobj["ch" + parts[5] + "MaxVerse"]) type = "multi-chapter";
-    ret = {type:type, ap:parts[1], bk:parts[2], chs:parts[3], che:parts[5], vs:parts[4], ve:parts[6]};
+    else if (parts[5] == bkobj["ch" + parts[4] + "MinVerse"] && parts[7] == bkobj["ch" + parts[6] + "MaxVerse"]) type = "multi-chapter";
+    ret = {type:type, ap:parts[2], bk:parts[3], chs:parts[4], che:parts[6], vs:parts[5], ve:parts[7]};
   }
      
   // now sanity check file coverage and report
@@ -1144,11 +1156,12 @@ function getAudioFileCoverage(filename) {
   return ret;
 }
 
-function insertAudioSubInCh(bk, ch, filename) {
+function insertAudioSubInCh(bk, ch, fileSubPath) {
   ch = Number(ch);
-  var fsv = getStartVerseIfChapter(filename, ch);
+  
+  var fsv = getStartVerseIfChapter(fileSubPath, ch);
   var sc = 1;
-  if (!AudioFiles[bk + "-" + ch + "-" + sc]) recordFileAs(bk, ch, sc, filename);
+  if (!AudioFiles[bk + "-" + ch + "-" + sc]) recordFileAs(bk, ch, sc, fileSubPath);
   else {
     var inserted = false;
     var savef, lastsavef;
@@ -1159,35 +1172,36 @@ function insertAudioSubInCh(bk, ch, filename) {
       if (inserted) recordFileAs(bk, ch, sc, lastsavef);
       else if (fsv <= sv) {
         if (fsv == sv) {
-          MainWin.logmsg("ERROR: Two different audio files begin at the same verse: \"" + filename + "\", \"" + savef + "\"");
+          MainWin.logmsg("ERROR: Two different audio files begin at the same verse: \"" + fileSubPath + "\", \"" + savef + "\"");
         }
-        recordFileAs(bk, ch, sc, filename);
+        recordFileAs(bk, ch, sc, fileSubPath);
         inserted = true;
       }
       lastsavef = savef;
       
       sc++;
     }
-    if (!inserted) recordFileAs(bk, ch, sc, filename);
+    if (!inserted) recordFileAs(bk, ch, sc, fileSubPath);
     else recordFileAs(bk, ch, sc, lastsavef);
   }
 }
 
-function getStartVerseIfChapter(filename, ch) {
+function getStartVerseIfChapter(fileSubPath, ch) {
+	var filename = fileSubPath.replace(/^.*\//, "");
   var info = getAudioFileCoverage(filename);
   if (!info) return null;
   
   if (info.chs == ch) return info.vs;
   if (info.chs > ch || info.che < ch) {
-    MainWin.logmsg("ERROR: Audio file \"" + filename + "\" is not a part of chapter \"" + ch + "\".");
+    MainWin.logmsg("ERROR: Audio file \"" + fileSubPath + "\" is not a part of chapter \"" + ch + "\".");
     return null;
   }
   return 1;
 }
 
-function recordFileAs(bk, ch, subch, filename) {
-  AudioFiles[bk + "-" + ch + "-" + subch] = filename;
-  CheckAudioFiles[bk + "-" + ch + "-" + subch] = filename;
+function recordFileAs(bk, ch, subch, fileSubPath) {
+  AudioFiles[bk + "-" + ch + "-" + subch] = fileSubPath;
+  CheckAudioFiles[bk + "-" + ch + "-" + subch] = fileSubPath;
 }
 
 
