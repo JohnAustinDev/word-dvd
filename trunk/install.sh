@@ -1,7 +1,7 @@
 #!/bin/bash
 sleep 0.25s
 
-cd ./script/utilities
+cd ./scripts/utilities
 echo 0 = create word-dvd-xx xpi file
 echo 1 = use word-dvd.jar
 echo 2 = copy flat files

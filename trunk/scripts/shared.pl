@@ -466,21 +466,21 @@ sub mpgPages2Chapter($$$$) {
       for ($pg=0; $pg<=$lastPage{$book."-".$ch}; $pg++) {
         my $thispage = "$dir/$book/$prefix$book-$ch-$pg.mpg";
         if (!-e $thispage) {next;}
-        if (!(-e "$dir/videotmp/chapter.mpg")) {`cp $thispage $dir/videotmp/chapter.mpg`;}
+        if (!(-e "$dir/videotmp/chapter.mpg")) {`cp \"$thispage\" \"$dir/videotmp/chapter.mpg\"`;}
         else {
-          `cat $dir/videotmp/chapter.mpg $thispage > $dir/videotmp/tmp.mpg`;
-          `mv $dir/videotmp/tmp.mpg $dir/videotmp/chapter.mpg`;
+          `cat \"$dir/videotmp/chapter.mpg\" \"$thispage\" > \"$dir/videotmp/tmp.mpg\"`;
+          `mv \"$dir/videotmp/tmp.mpg\" \"$dir/videotmp/chapter.mpg\"`;
         }
-        if (!$debug) {`rm $thispage`;}
+        if (!$debug) {`rm \"$thispage\"`;}
       }
       
       if (-e "$dir/videotmp/chapter.mpg") {
         if ($postFlag == 1) {
-          `ffmpeg -i "$dir/videotmp/chapter.mpg" -vcodec copy -acodec libmp3lame -y "$dir/$book/fin-$book-$ch.mpg"`;
+          `ffmpeg -i \"$dir/videotmp/chapter.mpg\" -vcodec copy -acodec libmp3lame -y \"$dir/$book/fin-$book-$ch.mpg\"`;
           if (!$debug) {`rm "$dir/videotmp/chapter.mpg"`;}
-          else {`mv "$dir/videotmp/chapter.mpg" "$dir/$book/tmp-$book-$ch.mpg"`;}
+          else {`mv \"$dir/videotmp/chapter.mpg\" \"$dir/$book/tmp-$book-$ch.mpg\"`;}
         }
-        else {`mv $dir/videotmp/chapter.mpg $dir/$book/fin-$book-$ch.mpg`;}
+        else {`mv \"$dir/videotmp/chapter.mpg\" \"$dir/$book/fin-$book-$ch.mpg\"`;}
       }
       print "Concatenating pages for fin-$book-$ch.mpg\n";
     }
@@ -553,7 +553,7 @@ sub makeSilentSlide($$) {
   
   if (!-e $imagefile) {print "ERROR: Missing image: \"$pagename\"\n"; die;}
   if ($imagefile !~ /\.jpg$/) {print "ERROR: Image must be jpg: \"$pagename\"\n"; die;}
-  if (!-e $videodir) {`mkdir $videodir`;}
+  if (!-e $videodir) {`mkdir \"$videodir\"`;}
   
   # is this a chapter image?
   my $subdir = "";
@@ -561,13 +561,13 @@ sub makeSilentSlide($$) {
   elsif ($pagename =~ /^(.*?)-(\d+)-(\d+)/) {$subdir = $1;}
   
   if ($subdir) {
-    if (!-e "$videodir/$subdir") {`mkdir "$videodir/$subdir"`;}
+    if (!-e "$videodir/$subdir") {`mkdir \"$videodir/$subdir\"`;}
     $subdir .= "/";
   }
   
-  `jpeg2yuv -v 0 $JPEG2YUV -j $imagefile | mpeg2enc $MPEG2ENC -v 0 -o $videodir/videotmp/$pagename.m2v`;
+  `jpeg2yuv -v 0 $JPEG2YUV -j \"$imagefile\" | mpeg2enc $MPEG2ENC -v 0 -o \"$videodir/videotmp/$pagename.m2v\"`;
   
-  `mplex -v $Verbosity $MPLEX $videodir/videotmp/$pagename.m2v $audiodir/blankaudio.ac3 -o $videodir/$subdir$pagename.mpg`;
+  `mplex -v $Verbosity $MPLEX \"$videodir/videotmp/$pagename.m2v\" \"$audiodir/blankaudio.ac3\" -o \"$videodir/$subdir$pagename.mpg\"`;
   
 }
 
@@ -580,7 +580,7 @@ sub makeAudioSlide($$$$$) {
   my $seekto = shift;
   my $mplex = shift; # used to create special mpg files which can be concatenated
   
-  if (!-e $videodir) {`mkdir $videodir`;}
+  if (!-e $videodir) {`mkdir \"$videodir\"`;}
     
   # get subdirectory for this page
   my $subdir = "";
@@ -588,7 +588,7 @@ sub makeAudioSlide($$$$$) {
   elsif ($pagename =~ /^(.*?)-(\d+)-(\d+)/) {$subdir = $1;}
   
   if ($subdir) {
-    if (!-e "$videodir/$subdir") {`mkdir "$videodir/$subdir"`;}
+    if (!-e "$videodir/$subdir") {`mkdir \"$videodir/$subdir\"`;}
     $subdir .= "/";
   }
   
@@ -598,15 +598,15 @@ sub makeAudioSlide($$$$$) {
   if ($audiofile !~ /\.ac3$/i) {print "ERROR: Audio must be AC3: \"$audiofile\"\n"; die;}
   
   # MAKE VIDEO FOR SLIDE
-  `jpeg2yuv -v 0 $JPEG2YUV -j $imagefile | mpeg2enc $MPEG2ENC -v 0 -o $videodir/videotmp/$pagename.m2v`;
+  `jpeg2yuv -v 0 $JPEG2YUV -j \"$imagefile\" | mpeg2enc $MPEG2ENC -v 0 -o \"$videodir/videotmp/$pagename.m2v\"`;
   
   # MAKE AUDIO FOR SLIDE
   if (defined($tlen)) {$tlen = "-t $tlen";}
   if (defined($seekto)) {$seekto = "-ss $seekto";}
-  `ffmpeg -v $Verbosity $tlen -i $audiofile $seekto -acodec copy -y $videodir/videotmp/$pagename.m2a`;
+  `ffmpeg -v $Verbosity $tlen -i \"$audiofile\" $seekto -acodec copy -y \"$videodir/videotmp/$pagename.m2a\"`;
   
   # MUX AUDIO AND VIDEO TOGETHER
-  `mplex -v $Verbosity $mplex $MPLEX $videodir/videotmp/$pagename.m2v $videodir/videotmp/$pagename.m2a -o $videodir/$subdir$pagename.mpg`;
+  `mplex -v $Verbosity $mplex $MPLEX \"$videodir/videotmp/$pagename.m2v\" \"$videodir/videotmp/$pagename.m2a\" -o \"$videodir/$subdir$pagename.mpg\"`;
   
 }
 
@@ -738,7 +738,7 @@ sub readPTS($) {
 	my $lastPTS = -1;
 	my $firstPTS = -1;
 	if (open(PTS, ">$videodir/videotmp/pts.txt")) {
-		print PTS `dvbsnoop -s ps -if $f`;
+		print PTS `dvbsnoop -s ps -if \"$f\"`;
 		close(PTS);
 		open(PTS, "<$videodir/videotmp/pts.txt");
 		while (<PTS>) {

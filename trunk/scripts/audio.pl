@@ -279,7 +279,7 @@ sub getAudioFileLength($) {
   
   if (!exists($filelens{$afile})) {
     my $fpath = "$audiodir/".$afile;
-    `ffmpeg -i $fpath -target pal-dvd -acodec copy $outaudiodir/tmp.ac3 2> $outaudiodir/tmp.txt`;
+    `ffmpeg -i \"$fpath\" -target pal-dvd -acodec copy \"$outaudiodir/tmp.ac3\" 2> \"$outaudiodir/tmp.txt\"`;
     unlink("$outaudiodir/tmp.ac3");
     #`sox $audiofile -r 48000 $outaudiodir/$book-$ch.wav vol 0.6 resample`;
   
