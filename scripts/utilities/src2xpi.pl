@@ -10,8 +10,8 @@ use File::Spec;
 $dir = shift;
 $nozipflag = shift;
 
-$totrunk = "../../.."; # relative path from this script to word-dvd trunk
-$tohere = "word-dvd/script/utilities"; # reverse path to here
+$totrunk = "../.."; # relative path from this script to word-dvd trunk
+$tohere = "scripts/utilities"; # reverse path to here
 $tocontent = "chrome/word-dvd"; # content of word-dvd.jar
 
 if (!$dir) {$dir = ".";}
@@ -22,7 +22,7 @@ if (!-e $dir) {
   my $parent = $dir;
   $parent =~ s/\/extensions(\/)?$//;
   
-  if (-e $parent) {`mkdir $dir`;}
+  if (-e $parent) {`mkdir \"$dir\"`;}
   
   if (!-e $dir) {print $dir."\n"; die;}
 }
@@ -45,8 +45,8 @@ $isext = ($dir =~ /\/extensions\\?$/);
 $dest = $isext ? "$dir/$eid":"$dir/word-dvd-$version";
 
 if ($isext && $nozipflag == 3) {
-	if (-e "$dest.xpi") {`rm $dest.xpi`;}
-	if (-e "$dest") {`rm -r -f $dest`;}
+	if (-e "$dest.xpi") {`rm \"$dest.xpi\"`;}
+	if (-e "$dest") {`rm -r -f \"$dest\"`;}
 	$code = `pwd`;
 	chomp($code);
 	if (!chdir("$dir")) {die;}
@@ -77,14 +77,14 @@ else {
 
 # create xpi file/dir
 if (!chdir("$trunk/$tmp")) {die;}
-if (-e "$dest.xpi") {`rm $dest.xpi`;}
-if (($nozipflag || $isext) && -e "$dest") {`rm -r -f $dest`;}
+if (-e "$dest.xpi") {`rm \"$dest.xpi\"`;}
+if (($nozipflag || $isext) && -e "$dest") {`rm -r -f \"$dest\"`;}
 if ($nozipflag) {
-	`mkdir $dest`;
-	`cp -r * $dest`;
+	`mkdir \"$dest\"`;
+	`cp -r * \"$dest\"`;
 }
-else {`zip -r $dest.xpi .`;}
+else {`zip -r \"$dest.xpi\" .`;}
 
 # cleanup
 if (!chdir("$trunk")) {die;}
-`rm -r -f $tmp`;
+`rm -r -f \"$tmp\"`;

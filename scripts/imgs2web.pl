@@ -91,10 +91,10 @@ foreach $book (sort {$books{$a}<=>$books{$b}} keys %books) {
       if ($ffmpgVersion=~/^0\.5\./) {$ffmpegt = ($tlen+$fseekto);}
       else {$ffmpegt = $tlen;}     
       
-      $cmd = "jpeg2yuv -v 0 -n ".$numf." -I p -f $framesPS -j $imagedir/$book/$book-$ch-$pg.jpg | mpeg2enc -v 0 -f 3 -g 1 -G ".(2*$framesPS)." -b 5000 -o $webdir/videotmp/$book-$ch-$pg.m2v";     
+      $cmd = "jpeg2yuv -v 0 -n ".$numf." -I p -f $framesPS -j \"$imagedir/$book/$book-$ch-$pg.jpg\" | mpeg2enc -v 0 -f 3 -g 1 -G ".(2*$framesPS)." -b 5000 -o \"$webdir/videotmp/$book-$ch-$pg.m2v\"";     
       print "$cmd\n\n";
       `$cmd`;
-      $cmd = "ffmpeg -v $Verbosity -t $ffmpegt -i $audiofile -ss $fseekto -acodec copy -y $webdir/videotmp/$book-$ch-$pg.m2a";
+      $cmd = "ffmpeg -v $Verbosity -t $ffmpegt -i \"$audiofile\" -ss $fseekto -acodec copy -y \"$webdir/videotmp/$book-$ch-$pg.m2a\"";
       print "$cmd\n\n";
       `$cmd`;
 
@@ -106,27 +106,27 @@ foreach $book (sort {$books{$a}<=>$books{$b}} keys %books) {
         
         if (!$seekto) {
           # ffmpeg insists on cutting off the first 0.52 seconds during web-video post processing, so here we add a one second lead-in to insure nothing is lost!
-          $cmd = "jpeg2yuv -v 0 -n 25 -I p -f 25 -j $imagedir/$book/$book-$ch-$pg.jpg | mpeg2enc -v 0 -f 3 -g 1 -G ".(2*$framesPS)." -b 5000 -o $webdir/videotmp/$book-$ch-0.m2v";
+          $cmd = "jpeg2yuv -v 0 -n 25 -I p -f 25 -j \"$imagedir/$book/$book-$ch-$pg.jpg\" | mpeg2enc -v 0 -f 3 -g 1 -G ".(2*$framesPS)." -b 5000 -o \"$webdir/videotmp/$book-$ch-0.m2v\"";
           print "$cmd\n\n";
           `$cmd`;
-          $cmd = "ffmpeg -v $Verbosity -t 1 -i $audiodir/blankaudio.ac3 -acodec copy -y $webdir/videotmp/$book-$ch-0.m2a";
+          $cmd = "ffmpeg -v $Verbosity -t 1 -i \"$audiodir/blankaudio.ac3\" -acodec copy -y \"$webdir/videotmp/$book-$ch-0.m2a\"";
           print "$cmd\n\n";
           `$cmd`;
-          $cmd = "mplex -v $Verbosity -V $seqend -T 0 -f 3 $webdir/videotmp/$book-$ch-0.m2v $webdir/videotmp/$book-$ch-0.m2a -o $webdir/$book/$book-$ch-0.mpg";
+          $cmd = "mplex -v $Verbosity -V $seqend -T 0 -f 3 \"$webdir/videotmp/$book-$ch-0.m2v\" \"$webdir/videotmp/$book-$ch-0.m2a\" -o \"$webdir/$book/$book-$ch-0.mpg\"";
           print "$cmd\n\n";
           `$cmd`;
         }
         
-        $cmd = "mplex -v $Verbosity -V $seqend -T $startPTS -f 3 $webdir/videotmp/$book-$ch-$pg.m2v $webdir/videotmp/$book-$ch-$pg.m2a -o $webdir/$book/$book-$ch-$pg.mpg";
+        $cmd = "mplex -v $Verbosity -V $seqend -T $startPTS -f 3 \"$webdir/videotmp/$book-$ch-$pg.m2v\" \"$webdir/videotmp/$book-$ch-$pg.m2a\" -o \"$webdir/$book/$book-$ch-$pg.mpg\"";
         print "$cmd\n\n";
         `$cmd`; 
         #$nextPTS = &readPTS("$webdir/$book/$book-$ch-$pg.mpg") + 0.04;         
       }
       else {
-        $cmd = "mplex -v $Verbosity -V -f 3 $webdir/videotmp/$book-$ch-$pg.m2v $webdir/videotmp/$book-$ch-$pg.m2a -o $webdir/$book/$book-$ch-$pg.mpg";
+        $cmd = "mplex -v $Verbosity -V -f 3 \"$webdir/videotmp/$book-$ch-$pg.m2v\" \"$webdir/videotmp/$book-$ch-$pg.m2a\" -o \"$webdir/$book/$book-$ch-$pg.mpg\"";
         print "\n\n$cmd\n\n";
         `$cmd`;
-        $cmd = "ffmpeg -i $webdir/$book/$book-$ch-$pg.mpg -vcodec copy -acodec libmp3lame -y $webdir/$book/fin-$book-$ch-$pg.mpg";
+        $cmd = "ffmpeg -i \"$webdir/$book/$book-$ch-$pg.mpg\" -vcodec copy -acodec libmp3lame -y \"$webdir/$book/fin-$book-$ch-$pg.mpg\"";
         print "\n\n$cmd\n\n";
         `$cmd`;
         if (!$debug) {`rm $webdir/$book/$book-$ch-$pg.mpg`;}

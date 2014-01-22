@@ -38,7 +38,7 @@ if ($STARTAUD eq "true") {
   # Convert audio file to wav
   $f = "$audiodir/".$haveAudio{$MBK."-".$MCH};
   $t = "$outaudiodir/labels.wav";
-  $com = "ffmpeg -acodec ac3 -i $f -y $t";
+  $com = "ffmpeg -acodec ac3 -i \"$f\" -y \"$t\"";
   print $com;
   `$com`;
   
