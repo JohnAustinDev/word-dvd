@@ -18,9 +18,25 @@
       window.open("chrome://word-dvd/content", "word-dvd", "chrome=yes");
     }
   </script>
-  
-  <menupopup id="menu_ToolsPopup">
+
+<menupopup id="menu_ToolsPopup">
   <menuseparator/>
-  <menuitem label="Word-DVD..." oncommand="startWordDVD();" />
-  </menupopup>
+  <menuitem insertafter="menu_preferences" 
+      image="chrome://word-dvd/skin/icon.png"
+      class="menuitem-iconic"
+      label="Word-DVD..." 
+      oncommand="startWordDVD();" />
+</menupopup>
+
+<toolbar id="nav-bar">
+  <toolbarbutton insertafter="home-button" 
+      image="chrome://word-dvd/skin/icon32.png"
+      class="toolbarbutton-1 chromeclass-toolbar-additional"
+      persist="class" 
+      removable="true"
+      label="Word-DVD..."
+      oncommand="startWordDVD();" />
+</toolbar>
+
+
 </overlay>
