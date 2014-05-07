@@ -200,7 +200,7 @@ foreach $book (sort {$books{$a}<=>$books{$b}} keys %books) {
     for ($pg=1; $pg<=$lastPage{$book."-".$ch}; $pg++) {
       $nextT = $TSTART{$book."-".$ch."-".($pg+1)};
       if ($nextT eq "") {$nextT = $audiofilelen{$book."-".$ch};}
-      if (($nextT-$TSTART{$book."-".$ch."-".$pg}) < $MINIMUML) {print "ERROR: Page $book-$ch-$pg is less than $MINIMUML seconds!\n";}
+      if (!$IsTimeAnalysisScript && (($nextT-$TSTART{$book."-".$ch."-".$pg}) < $MINIMUML)) {print "ERROR: Page $book-$ch-$pg is less than $MINIMUML seconds!\n";}
       print CHP ", ".$TSTART{$book."-".$ch."-".$pg};
     }
     print CHP "\n";

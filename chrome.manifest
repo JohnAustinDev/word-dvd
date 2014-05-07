@@ -1,2 +1,3 @@
 content word-dvd file:chrome/word-dvd/content/
+skin word-dvd skin file:chrome/word-dvd/skin/
 overlay chrome://browser/content/browser.xul chrome://word-dvd/content/word-dvd-overlay.xul

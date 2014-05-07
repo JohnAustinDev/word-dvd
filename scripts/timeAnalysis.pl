@@ -24,6 +24,8 @@
 
 print "\nRUNNING timeAnalysis.pl\n";
 
+$IsTimeAnalysisScript = 1;
+
 # Remove timingAdjustments.csv, then run audio.pl to create clean chapters.csv file
 unlink("$ARGV[2]/audio/timingAdjustments.csv");
 $scriptdir = $ARGV[0];
