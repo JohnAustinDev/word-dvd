@@ -618,8 +618,8 @@ sub internalChapter2Real($$$) {
   my $quiet = shift;
 
   my $res = -1;
-  if ($haveAudio{"$bk-$ic"} =~ /^[^-]+-([^-]+)-(\d+)/i) {
-    $res = (1*$2);
+  if ($haveAudio{"$bk-$ic"} =~ /\-(\d+)/i) {
+    $res = (1*$1);
     my $i = ($ic-1);
     while ($i >= 1 && $haveAudio{"$bk-$i"} eq $haveAudio{"$bk-$ic"}) {
       $i--; 
