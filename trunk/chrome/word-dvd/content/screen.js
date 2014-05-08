@@ -12,7 +12,8 @@ function init() {
 }
 
 function fitScreen(book, chapter, subchapters, aPage, skipPage1, skipPage2) {
-MainWin.jsdump("Chapter=" + Number(chapter+subchapters) + ", Pagenumber=" + aPage.pagenumber);
+var logthis = eval(uneval(aPage)); logthis.passage = "hidden";
+MainWin.jsdump("Chapter=" + Number(chapter+subchapters) + ", " + uneval(logthis));
   DisplayBook = book;
   DisplayChapter = chapter;
   
