@@ -1152,6 +1152,7 @@ function stop() {
       if (files.match(/^\s*$/)) {continue;}
       unUtilizedAudio += files + "\n";
     }
+/*
     // report any unused TransitionTiming entries
     for (var vt in RenderWin.TransitionTiming) {
       for (var i=0; i<RenderWin.TransitionTiming[vt].length; i++) {
@@ -1160,6 +1161,8 @@ function stop() {
         }
       }
     }
+*/
+
   }
   if (unUtilizedAudio) logmsg("Unutilized audio file(s):\n" + unUtilizedAudio);
   if (RenderWin) RenderWin.close();

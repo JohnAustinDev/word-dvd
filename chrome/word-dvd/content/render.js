@@ -1065,81 +1065,94 @@ function recordDirectoryAudioFiles(audiodir, root) {
 // does sanity checking and reporting as well
 function getAudioFileCoverage(filename) {
   var AudioFileRE1 = new RegExp(/^(([^-]+)-)?([^-]+)-(\d+):(\d+)-(\d+):(\d+)\.ac3$/);
-  var AudioFileRE2 = new RegExp(/^(([^-]+)-)?([^-]+)-(\d+)(-(\d+)|:(\d+)-(\d+))?\.ac3$/);
-
-  var parts = filename.match(AudioFileRE2);
-  if (parts) parts[0] = 2;
+  var AudioFileRE2 = new RegExp(/^(([^-]+)-)?([^-]+)-(\d+):(\d+)-(\d+)\.ac3$/);
+  var AudioFileRE3 = new RegExp(/^(([^-]+)-)?([^-]+)-(\d+)-(\d+)\.ac3$/);
+  var AudioFileRE4 = new RegExp(/^(([^-]+)-)?([^-]+)-(\d+)\.ac3$/);
+  
+  var f = filename.match(AudioFileRE1);
+  if (f) f[0] = 1;
   else {
-    parts = filename.match(AudioFileRE1);
-    if (parts) parts[0] = 1;
-  }
+		f = filename.match(AudioFileRE2);
+		if (f) f[0] = 2;
+		else {
+			f = filename.match(AudioFileRE3);
+			if (f) f[0] = 3;
+			else {
+				f = filename.match(AudioFileRE4);
+				if (f) f[0] = 4;
+			}
+		}
+	}
+  if (!f) return null;
   
-  if (!parts) return null;
-  
-  var bkobj = Book[getBindexFromBook(parts[3])];
+  var bkobj = Book[getBindexFromBook(f[3])];
   
   if (!bkobj) return null; // skip this audio file if its book is not being run
-
+  
+  for (i=4; i<f.length; i++) {f[i] = Number(f[i]);}
+  
   var type, ret;
-  if (parts[0] == 2) { // AudioFileRE2
-    parts[4] = Number(parts[4]); // starting chapter
-    parts[6] = Number(parts[6]); // ending chapter (?)
-    parts[7] = Number(parts[7]); // starting verse (?)
-    parts[8] = Number(parts[8]); // ending verse (?)
-    if (!ret && !parts[5]) 
-      ret = {
-        type:"chapter", 
-        ap:parts[2], 
-        bk:parts[3], 
-        chs:parts[4], 
-        che:parts[4], 
-        vs:bkobj["ch" + parts[4] + "MinVerse"], 
-        ve:bkobj["ch" + parts[4] + "MaxVerse"]
-      };
-      
-    if (!ret && parts[6])  
-      ret = {
-        type:"multi-chapter", 
-        ap:parts[2], 
-        bk:parts[3], 
-        chs:parts[4], 
-        che:parts[6], 
-        vs:bkobj["ch" + parts[4] + "MinVerse"], 
-        ve:bkobj["ch" + parts[6] + "MaxVerse"]
-      };
-    
-    if (!ret) {
-      type = "sub-chapter";
-      if (parts[7] == bkobj["ch" + parts[4] + "MinVerse"] && parts[8] == bkobj["ch" + parts[4] + "MaxVerse"]) type = "chapter";
-      ret = {
-        type:type, 
-        ap:parts[2], 
-        bk:parts[3], 
-        chs:parts[4], 
-        che:parts[4], 
-        vs:parts[7], 
-        ve:parts[8]
-      };
-    }
-  }
- 
-  if (parts[0] == 1) {
-    parts[4] = Number(parts[4]);
-    parts[5] = Number(parts[5]);
-    parts[6] = Number(parts[6]);
-    parts[7] = Number(parts[7]);
+	switch (f[0]) {
+	case 1:
     type = "multi-chapter-incomplete";
-    if (parts[4] == parts[6]) {
-      if (parts[5] == bkobj["ch" + parts[4] + "MinVerse"] && parts[7] == bkobj["ch" + parts[4] + "MaxVerse"]) type = "chapter";
+    if (f[4] == f[6]) {
+      if (f[5] == bkobj["ch" + f[4] + "MinVerse"] && f[7] == bkobj["ch" + f[4] + "MaxVerse"]) type = "chapter";
       else type = "sub-chapter";
     }
-    else if (parts[5] == bkobj["ch" + parts[4] + "MinVerse"] && parts[7] == bkobj["ch" + parts[6] + "MaxVerse"]) type = "multi-chapter";
-    ret = {type:type, ap:parts[2], bk:parts[3], chs:parts[4], che:parts[6], vs:parts[5], ve:parts[7]};
-  }
-     
+    else if (f[5] == bkobj["ch" + f[4] + "MinVerse"] && f[7] == bkobj["ch" + f[6] + "MaxVerse"]) type = "multi-chapter";
+    ret = {
+			type:type, 
+			ap:f[2], 
+			bk:f[3], 
+			chs:f[4], 
+			che:f[6], 
+			vs:f[5], 
+			ve:f[7]
+		};
+		break;
+		
+	case 2:
+		type = "sub-chapter";
+		if (f[5] == bkobj["ch" + f[4] + "MinVerse"] && f[6] == bkobj["ch" + f[4] + "MaxVerse"]) type = "chapter";
+		ret = {
+			type:type, 
+			ap:f[2], 
+			bk:f[3], 
+			chs:f[4], 
+			che:f[4], 
+			vs:f[5], 
+			ve:f[6]
+		};
+		break;
+		
+	case 3:
+		ret = {
+			type:"multi-chapter",
+			ap:f[2], 
+			bk:f[3], 
+			chs:f[4], 
+			che:f[5], 
+			vs:(bkobj["ch" + f[4] + "MinVerse"] ? bkobj["ch" + f[4] + "MinVerse"]:1), 
+			ve:(bkobj["ch" + f[5] + "MaxVerse"] ? bkobj["ch" + f[5] + "MaxVerse"]:1)
+		};
+		break;
+		
+	case 4:
+		ret = {
+			type:"chapter", 
+			ap:f[2], 
+			bk:f[3], 
+			chs:f[4], 
+			che:f[4], 
+			vs:(bkobj["ch" + f[4] + "MinVerse"] ? bkobj["ch" + f[4] + "MinVerse"]:1), 
+			ve:(bkobj["ch" + f[4] + "MaxVerse"] ? bkobj["ch" + f[4] + "MaxVerse"]:1)
+		};
+		break	;
+	}
+   
   // now sanity check file coverage and report
   if (!ret.type || !ret.bk || (!ret.chs && ret.chs!=0) || (!ret.che && ret.che!=0) || !ret.vs || !ret.ve)
-      MainWin.logmsg("ERROR: Problem interpereting audio file name: \"" + filename + "\".");
+      MainWin.logmsg("ERROR: Problem interpereting audio file name: \"" + filename + "\": " + uneval(ret));
   else {
     if (ret.chs > ret.che || (ret.chs == ret.che && ret.vs > ret.ve))
         MainWin.logmsg("ERROR: Audio file chapter or verse goes in reverse: \"" + filename + "\".");
@@ -1434,7 +1447,7 @@ function writeStats(book, chapterstats, overwrite) {
 	var file = MainWin.StatsFile.clone();
 	file.append(book + ".csv");
   if (file.exists() && overwrite) file.remove(false);
-  if (!file.exists()) MainWin.write2File(file, "#Page,AtPageEnd,Calculated_Chapter_Fraction,Audio_File,Number_of_Titles,Calculated_Total_Length,Absolute_Time\n", false);
+  if (!file.exists()) MainWin.write2File(file, "#Page,AtPageEnd,AtChapterEnd,Calculated_Chapter_Fraction,Audio_File,Number_of_Titles,Calculated_Total_Length,Absolute_Time\n", false);
   MainWin.write2File(file, statstring, true);
 	
   // write the book's transitions file
@@ -1446,14 +1459,23 @@ function writeStats(book, chapterstats, overwrite) {
 }
 
 function formatStatString(s, total) {
+	
   var atPageEnd = MainWin.getLocaleString("AtPageEnd:" + s.name);
   if (!atPageEnd) atPageEnd = "default";
   if (!(/^(loop|continue|pause|default)(\([\d\.]+\))?$/).test(atPageEnd)) {
     MainWin.logmsg("ERROR: Bad atPageEnd value:\"" + atPageEnd + "\"\n");
     atPageEnd = "default";
   }
+  
+  var atChapterEnd = MainWin.getLocaleString("AtChapterEnd:" + s.name);
+  if (!atChapterEnd) atChapterEnd = "default";
+  if (!(/^(loop|continue|pause|default)(\([\d\.]+\))?$/).test(atChapterEnd)) {
+    MainWin.logmsg("ERROR: Bad atChapterEnd value:\"" + atChapterEnd + "\"\n");
+    atChapterEnd = "default";
+  }
+  
   var rellen = Number(Math.round(10000000*s.len/total)/10000000);
-  return s.name + ", " + atPageEnd + ", " + rellen + ", " + s.hasAudio + ", " + s.numtitles + ", " + s.len + (s.realtime ? ", " + s.realtime:"") + "\n"; 
+  return s.name + ", " + atPageEnd + ", " + atChapterEnd + ", " + rellen + ", " + s.hasAudio + ", " + s.numtitles + ", " + s.len + (s.realtime ? ", " + s.realtime:"") + "\n"; 
 }
 
 function calculateReadingLength(info, html, lang, book, chapter) {

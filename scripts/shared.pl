@@ -191,8 +191,8 @@ sub readPageInformation {
     if ($_ =~ /^\s*\#/) {next;}
     $order++;
     
-    #Titus-1-4a, default, 0.211183, en-Titus-01.ac3, 1, 457, 1:07
-    if ($_ =~ /^\s*(.*)-(\d+)-(\d+)[ab]\s*,\s*(\S+)\s*,\s*([\-\d\.]+)\s*,\s*(\S+)\s*,\s*(\d+)\s*,\s*(\d+)\s*,\s*(.*?)\s*$/) {
+    #Titus-1-4a, default, loop, 0.211183, en-Titus-01.ac3, 1, 457, 1:07
+    if ($_ =~ /^\s*(.*)-(\d+)-(\d+)[ab]\s*,\s*(\S+)\s*,\s*\S+\s*,\s*([\-\d\.]+)\s*,\s*(\S+)\s*,\s*(\d+)\s*,\s*(\d+)\s*,\s*(.*?)\s*$/) {
       my $bkt = $1;
       my $cht = $2;
       my $pgt = $3;
@@ -211,16 +211,17 @@ sub readPageInformation {
       }
     }
     
-    #Ruth-1-4, default, 0.1545505, still, 1, 3845
-    elsif ($_ =~ /^\s*(.*)-(\d+)-(\d+)\s*,\s*(\S+)\s*,\s*([\d\.]+)\s*,\s*(\S+)\s*,\s*(\d+)\s*,\s*(\d+)\s*$/) {
+    #Ruth-1-4, default, loop, 0.1545505, still, 1, 3845
+    elsif ($_ =~ /^\s*(.*)-(\d+)-(\d+)\s*,\s*(\S+)\s*,\s*(\S+)\s*,\s*([\d\.]+)\s*,\s*(\S+)\s*,\s*(\d+)\s*,\s*(\d+)\s*$/) {
       $book = $1;
       $ch = $2;
       $pg = $3;
       my $atPageEnd = $4;
-      $res = $5;
-      $audio = $6;
-      $numtitles = $7;
-      $rellen = $8;
+      my $atChapterEnd = $5;
+      $res = $6;
+      $audio = $7;
+      $numtitles = $8;
+      $rellen = $9;
       
       if ($pg == 1 && $numtitles >=1 && $pageTimingEntry{"TitlesAreRead"} ne "true") {$numtitles--;}
   
@@ -244,6 +245,7 @@ sub readPageInformation {
       $pageTitles{"$book-$ch-$pg"} = $numtitles;
       $pages{"$book-$ch-$pg"} = $res;
       
+      # atPageEnd
       if ($atPageEnd eq "default") {
         $atPageEnd = $haveAudio{$book."-".$ch} eq "still" ? "pause":"continue"; # default
       }
@@ -253,6 +255,17 @@ sub readPageInformation {
       }
       $AtPageEnd{"$book-$ch-$pg"} = $atPageEnd;
       $AtPageEndDelay{"$book-$ch-$pg"} = $delay;
+      
+      # atChapterEnd
+      if ($atChapterEnd eq "default") {
+        $atChapterEnd = $haveAudio{$book."-".$ch} eq "still" ? "pause":"continue"; # default
+      }
+      my $delay = $haveAudio{$book."-".$ch} eq "still" ? "inf":"1"; # default
+      if ($atChapterEnd =~ s/\(([\d\.]+)\)$//) {
+        $delay = $1;
+      }
+      $AtChapterEnd{"$book-$ch-$pg"} = $atChapterEnd;
+      $AtChapterEndDelay{"$book-$ch-$pg"} = $delay;
 
       #print "Read:$_";
     }
@@ -282,7 +295,7 @@ sub readPageInformation {
   foreach my $book (sort {$books{$a}<=>$books{$b}} keys %books) {
     for (my $ch=0; $ch<=$lastChapter{$book}; $ch++) {
       for (my $pg=1; $pg<=$lastPage{$book."-".$ch}; $pg++) {
-        if ($mpgIsMultiPage{$book."-".$ch} eq "true" && $AtPageEnd{"$book-$ch-$pg"} ne "continue") {
+        if ($mpgIsMultiPage{$book."-".$ch} eq "true" && ($AtPageEnd{"$book-$ch-$pg"} ne "continue" || $AtChapterEnd{"$book-$ch-$pg"} ne "continue")) {
           $mpgIsMultiPage{$book."-".$ch} = "false";
         }
       }

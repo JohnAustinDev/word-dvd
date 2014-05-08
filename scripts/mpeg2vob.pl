@@ -259,6 +259,8 @@ foreach $book (sort {$books{$a}<=>$books{$b}} keys %books) {
       $CHAPTERS{$VTS."-".$TITLE."-".$VOB} = $Chapterlist{$book."-".$ch};
       $AT_VOB_END{$VTS."-".$TITLE."-".$VOB} = $AtPageEnd{"$book-$ch-".$lastPage{"$book-$ch"}};
       $AT_VOB_END_DELAY{$VTS."-".$TITLE."-".$VOB} = $AtPageEndDelay{"$book-$ch-".$lastPage{"$book-$ch"}};
+      $AT_CHAPTER_END{$VTS."-".$TITLE."-".$VOB} = $AtChapterEnd{"$book-$ch-".$lastPage{"$book-$ch"}};
+      $AT_CHAPTER_END_DELAY{$VTS."-".$TITLE."-".$VOB} = $AtChapterEndDelay{"$book-$ch-".$lastPage{"$book-$ch"}};
       $PROGRAM = $PROGRAM+@pages;
       $MAXPROGRAM{$VTS."-".$TITLE} = $PROGRAM-1;
       $VOB++;
@@ -270,6 +272,8 @@ foreach $book (sort {$books{$a}<=>$books{$b}} keys %books) {
         $CHAPTERS{$VTS."-".$TITLE."-".$VOB} = "00:00:00.00";
         $AT_VOB_END{$VTS."-".$TITLE."-".$VOB} = $AtPageEnd{"$book-$ch-$pg"};
         $AT_VOB_END_DELAY{$VTS."-".$TITLE."-".$VOB} = $AtPageEndDelay{"$book-$ch-$pg"};
+        $AT_CHAPTER_END{$VTS."-".$TITLE."-".$VOB} = $AtChapterEnd{"$book-$ch-$pg"};
+        $AT_CHAPTER_END_DELAY{$VTS."-".$TITLE."-".$VOB} = $AtChapterEndDelay{"$book-$ch-$pg"};
         #if page "1" is missing, the previous page should be referenced as the first page of this chapter
         if (!exists($PROGRAMofCHAP{$book."-".$ch})) {
           if (($PROGRAM-$pg+1) == 0) {
@@ -1102,31 +1106,50 @@ sub writeTitlePGC {
   print XML "\t\t\t\t<button name=\"bfootnotes\">{".&jumpTo("fn", "sregs", "sregs", $bfoot{"bfootnotes"}, "callroot")."}</button>\n";
   print XML "\t\t\t\t<button name=\"bnext\">{".&traverse("text", "next")."}</button>\n";
   
-  #generate video contents        
+  #generate video contents       
+  my $titleChapter = 0;
+  my $titleChapterAtUserChapStart = 0;
+  my $lastUserChap = 0;
   for ($vob=1; exists $FILE{$RELtextVTS{$vts}."-".$pgc."-".$vob}; $vob++) {
     $file = $FILE{$RELtextVTS{$vts}."-".$pgc."-".$vob};
 
+    my $thisUserChap = $file; #fin-chapter2-1.mpg
+    $thisUserChap =~ s/^.*fin-[^-]+-(\d+).*?$/$1/;
+		if (!$lastUserChap || $thisUserChap ne $lastUserChap) {
+			$titleChapterAtUserChapStart = ($titleChapter+1);
+		}
+		$lastUserChap = $thisUserChap;
+
     #a 1 frame gap was added between each page for DVDAUTHOR, so we must add that to chapter times as well
     @chaps = split(/,/, $CHAPTERS{$RELtextVTS{$vts}."-".$pgc."-".$vob});
+    $titleChapter += @chaps;
     my $gap = 0;
     foreach $chap (@chaps) {
       $chap = (&unformatTime($chap)+$gap);
       $gap = ($gap + 0.040);
       $chap = &formatTime($chap);
     }
+    
+    # Is this the last VOB in this UserChapter?
+    my $isLastVOBInUserChap = 0;
+    if (exists $FILE{$RELtextVTS{$vts}."-".$pgc."-".($vob+1)}) {
+			my $nc = $FILE{$RELtextVTS{$vts}."-".$pgc."-".($vob+1)};
+			$nc =~ s/^.*fin-[^-]+-(\d+).*?$/$1/;
+			if ($nc ne $thisUserChap) {$isLastVOBInUserChap = 1;}
+		}
+		else {$isLastVOBInUserChap = 1;}
+    
     # A 1+ second pause is necessary so that early switching to next chapter does not occur
-    if ($AT_VOB_END{$vts."-".$pgc."-".$vob} eq "loop") {
+    if ($AT_VOB_END{$vts."-".$pgc."-".$vob} eq "loop" || ($isLastVOBInUserChap && $AT_CHAPTER_END{$vts."-".$pgc."-".$vob} eq "loop")) { # these are forced to always be single title-chapter VOBs!
+			my $targetTC = ($isLastVOBInUserChap && $AT_CHAPTER_END{$vts."-".$pgc."-".$vob} eq "loop" ? $titleChapterAtUserChapStart:$titleChapter);
       print XML "\t\t\t\t<vob file=\"".$file."\" >";
-      my $chapter = 0;
-      for (my $v=1; $v<=$vob; $v++) {
-        my @chc = split(/,/, $CHAPTERS{$RELtextVTS{$vts}."-".$pgc."-".$v});
-        $chapter += @chc;
-      }
-      print XML "<cell chapter=\"on\" pause=\"1\">{ jump title ".$vts." chapter ".$chapter."; }</cell>";
+      print XML "<cell chapter=\"on\" pause=\"1\">{ jump title ".$pgc." chapter ".$targetTC."; }</cell>";
       print XML "</vob>\n";
     }
     else {
-      print XML "\t\t\t\t<vob file=\"".$file."\" chapters=\"".join(",", @chaps)."\" pause=\"".$AT_VOB_END_DELAY{$vts."-".$pgc."-".$vob}."\" ></vob>\n";
+			# pause here implements AT_VOB_END and AT_CHAPTER_END's "pause"
+			my $pause = ($AT_CHAPTER_END_DELAY{$vts."-".$pgc."-".$vob} ne "1" ? $AT_CHAPTER_END_DELAY{$vts."-".$pgc."-".$vob}:$AT_VOB_END_DELAY{$vts."-".$pgc."-".$vob});
+      print XML "\t\t\t\t<vob file=\"".$file."\" chapters=\"".join(",", @chaps)."\" pause=\"".$pause."\" ></vob>\n";
     }
     
   }
