@@ -34,6 +34,7 @@ const ISMENUIMAGE = 0, ISTEXTIMAGE = 1, ISFOOTNOTEIMAGE = 2;
 const REPAIRLEN = 64; // length of TransitionTiming repair string should be longer than pagebreak tags
 const BEGINCONTENT = "<!-- BEGIN-CONTENT !-->";
 const ENDCONTENT = "<!-- END-CONTENT !-->";
+const COMPACT_FOOTNOTES = false;
 
 var RenderFrame, MainWin;
 var ILastPage;
@@ -1614,7 +1615,9 @@ function initFootnotes() {
   IsFirstFN = true;
   Prepender = "";
   ContinueFunc = "renderNewFNScreen();";
-  LastBindex=0;
+  FNLast.bindex = 0;
+  FNLast.chapter = 0;
+  FNLast.page = 0;
   
   var body = RenderFrame.contentDocument.getElementById("body");
   body.setAttribute("pagetype", "FOOTNOTE");
@@ -1637,7 +1640,7 @@ var ContinuePage;
 var IsFirstFN;
 var Prepender;
 var Norender;
-var LastBindex;
+var FNLast = {bindex:0, chapter:0, page:0};
 // To start with, the passage consists of a single note. If it fits 
 // (Page.complete), then another note is added to the passage until
 // the passage no longer fits. The second to last try is saved. 
@@ -1646,11 +1649,16 @@ function renderNewFNScreen() {
   var book = PageWithFootnotes[FootnoteIndex].name.match(/^([^-]+)-/i)[1];
   Bindex = getBindexFromBook(book);
   Chapter = PageWithFootnotes[FootnoteIndex].chapter;
-  if (LastBindex != Bindex) {
+  var rpage = PageWithFootnotes[FootnoteIndex].name.match(/-([^-]+)$/i)[1];
+  if (FNLast.bindex != Bindex || 
+			(!COMPACT_FOOTNOTES && FNLast.chapter != Chapter) ||
+			(!COMPACT_FOOTNOTES && FNLast.page != rpage)) {
     MainWin.logmsg("Rendering Footnotes for page:" + PageWithFootnotes[FootnoteIndex].name + "...");
     IsFirstFN=true;
   }
-  LastBindex = Bindex;
+  FNLast.bindex = Bindex;
+  FNLast.chapter = Chapter;
+  FNLast.page = rpage;
   
   if (IsFirstFN) {
     Page = {passage:"", beg:0, end:0, complete:false, pagenumber:1, isNotes:false, topSplitTag:null, bottomSplitTag:null, matchTransition:null};
@@ -1686,7 +1694,10 @@ function renderNewFNScreen() {
   else if (Page.complete) {
     ContinuePage = false;
     // if this was a continued page, delete last image and attach it's text to next...
-    if (Page.pagenumber > 1 && (FootnoteIndex+1) < PageWithFootnotes.length && PageWithFootnotes[FootnoteIndex+1].name.match(/^([^-]+)-/i)[1]==Book[Bindex].shortName) {
+    if (Page.pagenumber > 1 && (FootnoteIndex+1) < PageWithFootnotes.length && 
+				PageWithFootnotes[FootnoteIndex+1].name.match(/^([^-]+)-/i)[1]==Book[Bindex].shortName &&
+				(COMPACT_FOOTNOTES || PageWithFootnotes[FootnoteIndex+1].chapter==Chapter) &&
+				(COMPACT_FOOTNOTES || PageWithFootnotes[FootnoteIndex+1].name.match(/-([^-]+)$/i)[1]==rpage)) {
       IsFirstFN = true;
       Norender = true;
       Prepender = Page.passage.substring(tstart);

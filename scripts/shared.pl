@@ -245,22 +245,22 @@ sub readPageInformation {
       $pageTitles{"$book-$ch-$pg"} = $numtitles;
       $pages{"$book-$ch-$pg"} = $res;
       
-      # atPageEnd
+      # atPageEnd (default, loop, pause, or continue)
       if ($atPageEnd eq "default") {
         $atPageEnd = $haveAudio{$book."-".$ch} eq "still" ? "pause":"continue"; # default
       }
-      my $delay = $haveAudio{$book."-".$ch} eq "still" ? "inf":"1"; # default
+      my $delay = $haveAudio{$book."-".$ch} eq "still" ? "inf":"0"; # default
       if ($atPageEnd =~ s/\(([\d\.]+)\)$//) {
         $delay = $1;
       }
       $AtPageEnd{"$book-$ch-$pg"} = $atPageEnd;
       $AtPageEndDelay{"$book-$ch-$pg"} = $delay;
       
-      # atChapterEnd
+      # atChapterEnd (default, loop, pause, or continue)
       if ($atChapterEnd eq "default") {
         $atChapterEnd = $haveAudio{$book."-".$ch} eq "still" ? "pause":"continue"; # default
       }
-      my $delay = $haveAudio{$book."-".$ch} eq "still" ? "inf":"1"; # default
+      my $delay = $haveAudio{$book."-".$ch} eq "still" ? "inf":"0"; # default
       if ($atChapterEnd =~ s/\(([\d\.]+)\)$//) {
         $delay = $1;
       }
