@@ -243,7 +243,9 @@ foreach $book (sort {$books{$a}<=>$books{$b}} keys %books) {
         $MAXFNPROGRAM{$FNVTS."-".$FNTITLE} = $FNPROGRAM;
         $FNVTSFOR{$VTS."-".$TITLE."-".($PROGRAM+$pgfn)} = $FNVTS;
         $FNTITLEFOR{$VTS."-".$TITLE."-".($PROGRAM+$pgfn)} = $FNTITLE;
-        $FNCHAPTERFOR{$VTS."-".$TITLE."-".($PROGRAM+$pgfn)} = $FNPROGRAM;
+        if (!defined($FNCHAPTERFOR{$VTS."-".$TITLE."-".($PROGRAM+$pgfn)})) {
+					$FNCHAPTERFOR{$VTS."-".$TITLE."-".($PROGRAM+$pgfn)} = $FNPROGRAM;
+				}
         $FNPROGRAM++;
         $pgn++;
       }
@@ -1139,17 +1141,17 @@ sub writeTitlePGC {
 		}
 		else {$isLastVOBInUserChap = 1;}
     
-    # A 1+ second pause is necessary so that early switching to next chapter does not occur
     if ($AT_VOB_END{$vts."-".$pgc."-".$vob} eq "loop" || ($isLastVOBInUserChap && $AT_CHAPTER_END{$vts."-".$pgc."-".$vob} eq "loop")) { # these are forced to always be single title-chapter VOBs!
 			my $targetTC = ($isLastVOBInUserChap && $AT_CHAPTER_END{$vts."-".$pgc."-".$vob} eq "loop" ? $titleChapterAtUserChapStart:$titleChapter);
       print XML "\t\t\t\t<vob file=\"".$file."\" >";
+      # A 1+ second pause is necessary so that early switching to next chapter does not occur
       print XML "<cell chapter=\"on\" pause=\"1\">{ jump title ".$pgc." chapter ".$targetTC."; }</cell>";
       print XML "</vob>\n";
     }
     else {
 			# pause here implements AT_VOB_END and AT_CHAPTER_END's "pause"
-			my $pause = ($AT_CHAPTER_END_DELAY{$vts."-".$pgc."-".$vob} ne "1" ? $AT_CHAPTER_END_DELAY{$vts."-".$pgc."-".$vob}:$AT_VOB_END_DELAY{$vts."-".$pgc."-".$vob});
-      print XML "\t\t\t\t<vob file=\"".$file."\" chapters=\"".join(",", @chaps)."\" pause=\"".$pause."\" ></vob>\n";
+			my $pause = ($AT_CHAPTER_END_DELAY{$vts."-".$pgc."-".$vob} ne "0" ? $AT_CHAPTER_END_DELAY{$vts."-".$pgc."-".$vob}:$AT_VOB_END_DELAY{$vts."-".$pgc."-".$vob});
+      print XML "\t\t\t\t<vob file=\"".$file."\" chapters=\"".join(",", @chaps)."\"".($pause ne "0" ? " pause=\"".$pause."\" ":"")."></vob>\n";
     }
     
   }
