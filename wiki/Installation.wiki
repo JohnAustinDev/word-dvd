@@ -22,7 +22,7 @@
 
 
 === Steps to make a DVD ===
-1) Install the latest modified mjpegtools package provided in the downloads section. This mjpegtools package contains modified `"mplex"` and `"mpeg2enc"`programs which are capable of creating highly compressed slide shows (10's of hours on a single DVD rather than just 1 or 2).
+1) Install the [http://ibt.org.ru/ftpmirror/pub/word-dvd/modified-mjpegtools-2.0.0_3.tar.gz modified mjpegtools package]. This mjpegtools package contains modified `"mplex"` and `"mpeg2enc"`programs which are capable of creating highly compressed slide shows (10's of hours on a single DVD rather than just 1 or 2).
 
 2) Install the latest `"Word-DVD-xx.xpi"` Firefox extension found in the [http://code.google.com/p/word-dvd/downloads/list downloads] list. 
 
