@@ -21,8 +21,6 @@ apt-get install -y dvbsnoop
 apt-get install -y eyed3
 apt-get install -y sox
 
-apt-get install -y gnome-terminal
-
 # Allow remote x-server through ssh
 echo X11Forwarding yes >> /home/vagrant/.ssh/config
 echo X11UseLocalhost yes >> /home/vagrant/.ssh/config
@@ -41,7 +39,7 @@ cd modified-mjpegtools-2.0.0
 make install
 ldconfig
 
-# Set up Firefox Add-On
+# Install Firefox Profile
 mkdir -p /home/vagrant/.mozilla/firefox
 cd /home/vagrant/.mozilla/firefox
 echo [General] > profiles.ini
@@ -51,10 +49,24 @@ echo Name=Word-DVD >> profiles.ini
 echo IsRelative=1 >> profiles.ini
 echo Path=Word-DVD >> profiles.ini
 echo Default=1 >> profiles.ini
-mkdir -p ./Word-DVD/extensions
-echo /vagrant > ./Word-DVD/extensions/\{f597ab2a-3a14-11de-a792-e68e56d89593\}
-echo firefox -P Word-DVD -jsconsole -purgecaches -no-remote > /home/vagrant/word-dvd.sh
-chmod ug+x /home/vagrant/word-dvd.sh
 
-# vagrant -X ssh
-# word-dvd.sh
+# Install Firefox extension
+mkdir -p ./Word-DVD/extensions
+echo /vagrant/extension > ./Word-DVD/extensions/\{f597ab2a-3a14-11de-a792-e68e56d89593\}
+
+# Install default Vagrant prefs
+cp /vagrant/prefs.js ./Word-DVD
+
+if [ ! -e /vagrant/PROJECT/INPUTS ]; then
+  mkdir -p /vagrant/PROJECT/INPUTS
+fi
+if [ ! -e /vagrant/PROJECT/OUTPUTS ]; then
+  mkdir /vagrant/PROJECT/OUTPUTS
+fi
+
+# Create easy Firefox startup script
+echo firefox -p Word-DVD -jsconsole -purgecaches -no-remote >> /home/vagrant/.bashrc
+
+# Fix permissions
+chown -R vagrant:vagrant /home/vagrant/.mozilla
+chown vagrant:vagrant /home/vagrant/firefox.sh

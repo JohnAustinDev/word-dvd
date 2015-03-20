@@ -50,6 +50,7 @@ const MENUHTML="menu.html";
 const CAPTURE="import.sh";
 const CAPTUREMASK="importMask.sh";
 // Input directory
+const INDEFAULTS = "defaults/INPUTS/";
 const LOCALEFILE="config.txt";
 const OSISFILE = "osis.xml";
 const PAGETIMING="pageTiming.txt";
@@ -158,7 +159,7 @@ function write2File(aFile, string, append) {
 
 var prefs = Components.classes["@mozilla.org/preferences-service;1"].
                     getService(Components.interfaces.nsIPrefService);  
-prefs = prefs.getBranch("wordDVD.");
+prefs = prefs.getBranch("extensions.worddvd.");
 
 // Looks for a string labeled by name in config.txt file. If the name is
 // not there, a less specific version of the name is sought. Runtime
@@ -330,7 +331,7 @@ function updateAction(elem) {
     document.getElementById("browse-1").disabled = false;
     document.getElementById("browse-2").disabled = false;
     var file = kFilePicker.file.clone();
-    if (input == OUTDIR) file.append(OUTDIRNAME);
+    if (input == OUTDIR && file.leafName != OUTDIRNAME) file.append(OUTDIRNAME);
     UIfile[input] = file;
     InputTextbox[input].value = file.path;
     if (input == INDIR) setDirsToDefault();
@@ -523,6 +524,18 @@ var MessageWin;
 var Osis2HtmlInterval;
 function wordDVD() {
 
+  // THE FOLLOWING ARE DEFAULT FILES THAT ARE EDITED OR REPLACED IN A NEW PROJECT.
+  // EXPORT THESE DIRECTORIES AND FILES ONLY IF THE DESTINATION DIR DOES NOT EXIST
+  if (!UIfile[INDIR].exists() || !UIfile[INDIR].directoryEntries.hasMoreElements()) {
+    exportDir(MENUSDIR, UIfile[INDIR].path, false);
+    exportDir(HTMLDIR, UIfile[INDIR].path, false);
+    exportDir(INIMAGEDIR, UIfile[INDIR].path, false);
+    exportDir(INAUDIODIR, UIfile[INDIR].path, false);
+    exportFile(PROJECTCSS, UIfile[INDIR].path, false);
+    exportFile(LOCALEFILE, UIfile[INDIR].path, false);
+    exportFile(PAGETIMING, UIfile[INDIR].path, false);
+  }
+
   // Check output directory and clean if needed
   if (!UIfile[OUTDIR].exists()) UIfile[OUTDIR].create(UIfile[OUTDIR].DIRECTORY_TYPE, 511);
   else if (document.getElementById("cleanOutDir").checked) {
@@ -537,23 +550,6 @@ function wordDVD() {
   ScreenHTML.append(MENUSDIR);
   ScreenHTML.append(MENUHTML);
   
-  // THE FOLLOWING ARE EXAMPLE FILES THAT ARE EDITED OR REPLACED IN A NEW PROJECT
-  // EXPORT THESE DIRECTORIES ONLY IF THE DESTINATION DIR DOES NOT EXIST
-  var test;
-  test = UIfile[INDIR].clone(); test.append(MENUSDIR);
-  if (!test.exists()) exportDir(MENUSDIR, UIfile[INDIR].path, false);
-  test = UIfile[INDIR].clone(); test.append(HTMLDIR);
-  if (!test.exists()) exportDir(HTMLDIR, UIfile[INDIR].path, false);
-  test = UIfile[INDIR].clone(); test.append(INIMAGEDIR);
-  if (!test.exists()) exportDir(INIMAGEDIR, UIfile[INDIR].path, false);
-  test = UIfile[INDIR].clone(); test.append(INAUDIODIR);
-  if (!test.exists()) exportDir(INAUDIODIR, UIfile[INDIR].path, false);
-  
-  // EXPORT THESE FILES ONLY IF THE DESTINATION FILE DOES NOT EXIST
-  exportFile(PROJECTCSS, UIfile[INDIR].path, false);
-  exportFile(LOCALEFILE, UIfile[INDIR].path, false);
-  exportFile(PAGETIMING, UIfile[INDIR].path, false);
-  
   // Create LocaleFile var
   LocaleFile = UIfile[INDIR].clone();
   LocaleFile.append(LOCALEFILE);
@@ -562,9 +558,14 @@ function wordDVD() {
   // MAKE OUTPUT SCRIPT DIR
   var file = UIfile[OUTDIR].clone(); 
   file.append(SCRIPT);
-  if (file.exists()) file.remove(true);
-  file.create(file.DIRECTORY_TYPE, 511);
-  exportDir(SCRIPTDIR, file.path, true);
+  // If there is a symlink to originals, don't delete and rewrite
+  var symlink = file.clone();
+  symlink.append(SCRIPTDIR);
+  if (!symlink || !symlink.exists() || !symlink.isSymlink()) {
+    if (file.exists()) file.remove(true);
+    file.create(file.DIRECTORY_TYPE, 511);
+    exportDir(SCRIPTDIR, file.path, true);
+  }
   
   // CREATE OUTPUT AUDIO DIR IF NEEDED
   var outaudio = UIfile[OUTDIR].clone();
@@ -835,7 +836,7 @@ function checkOSISConverion() {
   }
 }
 
-// extdir the partial path of a directory within the extension
+// extdir the pname of a subdirectory in the default inputs directory
 // outDirPath is the full destination base path
 // If overwrite is set, existing files will be overwritten, otherwise
 // directories will be merged with no overwrite.
@@ -849,11 +850,12 @@ function exportDir(extdir, outDirPath, overwrite) {
   if (!toP.exists()) toP.create(toP.DIRECTORY_TYPE, 511);
   if (ExtFile.isDirectory()) {
     var from = Components.classes["@mozilla.org/file/local;1"].createInstance(Components.interfaces.nsILocalFile);
-    from.initWithPath(ExtFile.path + "/" + extdir);
+    from.initWithPath(ExtFile.path + "/" + (INDEFAULTS ? INDEFAULTS:"") + extdir);
     if (!from.exists() || !from.isDirectory()) {logmsg("ERROR (exportDir): From directory does not exist \"" + from.path + "\""); return null;}
     if (!copyFiles(from, to, overwrite, true)) return null;
   }
   else {
+    var direntry = (INDEFAULTS ? INDEFAULTS:"")  + extdir + "/";
     var zReader = Components.classes["@mozilla.org/libjar/zip-reader;1"].createInstance(Components.interfaces.nsIZipReader);
     try {zReader.open(ExtFile);}
     catch (er) {logmsg(er + "\nERROR (exportDir): cannot open \"" + ExtFile.path + "\""); return null;}	
@@ -867,19 +869,19 @@ function exportDir(extdir, outDirPath, overwrite) {
     }
 */    
     try {
-      var isdir = zReader.getEntry(extdir + "/");
-      if (!isdir || !isdir.isDirectory) {logmsg("ERROR (exportDir): From zip directory does not exist \"" + extdir + "\""); return null;}
+      var isdir = zReader.getEntry(direntry);
+      if (!isdir || !isdir.isDirectory) {logmsg("ERROR (exportDir): From zip directory does not exist \"" + direntry + "\""); return null;}
     }
-    catch(er) {logmsg(er + "\nERROR (exportDir): reading zip entry \"" + extdir + "\""); return null;}
+    catch(er) {logmsg(er + "\nERROR (exportDir): reading zip entry \"" + direntry + "\""); return null;}
     // create output directories	
     var entries = zReader.findEntries(null);
     while (entries.hasMore()) {
       var entry = entries.getNext();
-      if (entry.indexOf(extdir) != 0) {continue;}
+      if (entry.indexOf(direntry) != 0) {continue;}
       try {var entryObj = zReader.getEntry(entry);}
       catch (er) {logmsg(er + "\nError (exportDir): Getting zip directory entry " + entry + ". " + er); continue;}
       var newfile = Components.classes["@mozilla.org/file/local;1"].createInstance(Components.interfaces.nsILocalFile);
-      newfile.initWithPath(outDirPath + "/" + entry);
+      newfile.initWithPath(outDirPath + "/" + extdir);
       if (entryObj && entryObj.isDirectory && !newfile.exists()) newfile.create(newfile.DIRECTORY_TYPE, 511);
     }
     // create output files	
@@ -887,11 +889,11 @@ function exportDir(extdir, outDirPath, overwrite) {
     var entries = zReader.findEntries(null);
     while (entries.hasMore()) {
       var entry = entries.getNext();
-      if (entry.indexOf(extdir) != 0) {continue;}
+      if (entry.indexOf(direntry) != 0) {continue;}
       try {var entryObj = zReader.getEntry(entry);}
       catch (er) {logmsg(er + "\nError (exportDir): Getting zip file entry " + entry + ". " + er); continue;}
       var newfile = Components.classes["@mozilla.org/file/local;1"].createInstance(Components.interfaces.nsILocalFile);
-      newfile.initWithPath(outDirPath + "/" + entry);
+      newfile.initWithPath(outDirPath + "/" + extdir);
       if (entryObj && !entryObj.isDirectory) {
         if (newfile.exists()) {
           if (overwrite) newfile.remove(false);
@@ -953,7 +955,7 @@ function copyFiles(from, to, overwrite, recursive) {
   return result;
 }
 
-// extdir the partial path of a file within the extension
+// filename within the default inputs directory
 // outDirPath is the full destination base path
 // if overwrite is set, the target file in outPath is deleted before copy
 // if overwrite is not set, the function will exit with null if target exists
@@ -969,7 +971,7 @@ function exportFile(extfile, outDirPath, overwrite) {
   if (!toP.exists()) toP.create(toP.DIRECTORY_TYPE, 511);
   if (ExtFile.isDirectory()) {
     var from = Components.classes["@mozilla.org/file/local;1"].createInstance(Components.interfaces.nsILocalFile);
-    from.initWithPath(ExtFile.path + "/" + extfile);
+    from.initWithPath(ExtFile.path + "/" + (INDEFAULTS ? INDEFAULTS:"") + extfile);
     if (!from.exists() || from.isDirectory()) {logmsg("ERROR (exportFile): From file does not exist \"" + from.path + "\""); return null;}
     from.copyTo(toP, to.leafName);
   }
@@ -978,11 +980,11 @@ function exportFile(extfile, outDirPath, overwrite) {
     try {zReader.open(ExtFile);}
     catch (er) {logmsg("ERROR (exportFile): cannot open-" + ExtFile.path); return null;}	
     try {
-      var isdir = zReader.getEntry(extfile);
+      var isdir = zReader.getEntry((INDEFAULTS ? INDEFAULTS:"") + extfile);
       if (!isdir || isdir.isDirectory) {logmsg("ERROR (exportFile): From zip file does not exist \"" + extfile +"\""); return null;}
     }
     catch(er) {logmsg("ERROR (exportFile): reading zip entry \"" + extfile + "\""); return null;}
-    zReader.extract(extfile, to);
+    zReader.extract((INDEFAULTS ? INDEFAULTS:"") + extfile, to);
   }
   if (!to.exists()) logmsg("ERROR (exportFile): failed to export to \"" + to.path + "\"");
   return to;	
@@ -1102,8 +1104,8 @@ function runscript(target) {
 // rFile to aFile is returned (if rFile and rootFile are existing dirs).
 function getPathOrRelativePath(aFile, rFile, rootFile) {
   var path = aFile.path;
-  if (!rFile.exists || !rFile.isDirectory()) return path;
-  if (!rootFile.exists || !rootFile.isDirectory()) return path;
+  if (!rFile.exists() || !rFile.isDirectory()) return path;
+  if (!rootFile.exists() || !rootFile.isDirectory()) return path;
   var rpath = rFile.path;
   var root = rootFile.path;
   if (path.indexOf(root) == 0 && rpath.indexOf(root) == 0) {

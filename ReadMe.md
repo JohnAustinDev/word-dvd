@@ -9,12 +9,8 @@ use.
 sufficient. 
 
 ##Basic requirements:
-* Firefox web browser running in Linux (Word-DVD is a Linux-Firefox 
-Add-On)
-* Linux skills (enough to compile and install Open Source code and 
-programs).
-* Text in a special HTML or OSIS format.
-* A configuration file containing project and user interface settings.
+* MS-Windows, Linux, or MAC computer.
+* Text in HTML or OSIS format.
 * (optional) Audio files in AC3 format.
 * (optional) Images and illustrations.
 * (optional) Custom designed backgrounds and buttons.
@@ -23,62 +19,39 @@ programs).
 -----
 
 # Word-DVD Installation:
+These Open Source programs must be installed:
 
-##Linux dependencies:
-* ffmpeg - Some non-DVD features may require compilation with 
-libmp3lame. This is the real [ffmpeg](http://www.ffmpeg.org/download.html)
-and not the avconv derivative which is included in some Linux 
-distributions.
-* dvdauthor
-* firefox
-* perl
-* ImageMagick
-* genisoimage
-* growisofs
+* [VirtualBox](https://www.virtualbox.org/wiki/Downloads), 
+* [Vagrant](https://www.vagrantup.com/downloads.html)
+* [Git](http://git-scm.com/downloads)
 
-## Additional Linux dependencies for utilities and debugging:
-* Perl's Term::ReadKey
-* wmctrl
-* dvbsnoop
-* eyeD3
-* sox (some features may require compilation with mp3 support)
+Use Git to get word-dvd:
 
-## Make a DVD
-1) Install the included modified mjpegtools package. This mjpegtools 
-package contains modified `"mplex"` and `"mpeg2enc"`programs which are 
-capable of creating highly compressed slide shows (10's of hours on a 
-single DVD rather than just 1 or 2).
+`https://github.com/JohnAustinDev/word-dvd.git`
 
-2) Get word-dvd source from GitHub. Then run install.sh, and choose 
-option 3: "use proxy extension". Enter the path of a Firefox 
-[profile directory](http://support.mozilla.org/en-US/kb/profiles-where-firefox-stores-user-data), 
-and press return. A "proxy extension" will then be installed there and 
-your word-dvd source code will be used directly by Firefox.
+Change into the word-dvd directory and run:
 
-3) Firefox's "Tools" menu will now show "Word-DVD..." (a restart may be 
-needed). Click to open the Word-DVD window.
+`VagrantStart.sh`
 
-4) Click the browse button for the input directory and choose an empty 
-directory to use as the project directory. By default, the OUTPUTS and 
-audio directory will be put beneath the project directory, but custom 
-locations may be chosen if desired.
+Wait until Firefox opens (this could take a half hour or more the first
+time; a virtual operating system is being built from scratch).
 
-5) Click Go! You should see a prompt when it's finished, and the DVD 
-files will be in OUTPUTS/dvd. If not, see the debugging section of this 
-wiki.
+When Firefox opens (you may need to click: "Allow this installation") 
+click the DVD icon in the upper right of Firefox's toolbar.
 
-## Burn and test a DVD
-The final DVD files will be located in `OUTPUTS/dvd`. To burn these to 
-DVD you need to use the proper file system, so run:
+Click "Go!" in the Word-DVD window to build a test DVD.
 
-`sudo xcreateiso.sh`
+After Firefox renders images, the console will show: "Shall I try to 
+create an ISO file...?" Type "y" and hit Enter, then the completed 
+`dvd.iso` file will appear in `word-dvd/PROJECT/OUTPUTS`.
 
-Which is located in `OUTPUTS/script`. Then you should see the 
-`OUTPUTS/dvd.iso` file which is ready for burning to DVD. By running 
-`xcreateiso.sh` with `sudo`, the script will also be able to mount the 
-iso as a dvd under `/media/dvd`.
+## Mount, Burn and verify a DVD
+To mount the DVD in Linux, run:
 
-To burn and verify a DVD, run:
+    cd word-dvd/PROJECT/OUTPUTS/script
+    sudo xcreateiso.sh
+
+To burn and verify a DVD in Linux, run:
 
 `./xburnverify.sh`
 

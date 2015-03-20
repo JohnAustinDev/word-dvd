@@ -50,8 +50,8 @@ body:not(.dev):not([masktype="none"]) .button div:first-child {
 }
 .page {
   /* The added pixels are to cause the scrollbars to become hidden */
-  width:calc(100% + 14px);
-  height:calc(100% + 26px);
+  width:calc(100% + 16px);
+  height:calc(100% + 28px);
 }
 body.dev .renderbox,
 body.dev .page {

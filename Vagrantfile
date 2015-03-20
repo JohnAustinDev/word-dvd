@@ -48,10 +48,6 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   # the path on the guest to mount the folder. And the optional third
   # argument is a set of non-required options.
   # config.vm.synced_folder "../data", "/vagrant_data"
-  
-  # share our Bible media folders with the guest VM
-  #config.vm.synced_folder "/var/www/browserbible", "/vagrant/www/browserbible"
-  #config.vm.synced_folder "/var/www/ftpmirror", "/vagrant/www/ftpmirror"
 
   # Provider-specific configuration so you can fine-tune various
   # backing providers for Vagrant. These expose provider-specific options.
