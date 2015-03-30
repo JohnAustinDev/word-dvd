@@ -9,7 +9,7 @@ use.
 sufficient. 
 
 ##Basic requirements:
-* MS-Windows, Linux, or MAC computer.
+* A computer running Linux, MS-Windows, or MAC (untested)
 * Text in HTML or OSIS format.
 * (optional) Audio files in AC3 format.
 * (optional) Images and illustrations.
@@ -18,18 +18,31 @@ sufficient.
 
 -----
 
-# Word-DVD Installation:
-These Open Source programs must be installed:
+# Before running Word-DVD:
+These Open Source programs are required:
 
-* [VirtualBox](https://www.virtualbox.org/wiki/Downloads), 
+* [VirtualBox](https://www.virtualbox.org/wiki/Downloads)
 * [Vagrant](https://www.vagrantup.com/downloads.html)
 * [Git](http://git-scm.com/downloads)
 
-Use Git to get word-dvd:
+### MS-Windows only
+Requires a Windows X11 server also be installed. This gives the virtual 
+Linux machine ability to display windows in MS-Windows. Cywgin is the 
+only tested solution:
 
-`https://github.com/JohnAustinDev/word-dvd.git`
+* Install [Cygwin](https://cygwin.com/install.html) (windows only) and 
+during the install select these packages:
 
-Change into the word-dvd directory and run:
+    * xorg-server
+    * xinit
+    * openssh
+    
+* Start the XWIN Server (via the startup menu or run `startxwin`). A white 
+console window should appear, and this is where word-dvd should be run.
+
+# Running Word-DVD:
+Get the source code from GitHub, then change into the word-dvd directory 
+and run:
 
 `VagrantStart.sh`
 

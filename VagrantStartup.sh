@@ -13,4 +13,4 @@ ln -s ../../../extension/defaults/INPUTS/scripts/ ./PROJECT/OUTPUTS/script/scrip
 
 vagrant up
 
-vagrant -X ssh
+vagrant -Y ssh
