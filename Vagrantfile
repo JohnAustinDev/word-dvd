@@ -10,20 +10,16 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   # please see the online documentation at vagrantup.com.
 
   # Every Vagrant virtual environment requires a box to build off of.
+  config.vm.box = "precise32"
+  config.vm.box_url = "http://files.vagrantup.com/precise32.box"
+  config.vm.provision :shell, :path => "VagrantProvision.sh"
+  config.ssh.forward_x11 = true
   
-  config.vm.define "precise32", primary: true do |precise32|
-		precise32.vm.box = "precise32"
-		precise32.vm.box_url = "http://files.vagrantup.com/precise32.box"
-		precise32.vm.provision :shell, :path => "VagrantProvision.sh"
-    precise32.ssh.forward_x11 = true
-	end
-  
-#  config.vm.define "precise64", primary: true do |precise64|
-#		precise64.vm.box = "precise64"
-#		precise64.vm.box_url = "http://files.vagrantup.com/precise64.box"
-#		precise64.vm.provision :shell, :path => "VagrantProvision.sh"
-#    precise64.ssh.forward_x11 = true
-#	end
+  # Default NAT's DNS for Linux VM within MS-Windows VM does not always 
+  # work, so the fix:
+  config.vm.provider :virtualbox do |vb|
+    vb.customize ["modifyvm", :id, "--natdnshostresolver1", "on"]
+  end
 
   # Create a forwarded port mapping which allows access to a specific port
   # within the machine from a port on the host machine. In the example below,
