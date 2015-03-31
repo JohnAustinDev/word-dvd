@@ -1,0 +1,13 @@
+# Set newline behavior, overriding core.autocrlf if set.
+
+# MS-Windows users may have core.autocrlf=true to allow use of any  
+# Microsoft text editor to edit code.
+
+# "auto" means Git decides if the file is text and normalizes text 
+# files' newlines to LF upon checkin.
+* text=auto
+
+# Declare files that will always have LF line endings on checkout, 
+# because these files will not function with the virtual Linux machine 
+# unless they have LF newlines.
+*.sh text eol=lf
