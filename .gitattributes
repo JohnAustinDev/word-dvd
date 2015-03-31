@@ -14,3 +14,9 @@
 # because these files will not function with the virtual Linux machine 
 # unless they have LF newlines.
 * text eol=lf
+
+# Denote all files that are truly binary and should not be modified.
+*.png binary
+*.jpg binary
+*.ac3 binary
+*.gz binary

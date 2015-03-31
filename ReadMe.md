@@ -26,7 +26,7 @@ These Open Source programs are required:
 
 ### MS-Windows only
 Requires a Windows X11 server also be installed. This gives the virtual 
-Linux machine ability to display its windows in MS-Windows. Cywgin is  
+Linux machine ability to display its windows in MS-Windows. Cywgin is 
 the only tested solution:
 
 * Install [Cygwin](https://cygwin.com/install.html) (windows only) and 
@@ -57,12 +57,12 @@ click the DVD icon in the upper right of Firefox's toolbar.
 
 Click "Go!" in the Word-DVD window to build a test DVD.
 
-After Firefox renders images, the console will show: "Shall I try to 
-create an ISO file...?" Type "y" and hit Enter, then the completed 
-`dvd.iso` file will appear in `word-dvd/PROJECT/OUTPUTS`.
+After Firefox renders images, the completed `dvd.iso` file will appear in 
+`word-dvd/PROJECT/OUTPUTS`.
 
-When finished with word-dvd, run 'vagrant halt' to halt the virtual 
-machine. Running `start-word-dvd.sh` will restart it.
+When finished with word-dvd, log out of the virtual machine with `logout` 
+and run 'vagrant halt' to halt the virtual machine. Running 
+`start-word-dvd.sh` will restart it.
 
 ## Mount, Burn and verify a DVD
 To mount the DVD in Linux, run:

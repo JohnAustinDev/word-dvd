@@ -27,12 +27,12 @@ $scriptdir = @ARGV[0];
 require "$scriptdir/shared.pl";
 &readDataFiles();
 
-# unmount and delete any existing ISO
-`sudo umount /media/dvd`;
+# unmount any existing ISO
+if (!-e "/vagrant") {`sudo umount /media/dvd`;}
+
+# delete any existing ISO
 if (-e "../dvd.iso") {`rm -f ../dvd.iso`;}
 if (-e "../md5sum-iso.txt") {`rm -f ../md5sum-iso.txt`;}
-
-
 
 # must use >= genisoimage 1.1.9. Earlier versions could not be read in Windows!
 `genisoimage -dvd-video -o ../dvd.iso ../dvd`;

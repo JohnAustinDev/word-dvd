@@ -65,7 +65,7 @@ if [ ! -e /vagrant/PROJECT/OUTPUTS ]; then
 fi
 
 # Create easy Firefox startup script
-echo firefox -p Word-DVD -jsconsole -purgecaches -no-remote >> /home/vagrant/.bashrc
+echo firefox -p Word-DVD -jsconsole -purgecaches -no-remote \& >> /home/vagrant/.bashrc
 
 # Fix permissions
 chown -R vagrant:vagrant /home/vagrant/.mozilla
