@@ -69,4 +69,3 @@ echo firefox -p Word-DVD -jsconsole -purgecaches -no-remote \& >> /home/vagrant/
 
 # Fix permissions
 chown -R vagrant:vagrant /home/vagrant/.mozilla
-chown vagrant:vagrant /home/vagrant/firefox.sh

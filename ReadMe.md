@@ -26,11 +26,12 @@ These Open Source programs are required:
 
 ### MS-Windows only
 Requires a Windows X11 server also be installed. This gives the virtual 
-Linux machine ability to display its windows in MS-Windows. Cywgin is 
+Linux machine ability to display its windows in MS-Windows. Cygwin is 
 the only tested solution:
 
 * Install [Cygwin](https://cygwin.com/install.html) (windows only) and 
-during the install select these packages:
+during the install select these packages by searching for them and then
+clicking the "skip" icon to change it to "install":
 
     * xorg-server
     * xinit
@@ -38,9 +39,12 @@ during the install select these packages:
     
 * Install [Git](http://git-scm.com/downloads) for Windows
     
-* Start the XWIN Server (via the startup menu or run `startxwin`). A 
-white console window should appear, and this is where `start-word-dvd.sh` 
-should be run.
+* Start the XWIN Server which you just installed with Cygwin. It can be
+started via the MS-Windows startup menu or by running `startxwin` in the 
+cygwin window, or other ways. Either way a white console window should 
+appear. In the white console window, change to the word-dvd directory 
+(note that in Cygwin, `/cygdrive/c` is the path to your MS-Windows C: 
+drive). This is where `start-word-dvd.sh` should be run.
 
 # Running Word-DVD:
 Get the source code from GitHub, then change into the word-dvd directory 
@@ -61,18 +65,13 @@ After Firefox renders images, the completed `dvd.iso` file will appear in
 `word-dvd/PROJECT/OUTPUTS`.
 
 When finished with word-dvd, log out of the virtual machine with `logout` 
-and run 'vagrant halt' to halt the virtual machine. Running 
-`start-word-dvd.sh` will restart it.
+and run `vagrant halt` to halt the virtual machine. Running 
+`start-word-dvd.sh` will always restart it.
 
-## Mount, Burn and verify a DVD
-To mount the DVD in Linux, run:
+## Burn and verify a DVD
 
     cd word-dvd/PROJECT/OUTPUTS/script
-    sudo xcreateiso.sh
-
-To burn and verify a DVD in Linux, run:
-
-`./xburnverify.sh`
+    ./xburnverify.sh
 
 -----
 
