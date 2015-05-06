@@ -4,12 +4,12 @@ if [ -n "$1" ]
 then cd $1
 fi
 
-./xtimeAnalysis.sh 2>../err.txt | tee -a ../logfile.txt 
-./xaudio.sh 2>>../err.txt | tee -a ../logfile.txt
-./xmenus.sh 2>>../err.txt | tee -a ../logfile.txt
-./ximgs2mpeg.sh 2>>../err.txt | tee -a ../logfile.txt
-./xnavbuttons.sh 2>>../err.txt | tee -a ../logfile.txt
-./xmpeg2vob.sh 2>>../err.txt | tee -a ../logfile.txt
+./xtimeAnalysis.sh $2 2>../err.txt | tee -a ../logfile.txt 
+./xaudio.sh $2 2>>../err.txt | tee -a ../logfile.txt
+./xmenus.sh $2 2>>../err.txt | tee -a ../logfile.txt
+./ximgs2mpeg.sh $2 2>>../err.txt | tee -a ../logfile.txt
+./xnavbuttons.sh $2 2>>../err.txt | tee -a ../logfile.txt
+./xmpeg2vob.sh $2 2>>../err.txt | tee -a ../logfile.txt
 
 if cat ../logfile.txt ../err.txt | grep -q -i "err" 
 then

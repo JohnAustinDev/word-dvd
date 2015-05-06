@@ -93,11 +93,11 @@ foreach $book (sort {$books{$a}<=>$books{$b}} keys %books) {
         
         $mplex = '';
         if ($mpgIsMultiPage{"$book-$ch"} eq "true") {
+          my $gapFrames = ($localeFile{"MpegGapFrames"} ? $localeFile{"MpegGapFrames"}:1);
           $seqend = "-E 0";
           if ($pg == $lastPage{$book."-".$ch}) {$seqend = "-E 1";}
           $startPTS = ($seekto+$gap);
-          $gap = ($gap+0.040); #this gap insures there is at least 1 frame between last audio and first video packets even after rounding (for dvdauthor)
-          
+          $gap = ($gap+(0.040*$gapFrames)); #this gap insures there is at least 1 frame between last audio and first video packets even after rounding (for dvdauthor)          
           $mplex = "$seqend -T $startPTS";
         }
         
