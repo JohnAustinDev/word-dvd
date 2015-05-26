@@ -28,7 +28,7 @@ const NOTEREF  = "<span class=\"verseref\"";
 const NOTESYMBOL = "<span class=\"fnsymbol\"";
 const PAGEBREAK = "<span class=\"pagebreak\"></span>";
 const PAGEBREAKBOTH = "<span class=\"pagebreak-both\"></span>";
-const SPLITABLEDIVS = "majorquote|list1|list2|list3|footnote|canonical|x-list-1|x-list-2|x-enumlist-1|x-enumlist-2|x-enumlist-3|p";
+const SPLITABLEDIVS = "majorquote|list1|list2|list3|footnote|canonical|x-list-1|x-list-2|x-enumlist-1|x-enumlist-2|x-enumlist-3|p|x-lg|line indent1";
 const TITLES = "title-1|title-2|book-title|chapter-title|text-header|menu-header";
 const ISMENUIMAGE = 0, ISTEXTIMAGE = 1, ISFOOTNOTEIMAGE = 2;
 const REPAIRLEN = 64; // length of TransitionTiming repair string should be longer than pagebreak tags
@@ -50,6 +50,21 @@ function loadedRender() {
   RenderFrame = document.getElementById("render");
 
   loadHTML(MainWin.ScreenHTML.path, "startMenuGeneration();", { pagetype:"TOC", masktype:"none", className:"menu" })
+  // Trying to get Firefox inspector to run for debugging
+  /*Components.utils.import('resource://gre/modules/devtools/dbg-server.jsm');
+if (!DebuggerServer.initialized) {
+  DebuggerServer.init();
+  // Don't specify a window type parameter below if "navigator:browser"
+  // is suitable for your app.
+  //window.getAttribute("windowtype")
+  //document.documentElement.getAttribute
+  MainWin.jsdump("Debug Here!!!"+document.documentElement.getAttribute("windowtype"));
+  DebuggerServer.addBrowserActors();
+  MainWin.jsdump("Debug Here After!!!"+document.documentElement.getAttribute("windowtype"));
+  //DebuggerServer.addBrowserActors("render-win");
+}
+  DebuggerServer.openListener(6000);*/
+  
 }
 
 function loadHTML(path, runWhenDone, body) {
@@ -58,8 +73,9 @@ function loadHTML(path, runWhenDone, body) {
   // security priviledges for Javascript. But it's important to give 
   // the user access to this file so that project CSS can be more
   // easily developed and tested.
+  //MainWin.alert("before");
   RenderFrame.contentDocument.defaultView.location.assign("file://" + path);
-  
+  //MainWin.alert("after");
   // The extra width/height should be anything large enough to prevent
   // scrollbars from appearing in the xul iframe. Captured images are
   // not effected by the extra width/height.
@@ -70,9 +86,9 @@ function loadHTML(path, runWhenDone, body) {
   
 } function postLoad1(runWhenDone, bodyobj) {
   var bodyobj = eval(bodyobj);
-  
+  //MainWin.alert("before init");
   init(); // in screen.js
-  
+  //MainWin.alert("after init");
   var body = RenderFrame.contentDocument.getElementById("body");
   body.setAttribute("pagetype", bodyobj.pagetype);
   body.setAttribute("masktype", bodyobj.masktype);
@@ -704,20 +720,29 @@ function renderNewScreen() {
 
   ContinueFunc = null;
   var mdoc = RenderFrame.contentDocument;
-  
+
+  // add class rendering; class=rendering will be used in css to switch overflow to 'scroll' while rendering
+  var b = RenderFrame.contentDocument.getElementsByTagName("body")[0];
+  var bodyclasses= b.classList;
+  bodyclasses.add('rendering');
   Page.pagebreakboth = false;
   var pageName = Book[Bindex].shortName + (Chapter==0 ? ".intr":"") + "-" + Number(Chapter+SubChapters) + "-" + Page.pagenumber;
   RenderFrame.contentDocument.getElementById("body").setAttribute("pagename", pageName);
+  MainWin.jsdump("Pagename :"+pageName);
 
   var tstyle = mdoc.defaultView.getComputedStyle(mdoc.getElementById("writing-left"), null);
   var skipPage1 = (tstyle.display == "none"); // this allows single column display
   
   tstyle = mdoc.defaultView.getComputedStyle(mdoc.getElementById("writing-right"), null);
   var skipPage2 = (tstyle.display == "none");
-  
+
   fitScreen(Book[Bindex].shortName, Chapter, SubChapters, Page, skipPage1, skipPage2);
-    
+   
+  // remove class 'rendering'
+  bodyclasses.remove('rendering');
+  
   waitRenderDoneThenDo("screenDrawComplete()");
+  MainWin.jsdump("LEFT:" + RenderFrame.contentDocument.getElementsByTagName("body")[0].innerHTML);
   
 //MainWin.jsdump("LEFT:" + RenderFrame.contentDocument.getElementById("left-page").innerHTML);
 //MainWin.jsdump("RIGHT:" + RenderFrame.contentDocument.getElementById("right-page").innerHTML);
@@ -1647,7 +1672,9 @@ var FNLast = {bindex:0, chapter:0, page:0};
 function renderNewFNScreen() {
   ContinueFunc = null;
   var book = PageWithFootnotes[FootnoteIndex].name.match(/^([^-]+)-/i)[1];
+  //alert("Book : "+book+":"+PageWithFootnotes[FootnoteIndex].name+" : "+FootnoteIndex);
   Bindex = getBindexFromBook(book);
+  //alert("Bindex : "+Bindex);
   Chapter = PageWithFootnotes[FootnoteIndex].chapter;
   var rpage = PageWithFootnotes[FootnoteIndex].name.match(/-([^-]+)$/i)[1];
   if (FNLast.bindex != Bindex || 
@@ -1780,4 +1807,20 @@ function unloadedRender() {
       MainWin.quit();
     else MainWin.resetGo();
   }
+}
+
+function dumpComputedStyles(elem,name,prop) {
+
+  var cs = window.getComputedStyle(elem,null);
+  if (prop) {
+    MainWin.jsdump("    "+prop+" : "+cs.getPropertyValue(prop)+"\n");
+    return;
+  }
+  var len = cs.length;
+  for (var i=0;i<len;i++) {
+ 
+    var style = cs[i];
+    MainWin.jsdump(name+"    "+style+" : "+cs.getPropertyValue(style)+"\n");
+  }
+
 }
