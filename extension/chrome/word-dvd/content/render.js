@@ -28,7 +28,7 @@ const NOTEREF  = "<span class=\"verseref\"";
 const NOTESYMBOL = "<span class=\"fnsymbol\"";
 const PAGEBREAK = "<span class=\"pagebreak\"></span>";
 const PAGEBREAKBOTH = "<span class=\"pagebreak-both\"></span>";
-const SPLITABLEDIVS = "majorquote|list1|list2|list3|footnote|canonical|x-list-1|x-list-2|x-enumlist-1|x-enumlist-2|x-enumlist-3|p";
+const SPLITABLEDIVS = "majorquote|list1|list2|list3|footnote|canonical|x-list-1|x-list-2|x-enumlist-1|x-enumlist-2|x-enumlist-3|p|x-lg|line indent1";
 const TITLES = "title-1|title-2|book-title|chapter-title|text-header|menu-header";
 const ISMENUIMAGE = 0, ISTEXTIMAGE = 1, ISFOOTNOTEIMAGE = 2;
 const REPAIRLEN = 64; // length of TransitionTiming repair string should be longer than pagebreak tags
@@ -704,10 +704,15 @@ function renderNewScreen() {
 
   ContinueFunc = null;
   var mdoc = RenderFrame.contentDocument;
-  
+
+  // add class rendering; class=rendering will be used in css to switch overflow to 'scroll' while rendering
+  var b = RenderFrame.contentDocument.getElementsByTagName("body")[0];
+  var bodyclasses= b.classList;
+  bodyclasses.add('rendering');
   Page.pagebreakboth = false;
   var pageName = Book[Bindex].shortName + (Chapter==0 ? ".intr":"") + "-" + Number(Chapter+SubChapters) + "-" + Page.pagenumber;
   RenderFrame.contentDocument.getElementById("body").setAttribute("pagename", pageName);
+  MainWin.jsdump("Pagename :"+pageName);
 
   var tstyle = mdoc.defaultView.getComputedStyle(mdoc.getElementById("writing-left"), null);
   var skipPage1 = (tstyle.display == "none"); // this allows single column display
@@ -716,7 +721,10 @@ function renderNewScreen() {
   var skipPage2 = (tstyle.display == "none");
   
   fitScreen(Book[Bindex].shortName, Chapter, SubChapters, Page, skipPage1, skipPage2);
-    
+   
+  // remove class 'rendering'
+  bodyclasses.remove('rendering');
+  
   waitRenderDoneThenDo("screenDrawComplete()");
   
 //MainWin.jsdump("LEFT:" + RenderFrame.contentDocument.getElementById("left-page").innerHTML);
@@ -1780,4 +1788,20 @@ function unloadedRender() {
       MainWin.quit();
     else MainWin.resetGo();
   }
+}
+
+function dumpComputedStyles(elem,name,prop) {
+
+  var cs = window.getComputedStyle(elem,null);
+  if (prop) {
+    MainWin.jsdump("    "+prop+" : "+cs.getPropertyValue(prop)+"\n");
+    return;
+  }
+  var len = cs.length;
+  for (var i=0;i<len;i++) {
+ 
+    var style = cs[i];
+    MainWin.jsdump(name+"    "+style+" : "+cs.getPropertyValue(style)+"\n");
+  }
+
 }
