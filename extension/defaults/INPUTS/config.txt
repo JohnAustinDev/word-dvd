@@ -4,12 +4,13 @@
 #-------------------------
 LogFileVerbosity  = 1
 AudioPrefix       = en      # audio files begin with this optional prefix
-LangCode          = en      # DVD language code.
+LangCode          = en      # DVD language code. This code has to part of the DVD language code standart (ISO 639 (http://en.wikipedia.org/wiki/List_of_ISO_639-1_codes))
+                            # If the laguage is not part of the list, the program will chrash!
 DontBreakBooks    = false   # disallow breaking books between VTS?
 AllBooksStartVTS  = false   # force each book to start in a new VTS?
 MattewStartsVTS   = false   # force the book of Matthew to start a VTS?
 FootnotesInOwnVTS = false   # place footnotes in seprate dedicated VTS?
-MaxStillImageSize = 130     # max size of DVD still image Iframes in kb.
+MaxStillImageSize = 100     # max size of DVD still image Iframes in kb. (was 130!)
                             # NOTE: MaxStillImageSize and audio file bit  
                             # rate are the two primary factors which 
                             # determine the final size of dvd.iso.

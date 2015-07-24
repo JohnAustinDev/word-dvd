@@ -9,6 +9,9 @@ var CSSHeading1Color, CSSHeading2Color;
 function init() {
   PageElem1 = RenderFrame.contentDocument.getElementById("left-page");
   PageElem2 = RenderFrame.contentDocument.getElementById("right-page");
+  //alert("left-page : "+PageElem1+':'+PageElem1.width+':'+PageElem1.height+':'+PageElem1.childNodes);
+  //alert("right-page : "+PageElem2+':'+PageElem2.width+':'+PageElem2.height+':'+PageElem2.childNodes);
+  
 }
 
 function fitScreen(book, chapter, subchapters, aPage, skipPage1, skipPage2) {
