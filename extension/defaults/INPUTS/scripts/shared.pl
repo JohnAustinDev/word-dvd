@@ -616,7 +616,7 @@ sub makeAudioSlide($$$$$) {
   # MAKE AUDIO FOR SLIDE
   if (defined($tlen)) {$tlen = "-t $tlen";}
   if (defined($seekto)) {$seekto = "-ss $seekto";}
-  `ffmpeg -v $Verbosity $tlen -i \"$audiofile\" $seekto -acodec copy -y \"$videodir/videotmp/$pagename.m2a\"`;
+  `ffmpeg -v $Verbosity -i \"$audiofile\" $seekto $tlen -acodec copy -y \"$videodir/videotmp/$pagename.m2a\"`;
   
   # MUX AUDIO AND VIDEO TOGETHER
   `mplex -v $Verbosity $mplex $MPLEX \"$videodir/videotmp/$pagename.m2v\" \"$videodir/videotmp/$pagename.m2a\" -o \"$videodir/$subdir$pagename.mpg\"`;

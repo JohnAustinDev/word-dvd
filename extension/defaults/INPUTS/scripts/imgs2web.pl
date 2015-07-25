@@ -94,7 +94,7 @@ foreach $book (sort {$books{$a}<=>$books{$b}} keys %books) {
       $cmd = "jpeg2yuv -v 0 -n ".$numf." -I p -f $framesPS -j \"$imagedir/$book/$book-$ch-$pg.jpg\" | mpeg2enc -v 0 -f 3 -g 1 -G ".(2*$framesPS)." -b 5000 -o \"$webdir/videotmp/$book-$ch-$pg.m2v\"";     
       print "$cmd\n\n";
       `$cmd`;
-      $cmd = "ffmpeg -v $Verbosity -t $ffmpegt -i \"$audiofile\" -ss $fseekto -acodec copy -y \"$webdir/videotmp/$book-$ch-$pg.m2a\"";
+      $cmd = "ffmpeg -v $Verbosity -i \"$audiofile\" -ss $fseekto -t $ffmpegt -acodec copy -y \"$webdir/videotmp/$book-$ch-$pg.m2a\"";
       print "$cmd\n\n";
       `$cmd`;
 

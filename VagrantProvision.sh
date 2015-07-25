@@ -50,6 +50,7 @@ ln -s /home/vagrant/bin/ffmpeg /usr/bin/ffmpeg
 ln -s /home/vagrant/bin/ffplay /usr/bin/ffplay
 ln -s /home/vagrant/bin/ffprobe /usr/bin/ffprobe
 ln -s /home/vagrant/bin/ffserver /usr/bin/ffserver
+su - vagrant -c 'echo "MANPATH_MAP /home/vagrant/bin /home/vagrant/ffmpeg_build/share/man" >> ~/.manpath'
 
 # Compile and install the modified-mjpegtools
 apt-get install -y libjpeg-dev
