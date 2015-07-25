@@ -93,7 +93,9 @@ echo /vagrant/extension > ./Word-DVD/extensions/\{f597ab2a-3a14-11de-a792-e68e56
 cp /vagrant/prefs.js ./Word-DVD
 
 # Create automatic Firefox-word-dvd startup script
-echo /home/vagrant/firefox/firefox -p Word-DVD -jsconsole -purgecaches -no-remote \& >> /home/vagrant/.bashrc
+echo /home/vagrant/firefox/firefox -p Word-DVD -jsconsole -purgecaches -no-remote > /home/vagrant/firefox.sh
+chmod ug+x /home/vagrant/firefox.sh
+echo /home/vagrant/firefox.sh \& >> /home/vagrant/.bashrc
 
 # Create default project directories if they don't already exist
 if [ ! -e /vagrant/PROJECT/INPUTS ]; then
