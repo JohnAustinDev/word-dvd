@@ -14,7 +14,15 @@ apt-get install -y wmctrl
 apt-get install -y dvbsnoop
 apt-get install -y eyed3
 apt-get install -y sox
+apt-get install -y cpanminus
 
+cpanm Term::ReadKey
+
+# Enable audio
+apt-get install -y alsa
+addgroup vagrant audio
+
+# Install source builds...
 cd /home/vagrant
 mkdir src
 

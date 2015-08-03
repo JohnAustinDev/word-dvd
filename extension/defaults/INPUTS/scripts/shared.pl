@@ -639,7 +639,10 @@ sub internalChapter2Real($$$) {
       $res++; 
     }
   }
-  if (!$quiet && $res == -1) {print "ERROR: internalChapter2Real, indeterminate chapter for $bk $ic.\n";}
+  if (!$quiet && $res == -1) {
+    print "ERROR: internalChapter2Real - Couldn't locate audio chapter \"$bk, $ic\".\n";
+    print "Are you sure book:\"$bk\", chapter:\"$ic\" has audio?.\n"
+  }
 
   return $res;
 }

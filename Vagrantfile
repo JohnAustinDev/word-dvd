@@ -18,7 +18,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   # Default NAT's DNS for Linux VM within MS-Windows VM does not always 
   # work, so the fix:
   config.vm.provider :virtualbox do |vb|
-    vb.customize ["modifyvm", :id, "--natdnshostresolver1", "on"]
+    vb.customize ["modifyvm", :id, "--natdnshostresolver1", "on", "--audio", "alsa", "--audiocontroller", "ac97", "--vram", "32"]
   end
 
   # Create a forwarded port mapping which allows access to a specific port
