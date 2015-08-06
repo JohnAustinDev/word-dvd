@@ -108,7 +108,7 @@ while (-e $save) {
 `cp $pageTimingFile $save`;
 
 # remove ffmpeg time file so it doesn't mess initial time up
-if (-e "$outaudiodir/audiotmp") {&sys("rm \"$outaudiodir/audiotmp\"");}
+if (-e "$outaudiodir/audiotmp") {&sys("rm -rf \"$outaudiodir/audiotmp\"");}
 
 ReadMode 4;
 
@@ -533,9 +533,12 @@ sub showPageImage($$$) {
   &sys("pkill -9 eog");
   if ($p < 1) {$p = 1;}
   if ($p > $lastPage{"$b-$c"}) {$p = $lastPage{"$b-$c"};}
-  &sys("eog \"$imagedir/$b/$b-$c-$p.jpg\" 1> /dev/null 2> /dev/null &");
-  &waitAndRefocus(quotemeta("$b-$c-$p.jpg"));
-  #print "Showing $b-$c page $p.\n";
+  my $name = "$b-$c-$p.jpg";
+  &sys("eog \"$imagedir/$b/$name\" 1> /dev/null 2> /dev/null &");
+  if (!&waitForWindow(quotemeta($name))) {print STDERR "ERROR, showPageImage: Could not find window \"$name\"\n";}
+  &sys("wmctrl -r \"$name\" -e \"0,0,0,-1,-1\""); # move to top-left of screen
+  &waitAndRefocus(quotemeta($name));
+  #print STDERR "Showing $name.\n";
 }
 
 sub readTransitionInformation() {
@@ -602,7 +605,7 @@ sub audioPlay($) {
   $tmp = "$outaudiodir/audiotmp";
   if (!-e "$tmp") {&sys("mkdir \"$tmp\"");}
   my $f = $audiodir."/".$haveAudio{$MBK."-".$MCH};
-  &sys("ffplay -x 200 -y 160 -stats -ss $st \"$f\" 1> \"$tmp/ffplay.txt\" 2> /dev/null &");
+  &sys("ffplay -x 200 -y 160 -stats -ss $st \"$f\" 2> \"$tmp/ffplay.txt\" 1> /dev/null &");
   $AudioPlaying = 1;
   &waitAndRefocus("(".quotemeta($f)."|FFplay)");
 }
@@ -675,27 +678,38 @@ sub audioForward($) {
 sub audioGetTime($) {
   my $normalize = shift;
     
-  my $tmp = "$outaudiodir/audiotmp";
   my $time = 0;
-  open(INF, "<$tmp/ffplay.txt") || return 0;
-  $f = <INF>;
-  while($f =~ s/([\d\.]+) A\-V//) {$time = $1;}
-  close(INF);
+
+  if (open(INF, "<$outaudiodir/audiotmp/ffplay.txt")) {
+    while (<INF>) {if ($_ =~ /^\s*([\d\.]+)/) {$time = $1;}}
+    close(INF);
+  }
   
   if ($normalize && &isMultiChapter($MBK, $MCH)) {$time = &normalizeMultiChapTime($MBK, $MCH, $time);}
   
   return $time;  
 }
 
-sub waitAndRefocus($) {
-  my $wait4win = shift;
+# argument is a regular expression to match a window name
+sub waitForWindow($) {
+  my $windowNameRE = shift;
+
   my $waiting = 15;
   while ($waiting > 0) {
-    &sys("sleep 0.5s");
     my $w = &sys("wmctrl -l");
-    if ($w =~ /^\S+\s+\S+\s+\S+\s+$wait4win\s*$/gm) {$waiting = 0;}
+    if ($w =~ /^\S+\s+\S+\s+\S+\s+$windowNameRE\s*$/gm) {return 1;}
     $waiting--;
+    &sys("sleep 0.5s");
   }
+  
+  return 0;
+}
+
+sub waitAndRefocus($) {
+  my $windowNameRE = shift;
+
+  if (!&waitForWindow($windowNameRE)) {print STDERR "ERROR, waitAndRefocus: Could not find window \"$windowNameRE\"\n";}
+  
   my $t = &sys("pwd"); chomp($t);
   $t =~ s/\/home\/[^\/]+/\~/;
   &sys("wmctrl -a \"$t\"");

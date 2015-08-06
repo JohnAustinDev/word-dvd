@@ -6,21 +6,18 @@ apt-get update
 apt-get install -y build-essential
 apt-get install -y libtool
 
-apt-get install -y dvdauthor
-apt-get install -y imagemagick
-apt-get install -y genisoimage
-apt-get install -y growisofs
-apt-get install -y wmctrl
-apt-get install -y dvbsnoop
-apt-get install -y eyed3
-apt-get install -y sox
-apt-get install -y cpanminus
+apt-get install -y dvdauthor imagemagick genisoimage growisofs wmctrl dvbsnoop eyed3 sox cpanminus eog
 
-cpanm Term::ReadKey
+# --notest is required because for some reason tests fail only on initial install
+cpanm --notest Term::ReadKey
 
 # Enable audio
 apt-get install -y alsa
 addgroup vagrant audio
+amixer set Master 90%
+amixer set Master unmute
+amixer set PCM 90%
+amixer set PCM unmute
 
 # Install source builds...
 cd /home/vagrant
