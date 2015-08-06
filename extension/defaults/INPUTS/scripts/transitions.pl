@@ -536,7 +536,7 @@ sub showPageImage($$$) {
   my $name = "$b-$c-$p.jpg";
   &sys("eog \"$imagedir/$b/$name\" 1> /dev/null 2> /dev/null &");
   if (!&waitForWindow(quotemeta($name))) {print STDERR "ERROR, showPageImage: Could not find window \"$name\"\n";}
-  &sys("wmctrl -r \"$name\" -e \"0,0,0,-1,-1\""); # move to top-left of screen
+  &sys("wmctrl -r \"$name\" -e \"0,0,0,-1,-1\" 2> /dev/null"); # move to top-left of screen
   &waitAndRefocus(quotemeta($name));
   #print STDERR "Showing $name.\n";
 }
@@ -680,9 +680,9 @@ sub audioGetTime($) {
     
   my $time = 0;
 
-  if (open(INF, "<$outaudiodir/audiotmp/ffplay.txt")) {
-    while (<INF>) {if ($_ =~ /^\s*([\d\.]+)/) {$time = $1;}}
-    close(INF);
+  if (open(FFPLAY, "<$outaudiodir/audiotmp/ffplay.txt")) {
+    my $a = join('', <FFPLAY>);  close(FFPLAY);
+    while ($a =~ s/\s+([\d\.]+)\s+M\-A://) {$time = $1;} 
   }
   
   if ($normalize && &isMultiChapter($MBK, $MCH)) {$time = &normalizeMultiChapTime($MBK, $MCH, $time);}
@@ -696,7 +696,7 @@ sub waitForWindow($) {
 
   my $waiting = 15;
   while ($waiting > 0) {
-    my $w = &sys("wmctrl -l");
+    my $w = &sys("wmctrl -l 2> /dev/null");
     if ($w =~ /^\S+\s+\S+\s+\S+\s+$windowNameRE\s*$/gm) {return 1;}
     $waiting--;
     &sys("sleep 0.5s");
@@ -712,7 +712,7 @@ sub waitAndRefocus($) {
   
   my $t = &sys("pwd"); chomp($t);
   $t =~ s/\/home\/[^\/]+/\~/;
-  &sys("wmctrl -a \"$t\"");
+  &sys("wmctrl -a \"$t\" 2> /dev/null");
 }
 
 sub normalizeMultiChapTime($$$) {
