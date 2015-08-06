@@ -666,7 +666,13 @@ function formatPage(elem, page, widowCheck) {
   }
   
   //add any split tags back in
-  if (topSplitTag) html = topSplitTag + html;
+  if (topSplitTag) {
+    // add split-div class to all split div elements
+    if (!(/class=["'][^"']*split\-div["']/).test(topSplitTag)) {
+      topSplitTag = topSplitTag.replace(/(class=["'][^"']*)(["'])/, "$1 split-div$2");
+    }
+    html = topSplitTag + html;
+  }
   if (bottomSplitTag) {
     var tag = bottomSplitTag.match(/<(.*?)[\s>]/);
     if (tag) html += "</" + tag[1] + ">";
