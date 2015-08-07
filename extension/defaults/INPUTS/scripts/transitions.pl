@@ -50,6 +50,18 @@ while($a = @ARGV[$i++]) {
   else {print "Bad Argument $a\n"; die;}
 }
 
+sys("amixer set Master mute & aplay /usr/share/sounds/alsa/Front_Center.wav 2> audioTest.txt");
+open(AUDIOTEST, "<audioTest.txt"); my $audioTest = join('', <AUDIOTEST>);
+close(AUDIOTEST); unlink("audioTest.txt");
+if ($audioTest =~ /cannot find card '0'/) {
+  print "\n\nERROR: This script requires that you open the VirtualBox GUI, enable\n";
+  print "audio, and choose a host audio driver ('PulseAudio' or 'alsa' are good\n";
+  print "choices). First you will need to stop the VM ('vagrant halt').\n";
+  print "\nThen try again.\n\n";
+  exit;
+}
+sys("amixer set Master unmute");
+
 if ($MBK eq "") {
   print "usage: ./xtransitions.pl book [chapter=??] [margin=??] [numpts=??]\n";
   print "\n";
@@ -148,8 +160,6 @@ for ($MCH=$firstChapter; $quit ne "true" && $MCH <= $lastChapter{$MBK}; $MCH++) 
   $gotoNextChapter = "false";
   $MPG=0;
   
-  &audioPlayPage("start", $MPG);
-  
   while($quit ne "true" && $gotoNextChapter ne "true") {
     &doTimingAdjustment();
     &readDataFiles();
@@ -164,6 +174,11 @@ for ($MCH=$firstChapter; $quit ne "true" && $MCH <= $lastChapter{$MBK}; $MCH++) 
     if (!$AudioPlaying) {&audioPlayPage("end", $MPG);}
     else {&updateStatus();}
     &showPageImage($MBK, $MCH, $MPG);
+    if (!$AudioPlaying) {
+      if ($MPG == 0) {&audioPlayPage("start", $MPG);}
+      else {&audioPlayPage("end", $MPG);}
+    }
+    else {&updateStatus();}
     $gotoNextPage = "false";
     while ($gotoNextPage ne "true") {
       $res = ReadKey(-1); if (ord($res) == 0) {&updateTime(); next;}
@@ -226,8 +241,8 @@ for ($MCH=$firstChapter; $quit ne "true" && $MCH <= $lastChapter{$MBK}; $MCH++) 
         print "\ntop of page\n";
         &audioStop();
         &doTimingAdjustment();
-        &audioPlayPage("start", $MPG);
         &showPageImage($MBK, $MCH, $MPG);
+        &audioPlayPage("start", $MPG);
         &updateStatus(); 
       } 
 
@@ -537,7 +552,7 @@ sub showPageImage($$$) {
   &sys("eog \"$imagedir/$b/$name\" 1> /dev/null 2> /dev/null &");
   if (!&waitForWindow(quotemeta($name))) {print STDERR "ERROR, showPageImage: Could not find window \"$name\"\n";}
   &sys("wmctrl -r \"$name\" -e \"0,0,0,-1,-1\" 2> /dev/null"); # move to top-left of screen
-  &waitAndRefocus(quotemeta($name));
+  &refocusConsole();
   #print STDERR "Showing $name.\n";
 }
 
@@ -607,7 +622,9 @@ sub audioPlay($) {
   my $f = $audiodir."/".$haveAudio{$MBK."-".$MCH};
   &sys("ffplay -x 200 -y 160 -stats -ss $st \"$f\" 2> \"$tmp/ffplay.txt\" 1> /dev/null &");
   $AudioPlaying = 1;
-  &waitAndRefocus("(".quotemeta($f)."|FFplay)");
+  my $windowNameRE = "(".quotemeta($f)."|FFplay)";
+  if (!&waitForWindow($windowNameRE)) {print STDERR "ERROR, audioPlay: Could not find window \"$windowNameRE\"\n";}
+  &refocusConsole();
 }
 
 # plays audio starting from page $p of current audio file
@@ -705,12 +722,9 @@ sub waitForWindow($) {
   return 0;
 }
 
-sub waitAndRefocus($) {
-  my $windowNameRE = shift;
-
-  if (!&waitForWindow($windowNameRE)) {print STDERR "ERROR, waitAndRefocus: Could not find window \"$windowNameRE\"\n";}
-  
-  my $t = &sys("pwd"); chomp($t);
+sub refocusConsole() {
+  my $t = &sys("pwd");
+  chomp($t);
   $t =~ s/\/home\/[^\/]+/\~/;
   &sys("wmctrl -a \"$t\" 2> /dev/null");
 }
