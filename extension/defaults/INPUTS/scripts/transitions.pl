@@ -550,7 +550,7 @@ sub showPageImage($$$) {
   if ($p > $lastPage{"$b-$c"}) {$p = $lastPage{"$b-$c"};}
   my $name = "$b-$c-$p.jpg";
   &sys("eog \"$imagedir/$b/$name\" 1> /dev/null 2> /dev/null &");
-  if (!&waitForWindow(quotemeta($name))) {print STDERR "ERROR, showPageImage: Could not find window \"$name\"\n";}
+  &waitForWindow(quotemeta($name));
   &sys("wmctrl -r \"$name\" -e \"0,0,0,-1,-1\" 2> /dev/null"); # move to top-left of screen
   &refocusConsole();
   #print STDERR "Showing $name.\n";
@@ -623,7 +623,7 @@ sub audioPlay($) {
   &sys("ffplay -x 200 -y 160 -stats -ss $st \"$f\" 2> \"$tmp/ffplay.txt\" 1> /dev/null &");
   $AudioPlaying = 1;
   my $windowNameRE = "(".quotemeta($f)."|FFplay)";
-  if (!&waitForWindow($windowNameRE)) {print STDERR "ERROR, audioPlay: Could not find window \"$windowNameRE\"\n";}
+  &waitForWindow($windowNameRE);
   &refocusConsole();
 }
 
@@ -714,10 +714,15 @@ sub waitForWindow($) {
   my $waiting = 15;
   while ($waiting > 0) {
     my $w = &sys("wmctrl -l 2> /dev/null");
+    if ($w =~ /^\s*$/) {last;}
     if ($w =~ /^\S+\s+\S+\s+\S+\s+$windowNameRE\s*$/gm) {return 1;}
     $waiting--;
     &sys("sleep 0.5s");
   }
+
+  my $res;
+  print "\nPress ENTER key to continue.\n";
+  do {$res = ReadKey(-1);} while (ord($res) ne "10");
   
   return 0;
 }
