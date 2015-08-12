@@ -94,6 +94,9 @@ if ($MBK eq "") {
   exit;
 }
 
+$WORKDIR = &sys("pwd");
+chomp($WORKDIR);
+  
 require "$scriptdir/shared.pl";
 if (!-e "$outaudiodir") {&sys("mkdir \"$outaudiodir\"");}
 &readDataFiles();
@@ -134,7 +137,7 @@ for ($MCH=$firstChapter; $quit ne "true" && $MCH <= $lastChapter{$MBK}; $MCH++) 
   $gotAudio = 1;
   if ($haveAudio{$MBK."-".$MCH} eq "still") {print "\n\nSKIPPING non audio chapter $MCH\n\n";}
   $done = 0;
-  while ($haveAudio{$MBK."-".$MCH} eq "still") {    
+  while ($haveAudio{$MBK."-".$MCH} eq "still") {
     if ($wchapter <= $MCH) {
       $MCH = ($MCH + 1);
       if ($MCH == $lastChapter{$MBK}) {
@@ -175,7 +178,11 @@ for ($MCH=$firstChapter; $quit ne "true" && $MCH <= $lastChapter{$MBK}; $MCH++) 
     &showPageImage($MBK, $MCH, $MPG);
     if (!$AudioPlaying) {
       if ($MPG == 0) {&audioPlayPage("start", $MPG);}
-      else {my $skipped = &audioPlayPage("end", $MPG); &updateStatus($skipped);}
+      else {
+        my $skipped = &audioPlayPage(($ContinueTime ? $ContinueTime:"end"), $MPG);
+        $ContinueTime = 0;
+        &updateStatus($skipped);
+      }
     }
     else {&updateStatus();}
     $gotoNextPage = "false";
@@ -189,11 +196,13 @@ for ($MCH=$firstChapter; $quit ne "true" && $MCH <= $lastChapter{$MBK}; $MCH++) 
       if ($res eq "120" || $res eq "113" || $res eq "3")  {print "\nquit\n"; $gotoNextPage = "true"; $quit = "true";}
       
       # save transition (space bar)
-      elsif ($res eq "32")  {
+      # save transition but continue reading unbroken (u)
+      elsif ($res eq "32" || $res eq "117")  {
         if ($debug) {print "\nKEYBOARD=$res (Save Transition)\n";}
         $newEntry = "true";
         $gotoNextPage = "true";
         &audioStop();
+        if ($res eq "117") {$ContinueTime = &audioGetTime(0, 1);}
         if ($MPG == 0) {&saveTime("start");}
         elsif ($MPG == $lastPage{$MBK."-".$MCH}) {
           &saveTime("end");
@@ -203,26 +212,11 @@ for ($MCH=$firstChapter; $quit ne "true" && $MCH <= $lastChapter{$MBK}; $MCH++) 
         }
         else {
           &saveTime("trans");
-          if ($MPG>0 && $numpts) {
+          if ($res eq "32" && $MPG>0 && $numpts) {
             $MPG += int($lastPage{"$MBK-$MCH"}/$numpts)-1;
             if ($MPG > $lastPage{"$MBK-$MCH"}-1) {$MPG = $lastPage{"$MBK-$MCH"}-1;}
           }  
         }   
-      }
-
-      # save transition but continue reading unbroken ( down-arrow )
-      elsif ($res eq "117")  {
-        if ($debug) {print "\nKEYBOARD=$res (Save transition and continue)\n";}
-        $newEntry = "true";
-        $gotoNextPage = "true";  
-        if ($MPG == 0) {&saveTime("start");}
-        elsif ($MPG == $lastPage{$MBK."-".$MCH}) {
-          &saveTime("end");
-          if (&isMultiChapter($MBK, $MCH) && $MCH < &audioFileInternalLastChapter($haveAudio{$MBK."-".$MCH})) {
-            &saveTime("multi-chap-end");
-          }
-        }
-        else {&saveTime("trans");}            
       }
             
       # log time 0 as reading start ( s )
@@ -339,8 +333,8 @@ for ($MCH=$firstChapter; $quit ne "true" && $MCH <= $lastChapter{$MBK}; $MCH++) 
         if ($debug) {print "\nKEYBOARD=$res (Pause/Continue)\n";}
         if (!$PauseTime) {
           print "\nPaused!\n";
-          $PauseTime = &audioGetTime();
           &audioStop();
+          $PauseTime = &audioGetTime(0, 1);
         }
         else {
           print "\nResumed.\n";
@@ -415,7 +409,7 @@ sub doTimingAdjustment() {
 sub updateStatus($) {
   my $skipped = shift;
   
-  my $cp = &audioGetTime(1);
+  my $cp = &audioGetTime(1, 0);
 
   my $targr = "$MBK ".&internalChapter2Real($MBK, $MCH).": ";
   my $targi = "$MBK-$MCH-";
@@ -451,7 +445,7 @@ sub updateStatus($) {
 sub updateTime() {
     my $t = time;
     if ($LastTimeCheck && $LastTimeCheck != $t) {
-      my $cp = &audioGetTime(1);
+      my $cp = &audioGetTime(1, 0);
       print "\b\b\b\b\b";
       print &formatTime(&roundToNearestFrame($cp), "short");  
     }
@@ -462,7 +456,7 @@ sub saveTime($$) {
   my $type = shift;
   my $savezero = shift;
   
-  my $posuf = $savezero ? 0:&audioGetTime($type ne "multi-chap-end");
+  my $posuf = $savezero ? 0:&audioGetTime($type ne "multi-chap-end", 1);
     
   my $pos = &formatTime(&roundToNearestFrame($posuf));
   
@@ -557,7 +551,7 @@ sub showPageImage($$$) {
   &waitForWindow(quotemeta($name));
   &sys("wmctrl -r \"$name\" -e \"0,0,0,-1,-1\" 2> /dev/null"); # move to top-left of screen
   &refocusConsole();
-  #print STDERR "Showing $name.\n";
+  #print "Showing $name.\n";
 }
 
 sub readTransitionInformation() {
@@ -623,21 +617,33 @@ sub audioPlay($) {
   if ($AudioPlaying) {return;}
   $tmp = "$outaudiodir/audiotmp";
   if (!-e "$tmp") {&sys("mkdir \"$tmp\"");}
+  chdir($tmp);
+  opendir(DIR, "./"); my @files = readdir(DIR); close(DIR);
+  foreach my $file (@files) {if ($file =~ /^ffplay\-.*\.log$/) {unlink($file);}}
+  $FFPLAYLOG = '';
   my $f = $audiodir."/".$haveAudio{$MBK."-".$MCH};
-  &sys("ffplay -x 200 -y 160 -stats -ss $st \"$f\" 2> \"$tmp/ffplay.txt\" 1> /dev/null &");
+  &sys("ffplay -report -x 200 -y 160 -stats -ss $st \"$f\" 2> /dev/null 1> /dev/null &");
   $AudioPlaying = 1;
   my $windowNameRE = "(".quotemeta($f)."|FFplay)";
   &waitForWindow($windowNameRE);
   &refocusConsole();
+  opendir(DIR, "./"); my @files = readdir(DIR); close(DIR);
+  foreach my $file (@files) {
+    if ($file !~ /^ffplay\-.*\.log$/) {next;}
+    if ($FFPLAYLOG) {print "ERROR: Multiple ffplay log files found. Timing values may become incorrect\n";}
+    $FFPLAYLOG = $tmp."/".$file;
+    last;
+  }
 }
 
 # plays audio starting from page $p of current audio file
-# does nothing if audio is already playing
+# does nothing if audio is already playing. Returns number of seconds skipped forward since player was
+# last stopped.
 sub audioPlayPage($$) {
   my $t = shift;
   my $p = shift;
   
-  if ($AudioPlaying) {return;}
+  if ($AudioPlaying) {return 0;}
   
   my $b = $MBK;
   my $c = $MCH; 
@@ -657,14 +663,14 @@ sub audioPlayPage($$) {
     }
     elsif ($p == 0) {$pos = 0;}
   }
+  else {$pos = $t;}
   
   if (&isMultiChapter($b, $c)) {$pos = &denormalizeMultiChapTime($b, $c, $pos);}
   
-  my $at = &audioGetTime();
-  my $dt = $pos -$at;
+  my $at = &audioGetTime(0, 1);
   &audioPlay($pos);
 
-  return $dt; 
+  return $pos - $at; 
 }
 
 sub audioStop() {
@@ -676,7 +682,7 @@ sub audioStop() {
 sub audioRewind($) {
   my $s = shift;
   &audioStop();
-  my $t = &audioGetTime();
+  my $t = &audioGetTime(0, 1);
   $t = $t-$s; 
   if ($t < 0) {$t = 0;}
   &audioPlay($t);
@@ -685,19 +691,26 @@ sub audioRewind($) {
 sub audioForward($) {
   my $s = shift;
   &audioStop();
-  my $t = &audioGetTime();
+  my $t = &audioGetTime(0, 1);
   my $fl = $Chapterlength{$MBK."-".$MCH};
   $s = $t+$s;
   if ($s > $fl) {$s = $fl-$s;}
   &audioPlay($s);
 }
 
-sub audioGetTime($) {
+sub audioGetTime($$) {
   my $normalize = shift;
+  my $exact = shift;
+
+  # Exact audio time cannot be determined while audio is playing due to
+  # ffplay report buffering
+  if ($exact && $AudioPlaying) {
+    print "ERROR: Problem getting exact time value\n";
+  }
     
   my $time = 0;
 
-  if (open(FFPLAY, "<$outaudiodir/audiotmp/ffplay.txt")) {
+  if ($FFPLAYLOG && open(FFPLAY, "<$FFPLAYLOG")) {
     my $a = join('', <FFPLAY>);  close(FFPLAY);
     while ($a =~ s/\s+([\d\.]+)\s+M\-A://) {$time = $1;} 
   }
@@ -721,15 +734,14 @@ sub waitForWindow($) {
   }
 
   my $res;
-  print "\nPress ENTER key to continue.\n";
-  do {$res = ReadKey(-1);} while (ord($res) ne "10");
+  print "\nPress \"c\" key to continue.\n";
+  do {$res = ReadKey(-1);} while (ord($res) ne "99");
   
   return 0;
 }
 
 sub refocusConsole() {
-  my $t = &sys("pwd");
-  chomp($t);
+  my $t = $WORKDIR;
   $t =~ s/\/home\/[^\/]+/\~/;
   &sys("wmctrl -a \"$t\" 2> /dev/null");
 }
