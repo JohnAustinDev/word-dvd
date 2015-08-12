@@ -170,13 +170,12 @@ for ($MCH=$firstChapter; $quit ne "true" && $MCH <= $lastChapter{$MBK}; $MCH++) 
       print "* PRESS SPACEBAR WHERE READING ENDS. *\n";
       print "************* LAST PAGE **************\n\n";
     }
-     
-    if (!$AudioPlaying) {&audioPlayPage("end", $MPG);}
-    else {&updateStatus();}
+
+    if (!$AudioPlaying && $MPG == 0) {&updateStatus();}
     &showPageImage($MBK, $MCH, $MPG);
     if (!$AudioPlaying) {
       if ($MPG == 0) {&audioPlayPage("start", $MPG);}
-      else {&audioPlayPage("end", $MPG);}
+      else {my $skipped = &audioPlayPage("end", $MPG); &updateStatus($skipped);}
     }
     else {&updateStatus();}
     $gotoNextPage = "false";
@@ -242,8 +241,8 @@ for ($MCH=$firstChapter; $quit ne "true" && $MCH <= $lastChapter{$MBK}; $MCH++) 
         &audioStop();
         &doTimingAdjustment();
         &showPageImage($MBK, $MCH, $MPG);
-        &audioPlayPage("start", $MPG);
-        &updateStatus(); 
+        my $skipped = &audioPlayPage("start", $MPG);
+        &updateStatus($skipped); 
       } 
 
       # go back to last page ( b )
@@ -413,7 +412,9 @@ sub doTimingAdjustment() {
   &sys("\"$scriptdir/audio.pl\" \"$scriptdir\" \"$IDR\" \"$ODR\" \"$ADR\"");
 }
 
-sub updateStatus() {
+sub updateStatus($) {
+  my $skipped = shift;
+  
   my $cp = &audioGetTime(1);
 
   my $targr = "$MBK ".&internalChapter2Real($MBK, $MCH).": ";
@@ -439,6 +440,9 @@ sub updateStatus() {
   $v  = &formatTime(&roundToNearestFrame($v), "short");
   $cp = &formatTime(&roundToNearestFrame($cp), "short");
 
+  print "\n";
+  if ($skipped > 5) {print sprintf("%-30s%19s%i s", "", "SKIPPING: ", $skipped);}
+  
   print "\n";
   print sprintf("%-30s%19s%s\n", $targr, "CALCULATED TARGET: ", $v);
   print sprintf("%-30s%19s%s", "SPACEBAR==> ".$targi, "REAL TIME: ", $cp, "short");
@@ -659,12 +663,8 @@ sub audioPlayPage($$) {
   my $at = &audioGetTime();
   my $dt = $pos -$at;
   &audioPlay($pos);
-  print "\n";
-  if ($at) {  
-    if ($dt > 5) {print sprintf("%-30s%19s%i s", "", "SKIPPING: ", $dt);}
-    &updateStatus();
-  }
-  #print "Started $b-$c at $pos seconds in $p (".$lastPage{$b."-".$c}.")\n";  
+
+  return $dt; 
 }
 
 sub audioStop() {
