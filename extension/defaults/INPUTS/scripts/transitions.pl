@@ -27,6 +27,7 @@
 #   ffmpeg (to get ffplay)
 
 use Term::ReadKey;
+use File::Spec;
 
 $debug = 0;
 
@@ -36,9 +37,7 @@ $forward = 10;
 $firstChapter = 1;
 
 $scriptdir = @ARGV[0];
-$IDR = @ARGV[1];
-$ODR = @ARGV[2];
-$ADR = @ARGV[3];
+if ($scriptdir =~ /^\./) {$scriptdir = File::Spec->rel2abs($scriptdir);}
 $MBK = @ARGV[4];
 
 # capture arguments
@@ -402,8 +401,8 @@ ReadMode 0;
 ################################################################################
 ################################################################################
 sub doTimingAdjustment() {
-  &sys("\"$scriptdir/timeAnalysis.pl\" \"$scriptdir\" \"$IDR\" \"$ODR\" \"$ADR\"");
-  &sys("\"$scriptdir/audio.pl\" \"$scriptdir\" \"$IDR\" \"$ODR\" \"$ADR\"");
+  &sys("\"$scriptdir/timeAnalysis.pl\" \"$scriptdir\" \"$indir\" \"$outdir\" \"$audiodir\"");
+  &sys("\"$scriptdir/audio.pl\" \"$scriptdir\" \"$indir\" \"$outdir\" \"$audiodir\"");
 }
 
 sub updateStatus($) {
@@ -617,23 +616,12 @@ sub audioPlay($) {
   if ($AudioPlaying) {return;}
   $tmp = "$outaudiodir/audiotmp";
   if (!-e "$tmp") {&sys("mkdir \"$tmp\"");}
-  chdir($tmp);
-  opendir(DIR, "./"); my @files = readdir(DIR); close(DIR);
-  foreach my $file (@files) {if ($file =~ /^ffplay\-.*\.log$/) {unlink($file);}}
-  $FFPLAYLOG = '';
+  if (-e "$tmp/ffplay.log") {unlink("$tmp/ffplay.log");}
   my $f = $audiodir."/".$haveAudio{$MBK."-".$MCH};
-  &sys("ffplay -report -x 200 -y 160 -stats -ss $st \"$f\" 2> /dev/null 1> /dev/null &");
+  &sys("export FFREPORT=file=$tmp/ffplay.log && ffplay -x 200 -y 160 -stats -ss $st \"$f\" 2> /dev/null 1> /dev/null &");
   $AudioPlaying = 1;
-  my $windowNameRE = "(".quotemeta($f)."|FFplay)";
-  &waitForWindow($windowNameRE);
+  &waitForWindow("(".quotemeta($f)."|FFplay)");
   &refocusConsole();
-  opendir(DIR, "./"); my @files = readdir(DIR); close(DIR);
-  foreach my $file (@files) {
-    if ($file !~ /^ffplay\-.*\.log$/) {next;}
-    if ($FFPLAYLOG) {print "ERROR: Multiple ffplay log files found. Timing values may become incorrect\n";}
-    $FFPLAYLOG = $tmp."/".$file;
-    last;
-  }
 }
 
 # plays audio starting from page $p of current audio file
@@ -710,7 +698,7 @@ sub audioGetTime($$) {
     
   my $time = 0;
 
-  if ($FFPLAYLOG && open(FFPLAY, "<$FFPLAYLOG")) {
+  if (open(FFPLAY, "<$outaudiodir/audiotmp/ffplay.log")) {
     my $a = join('', <FFPLAY>);  close(FFPLAY);
     while ($a =~ s/\s+([\d\.]+)\s+M\-A://) {$time = $1;} 
   }

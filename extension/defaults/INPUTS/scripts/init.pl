@@ -10,6 +10,10 @@ $indir =~ s/\/\s*$//; # remove any trailing slash
 $outdir =~ s/\/\s*$//; # remove any trailing slash
 $audiodir =~ s/\/\s*$//; # remove any trailing slash
 
+if ($indir =~ /^\./) {$indir = File::Spec->rel2abs($indir);}
+if ($outdir =~ /^\./) {$outdir = File::Spec->rel2abs($outdir);}
+if ($audiodir =~ /^\./) {$audiodir = File::Spec->rel2abs($audiodir);}
+
 $projmenusdir = "$indir/menus";
 $locale = "$indir/config.txt";
 $htmldir = "$indir/html";

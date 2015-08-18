@@ -21,6 +21,7 @@
 
 use Encode;
 use POSIX;
+use File::Spec;
 require "$scriptdir/init.pl";
 
 sub readDataFiles() {
