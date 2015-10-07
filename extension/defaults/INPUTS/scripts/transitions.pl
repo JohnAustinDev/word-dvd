@@ -517,7 +517,7 @@ sub saveTime($$) {
     }
   }
 
-  open(INF, ">>$pageTimingFile") || &DIE("Could not open $pageTimingFile\n");
+  open(INF, ">>encoding(UTF-8)", $pageTimingFile) || &DIE("Could not open $pageTimingFile\n");
   if (!defined($hasRT)) {print INF "\n"; $hasRT = "true";}     
   if (exists($transitionIndex{"$MBK-$MCH-$MPG"})) {
     my $ptentry = "$MBK-$MCH-i".$transitionIndex{"$MBK-$MCH-$MPG"}." = $pos";
@@ -561,7 +561,7 @@ sub readTransitionInformation() {
   
     foreach $entry (@entries) {
       if ($entry !~ /-trans\.csv$/) {next;}
-      open (INF, "<$listdir/$entry") || die &DIE("Could not open $listdir/$entry");
+      open (INF, "<encoding(UTF-8)", "$listdir/$entry") || die &DIE("Could not open $listdir/$entry");
       my $line = 0;
       while (<INF>) {
         $line++;
@@ -698,7 +698,7 @@ sub audioGetTime($$) {
     
   my $time = 0;
 
-  if (open(FFPLAY, "<$outaudiodir/audiotmp/ffplay.log")) {
+  if (open(FFPLAY, "<encoding(UTF-8)", "$outaudiodir/audiotmp/ffplay.log")) {
     my $a = join('', <FFPLAY>);  close(FFPLAY);
     while ($a =~ s/\s+([\d\.]+)\s+M\-A://) {$time = $1;} 
   }
@@ -762,8 +762,8 @@ sub sortPageTimingFile() {
   
   my $tmp = "$pageTimingFile.tmp";
 
-  open(INF, "<$pageTimingFile") || return;
-  open(OUTF, ">$tmp") || return;
+  open(INF, "<encoding(UTF-8)", $pageTimingFile) || return;
+  open(OUTF, ">encoding(UTF-8)", $tmp) || return;
   my $lastLineWasBlank;
   while(<INF>) {
     
@@ -801,7 +801,7 @@ sub sortPageTimingFile() {
   close(OUTF);
   
   # append all timing data to the end...
-  open(OUTF, ">>$tmp") || &DIE("ERROR: Could not open $tmp!\n");
+  open(OUTF, ">>encoding(UTF-8)", $tmp) || &DIE("ERROR: Could not open $tmp!\n");
   
   foreach $k (sort sortAT keys %allAT) {
     $allAT{$k} =~ /^\s*([^-]+)-(\d+)-/; 
@@ -911,8 +911,8 @@ sub updateEntriesBy(\%) {
   
   my $tmp = "$pageTimingFile.tmp";
 
-  open(INF, "<$pageTimingFile") || return;
-  open(OUTF, ">$tmp") || return;
+  open(INF, "<encoding(UTF-8)", $pageTimingFile) || return;
+  open(OUTF, ">encoding(UTF-8)", $tmp) || return;
   
   my $new = "";
   while(<INF>) {

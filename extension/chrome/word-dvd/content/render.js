@@ -1362,7 +1362,7 @@ function getStats(pagename, page, beg, end, hasAudio) {
     // file is only needed by transitions.pl so that if transitions are
     // manually recorded, a text-locative entry can be made in pageTiming.txt.
     // After text-locative entries are added to pageTiming.txt, then while the
-    // project is being re-rendered, these entries are reported in the -trans 
+    // project is being re-rendered, these entries are reported in the <book>.csv 
     // file, along with the usual data. This allows correlation of real 
     // times to calculated times, thus greatly improving calculation accuracy.
     info["trans"] = pagename + "," + end + ",{" + page.passage.substring((end-REPAIRLEN < 0 ? 0:end-REPAIRLEN), end).replace(/\n/g, "<n>") + "}\n";

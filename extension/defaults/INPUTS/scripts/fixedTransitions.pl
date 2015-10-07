@@ -62,8 +62,8 @@ foreach my $k (keys %correctPageChap) {
 
 $tmp = "$pageTimingFile.tmp";
 
-open(INF, "<$pageTimingFile") || die;
-open(OUTF, ">$tmp") || die;
+open(INF, "<encoding(UTF-8)", $pageTimingFile) || die;
+open(OUTF, ">encoding(UTF-8)", $tmp) || die;
 while(<INF>) {
   
   # print every single line, but add "#" before select lines...

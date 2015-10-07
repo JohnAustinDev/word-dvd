@@ -89,7 +89,7 @@ sub readDataFiles() {
   # Matt-1-2 += 3.4
   #
   # Matt-1-0 is baseline (subtracted from all values)
-  if (open (INF, "<$indir/pageTiming.txt")) {
+  if (open (INF, "<encoding(UTF-8)", "$indir/pageTiming.txt")) {
     $order=50000;
     $baseline=0;
     while(<INF>) {
