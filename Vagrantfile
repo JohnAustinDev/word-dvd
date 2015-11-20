@@ -14,6 +14,9 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   config.vm.box_url = "http://files.vagrantup.com/precise32.box"
   config.vm.provision :shell, :path => "VagrantProvision.sh"
   config.ssh.forward_x11 = true
+  if not File.exists?("./PROJECT") and File.symlink?("./PROJECTS")
+    config.vm.synced_folder File.readlink('PROJECTS'), "/vagrant/PROJECT"
+  end
   
   # Default NAT's DNS for Linux VM within MS-Windows VM does not always 
   # work, so the fix:
